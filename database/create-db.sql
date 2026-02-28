@@ -1,0 +1,6 @@
+DROP DATABASE gadim_lab;
+
+CREATE DATABASE gadim_lab
+    WITH
+    ENCODING = 'UTF8'
+    CONNECTION LIMIT = -1;

@@ -1,0 +1,88 @@
+@startuml "gadim-lab-api-types"
+
+skinparam defaultFontName Monospaced
+hide empty members
+set separator none
+
+title gadim.lab.api.types
+
+enum Role {
+    ADMIN
+    STUDENT
+    TEACHER
+}
+
+enum UserStatus {
+    ACTIVE
+    INACTIVE
+}
+
+enum InstanceStatus {
+    CREATING
+    RUNNING
+    STOPPED
+    PAUSED
+    ERROR
+    TERMINATED
+}
+
+interface WorkspaceGroup {
+    id() :String
+    name() :String
+}
+
+interface User {
+    userId() :String
+    name() :String
+    lastName() :String
+    studentCode() :String
+    password() :String
+    status() :UserStatus
+    createdAt() :LocalDateTime
+}
+
+interface UserRole {
+    id() :String
+    userId() :String
+    role() :Role
+}
+
+interface Instance {
+    id() :String
+    name() :String
+    description() :String
+    externalIp() :String  //Id real del contenedor
+    imageName() :String
+    imageVersion() :String
+    imageRegistry() :String //
+    cpuCores() :Integer
+    memoryMb() :Integer
+    storageMb() :Integer
+    gpuEnabled() :Boolean
+    exposedPort() :Integer
+    internalIp() :String
+    createdAt() :LocalDateTime
+    expiresAt() :LocalDateTime
+    startedAt() :LocalDateTime
+    stoppedAt() :LocalDateTime
+    deletedAt() :LocalDateTime
+    lastAccessedAt() :LocalDateTime
+    status() :InstanceStatus
+}
+
+interface InstanceMetrics {
+    id() :String
+    instanceId() :String
+    currentCpuUsage() :Double
+    currentMemoryUsage() :Double
+    currentDiskUsage() :Double
+    currentTimeUsage() :Double
+}
+
+interface InstanceUser {
+    id() :String
+    instanceId() :String
+    userId() :String
+}
+
+@enduml
