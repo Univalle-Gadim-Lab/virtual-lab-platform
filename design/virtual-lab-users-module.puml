@@ -1,0 +1,105 @@
+@startuml VirtualLabUsersModule
+' Título del diagrama
+title Módulo Users - Virtual Lab Platform
+
+' Definición de paquetes
+package "api" {
+    package "type" {
+        interface User {
+            +String id()
+            +String name()
+            +String lastName()
+            +Optional<String> externalCode()
+            +String getPassword()
+            +UserStatus status()
+            +LocalDateTime createdDate()
+        }
+        interface UserRole {
+            +String id()
+            +String userId()
+            +Role role()
+        }
+        enum Role {
+            ADMIN
+            STUDENT
+            TEACHER
+        }
+        enum UserStatus {
+            ACTIVE
+            INACTIVE
+        }
+    }
+    package "service" {
+        interface UserService {
+            +User createUser(String username, String email, String password, Set<String> roles)
+            +Optional<User> getUserById(String id)
+            +Optional<User> getUserByUsername(String username)
+            +List<User> getAllUsers()
+        }
+        interface UserRoleService {
+            +UserRole createUserRole(String userId, Role role)
+            +List<UserRole> createUserRoles(String userId, List<Role> roles)
+            +List<UserRole> getRoleByUserId(String userId)
+        }
+    }
+}
+
+package "data" {
+    package "model" {
+        class UserJpa {
+
+        }
+    }
+    package "repository" {
+        interface UserRepository {
+            +Optional<UserJpa> findByUsername(String username)
+            +UserJpa save(UserJpa user)
+            +Optional<UserJpa> findById(String id)
+            +List<UserJpa> findAll()
+        }
+    }
+}
+
+package "operation" {
+    class UserServiceOp {
+        -UserRepository repository
+        +createUser(...)
+        +getUserById(...)
+        +getUserByUsername(...)
+        +getAllUsers()
+    }
+}
+
+package "web" {
+    package "model" {
+        class UserDto {
+            +String id
+            +String username
+            +String email
+            +Set<String> roles
+            +static from(User user): UserDto
+        }
+    }
+    package "controller" {
+        class UserController {
+            -UserService service
+            +createUser(...)
+        }
+    }
+}
+
+package "config" {
+    class ModuleConfig
+}
+
+' Relaciones
+UserJpa ..|> User
+UserServiceOp ..|> UserService
+UserServiceOp --> UserRepository
+UserController --> UserService
+UserDto ..> User
+UserRole --> User
+UserRole --> Role
+User --> UserStatus
+
+@enduml

@@ -1,0 +1,70 @@
+@startuml VirtualLabPlatformModules
+title Virtual Lab Platform - Arquitectura Modular
+
+' =======================
+' Módulo Boot
+' =======================
+package "virtual-lab-platform-boot" {
+    class VirtualLabPlatformApplication {
+        +main(String[] args)
+    }
+    VirtualLabPlatformApplication --> "users.UserService"
+    VirtualLabPlatformApplication --> "security.SecurityConfig"
+    VirtualLabPlatformApplication --> "instances.InstanceService"
+}
+
+' =======================
+' Módulo Users
+' =======================
+package "users" {
+    package "api" {
+        interface User
+        interface UserService
+    }
+    package "data" {
+        class UserJpa
+        interface UserRepository
+    }
+    package "operation" {
+        class UserServiceOp
+    }
+    package "web" {
+        class UserController
+        class UserDto
+    }
+    package "config" {
+        class ModuleConfig
+    }
+
+    ' Relaciones internas
+    UserJpa ..|> User
+    UserServiceOp ..|> UserService
+    UserServiceOp --> UserRepository
+    UserController --> UserService
+    UserDto ..> User
+}
+
+' =======================
+' Módulo Security
+' =======================
+package "security" {
+    class SecurityConfig
+    SecurityConfig --> "users.UserService"
+}
+
+' =======================
+' Módulo Instances
+' =======================
+package "instances" {
+    class Instance
+    interface InstanceService
+    class InstanceServiceOp
+    InstanceServiceOp ..|> InstanceService
+}
+
+' Relaciones entre módulos
+VirtualLabPlatformApplication --> UserServiceOp
+VirtualLabPlatformApplication --> SecurityConfig
+VirtualLabPlatformApplication --> InstanceServiceOp
+
+@enduml
