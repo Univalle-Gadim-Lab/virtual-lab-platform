@@ -1,3 +1,20 @@
 rootProject.name = "virtual-lab-platform"
+
 include("virtual-lab-platform-boot")
-include("virtaul-lab-platform-users")
+include("virtual-lab-platform-users")
+
+//dependencyResolutionManagement {
+//    repositories {
+//        mavenCentral()
+//    }
+
+//    versionCatalogs {
+//        create("platformLibs") {
+//            from(files("gradle/libs.versions.toml"))
+//        }
+//    }
+//}
+
+//dependencyResolutionManagement {
+//    repositoriesMode = RepositoriesMode.PREFER_PROJECT
+//}

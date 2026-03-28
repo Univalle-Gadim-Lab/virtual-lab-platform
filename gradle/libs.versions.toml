@@ -1,0 +1,31 @@
+# https://docs.gradle.org/current/userguide/platforms.html#sub::toml-dependencies-format
+[versions]
+h2 = "2.2.224"
+junit = "6.0.3"
+lombok = "1.18.44"
+springBoot = "4.0.3"
+springManagement = "1.1.7"
+springSecurity = "6.2.3"
+
+[plugins]
+dependency-management = { id = "io.spring.dependency-management", version.ref = "springManagement" }
+spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }
+
+[libraries]
+# Spring Boot libraries
+spring-boot-bom = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "springBoot"}
+dependency-management-plugin = { module = "io.spring.gradle:dependency-management-plugin", version.ref = "springManagement" }
+spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security"}
+spring-boot-starter-webmvc = { module = "org.springframework.boot:spring-boot-starter-webmvc"}
+spring-context = { module = "org.springframework:spring-context"}
+spring-core = { module = "org.springframework:spring-core"}
+spring-data-jpa = { module = "org.springframework.data:spring-data-jpa"}
+spring-security-config = { module = "org.springframework.security:spring-security-config"}
+spring-security-core = { module = "org.springframework.security:spring-security-core"}
+spring-web = { module = "org.springframework:spring-web"}
+
+# Other libraries
+h2 = { module = "com.h2database:h2", version.ref = "h2" }
+junit = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
+
