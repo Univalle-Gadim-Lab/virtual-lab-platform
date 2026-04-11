@@ -1,11 +1,16 @@
 # https://docs.gradle.org/current/userguide/platforms.html#sub::toml-dependencies-format
 [versions]
+bson = "5.6.4"
+commons-lang3 = "3.18.0"
+either = "2.9.0"
+findbugs = "3.0.2"
+gson = "2.13.1"
+guava = "33.4.8-jre"
 h2 = "2.2.224"
 junit = "6.0.3"
 lombok = "1.18.44"
 springBoot = "4.0.3"
 springManagement = "1.1.7"
-springSecurity = "6.2.3"
 
 [plugins]
 dependency-management = { id = "io.spring.dependency-management", version.ref = "springManagement" }
@@ -25,7 +30,13 @@ spring-security-core = { module = "org.springframework.security:spring-security-
 spring-web = { module = "org.springframework:spring-web"}
 
 # Other libraries
+bson = { module = "org.mongodb:bson", version.ref = "bson" }
+commonsLang3 = { module = "org.apache.commons:commons-lang3", version.ref = "commons-lang3" }
+either = { module = "com.spencerwi:Either.java", version.ref = "either" }
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+guava = { module = "com.google.guava:guava", version.ref = "guava" }
 h2 = { module = "com.h2database:h2", version.ref = "h2" }
+jakarta-persistence-api = { module = "jakarta.persistence:jakarta.persistence-api", version = "3.1.0" }
 junit = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
-
+findbugs = { module = "com.google.code.findbugs:jsr305", version.ref = "findbugs"}

@@ -1,5 +1,4 @@
 plugins {
-	kotlin("jvm") version "2.3.10"
 	id("java")
 	alias(libs.plugins.dependency.management)
 	alias(libs.plugins.spring.boot) apply false
@@ -31,5 +30,13 @@ subprojects {
 
 	tasks.withType<Test> {
 		useJUnitPlatform()
+	}
+
+	tasks.withType<Checkstyle>().configureEach {
+		val cfgDir = "${rootDir}/build-tools/checkstyle"
+		val cfgFile = "${cfgDir}/checkstyle.xml"
+		configDirectory.set(file(cfgDir))
+		configFile = file(cfgFile)
+		maxWarnings = 0
 	}
 }

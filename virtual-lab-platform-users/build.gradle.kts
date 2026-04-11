@@ -4,10 +4,16 @@ plugins {
 
 
 dependencies {
+    implementation(project(":virtual-lab-platform-commons"))
+
+    implementation(libs.findbugs)
+    implementation(libs.jakarta.persistence.api)
     implementation(libs.spring.context)
-//    implementation(libs.spring.data.jpa)
     implementation(libs.spring.core)
-//    implementation("org.springframework.data:spring-data-jpa")
+    implementation(libs.spring.data.jpa)
+    implementation(libs.spring.security.core)
+    implementation(libs.spring.web)
+
 
     compileOnly(libs.lombok)
     annotationProcessor(libs.lombok)
