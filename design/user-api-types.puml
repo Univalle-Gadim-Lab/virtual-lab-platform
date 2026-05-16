@@ -47,42 +47,6 @@ interface UserRole {
     role() :Role
 }
 
-interface Instance {
-    id() :String
-    name() :String
-    description() :String
-    externalIp() :String  //Id real del contenedor
-    imageName() :String
-    imageVersion() :String
-    imageRegistry() :String //
-    cpuCores() :Integer
-    memoryMb() :Integer
-    storageMb() :Integer
-    gpuEnabled() :Boolean
-    exposedPort() :Integer
-    internalIp() :String
-    createdAt() :LocalDateTime
-    expiresAt() :LocalDateTime
-    startedAt() :LocalDateTime
-    stoppedAt() :LocalDateTime
-    deletedAt() :LocalDateTime
-    lastAccessedAt() :LocalDateTime
-    status() :InstanceStatus
-}
 
-interface InstanceMetrics {
-    id() :String
-    instanceId() :String
-    currentCpuUsage() :Double
-    currentMemoryUsage() :Double
-    currentDiskUsage() :Double
-    currentTimeUsage() :Double
-}
-
-interface InstanceUser {
-    id() :String
-    instanceId() :String
-    userId() :String
-}
 
 @enduml

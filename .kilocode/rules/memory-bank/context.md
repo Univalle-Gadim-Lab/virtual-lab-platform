@@ -22,3 +22,49 @@
     - SpotBugs plugin with exclusions at build-tools/spotbugs/spotbugs-exclude.xml
     - JaCoCo XML reports enabled; JUnit Platform configured
 
+## virtual-platform Application
+
+### Modules:
+- virtual-platform-boot
+    - Clase main
+    - Configuración general
+    - Wiring final
+    - Este módulo depende de todos los demás.
+
+- Seguridad como módulo propio
+      - Users como dominio puro
+      - Instances como dominio puro
+      - Boot como ensamblador
+      - JWT en security
+      - BCrypt en security
+      - Control de ownership en instances
+
+- virtual-platform-security
+  - SecurityConfig
+  - JWT Provider
+  - JWT Filter
+  - AuthenticationEntryPoint
+  - PasswordEncoder bean
+  - CustomUserDetailsService (o interfaz que consuma users)
+  - Este módulo NO debe tener lógica de negocio. Solo infraestructura de seguridad.
+
+- virtual-platform-users
+  - Entidad User
+  - Entidad Role
+  - Repositorios
+  - Servicios CRUD
+  - Lógica de negocio de usuarios
+  - No debe conocer nada de JWT.
+
+- virtual-platform-instances 
+  - Entidad Instance 
+  - Asociación con User 
+  - Lógica de ownership 
+  - Lógica de virtualización
+
+- virtual-platform-core (opcional pero recomendable)
+  - Excepciones comunes 
+  - Response wrappers 
+  - Auditoría base 
+  - Interfaces compartidas
+
