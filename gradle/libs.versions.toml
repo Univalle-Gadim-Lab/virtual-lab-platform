@@ -11,6 +11,7 @@ junit = "6.0.3"
 lombok = "1.18.44"
 springBoot = "4.0.3"
 springManagement = "1.1.7"
+docerClient = "3.7.1"
 
 [plugins]
 dependency-management = { id = "io.spring.dependency-management", version.ref = "springManagement" }
@@ -40,3 +41,4 @@ jakarta-persistence-api = { module = "jakarta.persistence:jakarta.persistence-ap
 junit = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
 findbugs = { module = "com.google.code.findbugs:jsr305", version.ref = "findbugs"}
+docker-client = { module = "com.github.docker-java:docker-java", version.ref = "docerClient"}

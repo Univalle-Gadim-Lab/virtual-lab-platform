@@ -15,7 +15,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -92,8 +91,33 @@ public class InstanceJpa implements Instance {
   private InstanceStatus status;
 
   @Override
+  public String id() {
+    return this.id;
+  }
+
+  @Override
+  public String name() {
+    return this.name;
+  }
+
+  @Override
   public Optional<String> description() {
     return Optional.ofNullable(this.description);
+  }
+
+  @Override
+  public String externalIp() {
+    return this.externalIp;
+  }
+
+  @Override
+  public String imageName() {
+    return this.imageName;
+  }
+
+  @Override
+  public String imageVersion() {
+    return this.imageVersion;
   }
 
   @Override

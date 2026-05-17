@@ -14,6 +14,7 @@ dependencies {
     implementation(libs.spring.data.jpa)
     implementation(libs.spring.security.core)
     implementation(libs.spring.web)
+    implementation(libs.docker.client)
 
 
     compileOnly(libs.lombok)
