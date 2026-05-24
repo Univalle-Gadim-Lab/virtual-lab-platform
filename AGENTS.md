@@ -15,6 +15,13 @@ Instructions:
 
 Read the definitions and patterns in: @.opencode/instructions/java-project-structure-concepts-and-package-patterns.md
 
+## Project Structure / Architecture Documentation
+
+Architecture and design documentation lives under `architecture/`:
+
+- `architecture/ARCHITECTURE.md` — Class-level system architecture, module diagrams, component relationships
+- `architecture/DATABASE.md` — Physical database schema, ERD diagram, DDL-to-JPA mapping reference
+
 ## Testing
 
 ### Framework
