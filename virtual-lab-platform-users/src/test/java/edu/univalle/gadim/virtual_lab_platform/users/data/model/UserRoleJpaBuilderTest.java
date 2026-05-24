@@ -93,8 +93,9 @@ class UserRoleJpaBuilderTest {
                     .role(Role.ADMIN)
                     .build();
 
-            assertThat(role1).isEqualTo(role2);
-            assertThat(role1.hashCode()).isEqualTo(role2.hashCode());
+            assertThat(role1)
+                .isEqualTo(role2)
+                .hasSameHashCodeAs(role2);
         }
 
         @Test
