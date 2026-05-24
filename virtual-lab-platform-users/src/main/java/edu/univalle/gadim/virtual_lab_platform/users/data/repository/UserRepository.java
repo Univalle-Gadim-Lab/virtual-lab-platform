@@ -6,7 +6,20 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
+/**
+ * Spring Data repository for {@link UserJpa} persistence.
+ *
+ * <p>Provides standard CRUD operations plus a custom lookup by username.
+ *
+ * @see UserJpa
+ */
 @Repository
 public interface UserRepository extends JpaRepository<UserJpa, String> {
+    /**
+     * Finds a user by their name (username).
+     *
+     * @param name the username to search for
+     * @return the user if found, or {@code Optional.empty()} if not found
+     */
     Optional<UserJpa> findByName(String name);
 }

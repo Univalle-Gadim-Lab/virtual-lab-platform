@@ -20,6 +20,17 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+/**
+ * JPA entity representing a user-to-role association.
+ *
+ * <p>Mapped to the {@code user_roles} table and implements the {@link UserRole}
+ * domain contract. A unique constraint on {@code (user_id, role)} prevents
+ * duplicate role assignments.
+ *
+ * @see UserRole
+ * @see Role
+ * @see UserRoleRepository
+ */
 @Entity
 @Getter
 @Setter

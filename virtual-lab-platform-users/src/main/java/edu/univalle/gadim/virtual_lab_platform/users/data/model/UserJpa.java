@@ -19,6 +19,20 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+/**
+ * JPA entity representing a platform user account.
+ *
+ * <p>Mapped to the {@code users} table and implements the {@link User} domain
+ * contract, unifying persistence and domain models. Stores authentication
+ * metadata, personal information, and lifecycle status.
+ *
+ * <p><b>Thread Safety:</b> This class is not thread-safe. Instances should not
+ * be shared across threads without external synchronization.
+ *
+ * @see User
+ * @see UserRepository
+ * @see UserRoleJpa
+ */
 @Entity
 @Getter
 @Setter
