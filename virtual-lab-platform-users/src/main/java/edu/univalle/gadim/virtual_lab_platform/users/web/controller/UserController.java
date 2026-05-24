@@ -43,7 +43,7 @@ public class UserController {
    */
   @PostMapping
   @Nonnull
-  public ResponseEntity<UserResponse> createUser(@RequestBody @Nonnull CreateUserRequest request) {
+  public ResponseEntity<UserResponse> createUser(@RequestBody CreateUserRequest request) {
     User user =
         new UserCreateRecord(
             "temp",

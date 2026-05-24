@@ -21,4 +21,6 @@ dependencies {
     runtimeOnly(libs.h2)
 
     testImplementation(libs.junit)
+    testImplementation(libs.assertj)
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
