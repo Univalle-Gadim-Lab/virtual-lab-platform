@@ -14,6 +14,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+/**
+ * JPA entity representing resource utilization metrics for a virtual lab instance.
+ *
+ * <p>Mapped to the {@code instance_metrics} table and implements the {@link InstanceMetrics}
+ * domain contract. Stores point-in-time snapshots of CPU, memory, disk, and time usage.
+ *
+ * @see InstanceMetrics
+ * @see InstanceMetricsRepository
+ */
 @Entity
 @Getter
 @Setter

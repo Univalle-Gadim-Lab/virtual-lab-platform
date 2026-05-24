@@ -11,6 +11,22 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 
+/**
+ * Docker adapter that implements the {@link WorkspaceProvisionerService} contract.
+ *
+ * <p>Bridges the domain service layer to the Docker daemon using the {@code docker-java}
+ * client library. Creates containers with configurable resource limits (CPU, memory, disk)
+ * and manages their lifecycle.
+ *
+ * <p><b>Resource Configuration:</b>
+ * <ul>
+ *   <li>CPU: 2 cores (quota 200000/period 100000)</li>
+ *   <li>Memory: 4 GB RAM (swap disabled)</li>
+ *   <li>Disk: 10 GB storage limit</li>
+ * </ul>
+ *
+ * @see WorkspaceProvisionerService
+ */
 @Service
 @ParametersAreNonnullByDefault
 public class WorkspaceProvisionerOperation implements WorkspaceProvisionerService {

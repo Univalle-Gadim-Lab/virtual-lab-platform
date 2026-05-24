@@ -14,6 +14,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+/**
+ * JPA entity representing the many-to-many association between users and instances.
+ *
+ * <p>Mapped to the {@code instance_users} table and implements the {@link InstanceUser}
+ * domain contract. Establishes ownership and access rights for users to specific instances.
+ *
+ * @see InstanceUser
+ * @see InstanceUserRepository
+ */
 @Entity
 @Getter
 @Setter

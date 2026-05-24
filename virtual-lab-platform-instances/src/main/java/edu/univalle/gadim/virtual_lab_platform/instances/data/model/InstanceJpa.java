@@ -18,6 +18,20 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+/**
+ * JPA entity representing a virtual lab instance.
+ *
+ * <p>Mapped to the {@code instances} table and implements the {@link Instance} domain
+ * contract. Stores container configuration, networking details, lifecycle timestamps,
+ * and runtime status.
+ *
+ * <p><b>Thread Safety:</b> This class is not thread-safe. Instances should not
+ * be shared across threads without external synchronization.
+ *
+ * @see Instance
+ * @see InstanceStatus
+ * @see InstanceRepository
+ */
 @Entity
 @Getter
 @Setter
