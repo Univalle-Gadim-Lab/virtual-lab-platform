@@ -58,6 +58,7 @@ package "api" {
         interface InstanceService {}
         interface InstanceMetricsService {}
         interface InstanceUserService {}
+        interface WorkspaceProvisionerService {}
     }
 }
 
@@ -117,9 +118,11 @@ package "data" {
 }
 
 package "operation" {
-    class InstanceServiceOp {
+    class InstanceServiceOperation {
         -InstanceRepository repository
         -InstanceUserRepository instanceUserRepository
+        -WorkspaceProvisionerService workspaceProvisionerService
+        -UniqueIdGenerator uniqueIdGenerator
         +createInstance(...)
         +startInstance(String id)
         +stopInstance(String id)
@@ -128,29 +131,40 @@ package "operation" {
         +deleteInstance(String id)
         +checkOwnership(String instanceId, String userId)
     }
-    class InstanceMetricsServiceOp {
+    class InstanceMetricsServiceOperation {
         -InstanceMetricsRepository repository
+        -UniqueIdGenerator uniqueIdGenerator
         +getMetricsByInstanceId(String instanceId)
         +recordMetrics(String instanceId, ...)
     }
-    class InstanceUserServiceOp {
+    class InstanceUserServiceOperation {
         -InstanceUserRepository repository
+        -UniqueIdGenerator uniqueIdGenerator
         +assignUserToInstance(String userId, String instanceId)
         +getUsersByInstanceId(String instanceId)
         +removeUserFromInstance(String userId, String instanceId)
     }
-    class VirtualizationServiceOp {
-        +createContainer(...)
-        +startContainer(String containerId)
-        +stopContainer(String containerId)
-        +deleteContainer(String containerId)
-        +getContainerStatus(String containerId)
+    class WorkspaceProvisionerOperation {
+        +createWorkspace(String userId, boolean isPersistent)
+        +stopWorkSpace(String containerId)
     }
 }
 
 package "web" {
     package "model" {
-        class InstanceDto {
+        class CreateInstanceRequest {
+            +String name
+            +Optional<String> description
+            +String imageName
+            +String imageVersion
+            +String imageRegistry
+            +Integer cpuCores
+            +Integer memoryMb
+            +Integer storageMb
+            +Boolean gpuEnabled
+            +Integer exposedPort
+        }
+        class InstanceResponse {
             +String id
             +String name
             +Optional<String> description
@@ -161,25 +175,22 @@ package "web" {
             +Integer storageMb
             +Boolean gpuEnabled
             +InstanceStatus status
-            +static from(Instance instance): InstanceDto
+            +LocalDateTime createdAt
+            +LocalDateTime expiresAt
+            +Optional<LocalDateTime> startedAt
+            +Optional<LocalDateTime> stoppedAt
+            +Optional<LocalDateTime> deletedAt
+            +Optional<LocalDateTime> lastAccessedAt
+            +static from(Instance instance): InstanceResponse
         }
-        class CreateInstanceRequest {
-            +String name
-            +Optional<String> description
-            +String imageName
-            +String imageVersion
-            +Integer cpuCores
-            +Integer memoryMb
-            +Integer storageMb
-            +Boolean gpuEnabled
-        }
-        class InstanceMetricsDto {
+        class InstanceMetricsResponse {
             +String id
             +String instanceId
             +Double currentCpuUsage
             +Double currentMemoryUsage
             +Double currentDiskUsage
             +Double currentTimeUsage
+            +static from(InstanceMetrics metrics): InstanceMetricsResponse
         }
     }
     package "controller" {
@@ -200,25 +211,26 @@ package "web" {
 }
 
 package "config" {
-    class ModuleConfig
+    class InstanceConfig
 }
 
 ' Relaciones
 InstanceJpa ..|> Instance
 InstanceMetricsJpa ..|> InstanceMetrics
 InstanceUserJpa ..|> InstanceUser
-InstanceServiceOp ..|> InstanceService
-InstanceMetricsServiceOp ..|> InstanceMetricsService
-InstanceUserServiceOp ..|> InstanceUserService
-InstanceServiceOp --> InstanceRepository
-InstanceServiceOp --> InstanceUserRepository
-InstanceServiceOp --> VirtualizationServiceOp
-InstanceMetricsServiceOp --> InstanceMetricsRepository
-InstanceUserServiceOp --> InstanceUserRepository
+InstanceServiceOperation ..|> InstanceService
+InstanceMetricsServiceOperation ..|> InstanceMetricsService
+InstanceUserServiceOperation ..|> InstanceUserService
+WorkspaceProvisionerOperation ..|> WorkspaceProvisionerService
+InstanceServiceOperation --> InstanceRepository
+InstanceServiceOperation --> InstanceUserRepository
+InstanceServiceOperation --> WorkspaceProvisionerOperation
+InstanceMetricsServiceOperation --> InstanceMetricsRepository
+InstanceUserServiceOperation --> InstanceUserRepository
 InstanceController --> InstanceService
 InstanceMetricsController --> InstanceMetricsService
-InstanceDto ..> Instance
-InstanceMetricsDto ..> InstanceMetrics
+InstanceResponse ..> Instance
+InstanceMetricsResponse ..> InstanceMetrics
 Instance --> InstanceStatus
 
 @enduml

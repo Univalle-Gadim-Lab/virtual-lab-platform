@@ -29,6 +29,6 @@
     <Match>
         <!-- SQL strings in text blocks are flagged as format strings, but they're not -->
         <Bug pattern="VA_FORMAT_STRING_USES_NEWLINE"/>
-        <Class name="io.cmt.nucleus.hids.hierarchies.base.persistence.dao.BaseHierarchyJdbcDao"/>
+        <Class name="edu.univalle.gadim.nucleus.hids.hierarchies.base.persistence.dao.BaseHierarchyJdbcDao"/>
     </Match>
 </FindBugsFilter>

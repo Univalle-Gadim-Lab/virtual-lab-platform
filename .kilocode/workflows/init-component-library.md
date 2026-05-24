@@ -9,8 +9,8 @@ A reusable workflow to scaffold a new, empty Nucleus component library that foll
 3. Ask for the input: description (one sentence), example: `Acme Chat Component Library.`
 4. Evaluate derived values:
     - snake_case_name = kebab_to_snake(component_name) (e.g., `acme-chat` → `acme_chat`)
-    - base_package = if component_alias is empty: io.cmt.nucleus.<snake_case_name> (e.g., `io.cmt.nucleus.acme_chat`); 
-        else: io.cmt.nucleus.<component_alias> (e.g., `io.cmt.nucleus.acchat`)
+    - base_package = if component_alias is empty: edu.univalle.gadim.nucleus.<snake_case_name> (e.g., `edu.univalle.gadim.nucleus.acme_chat`); 
+        else: edu.univalle.gadim.nucleus.<component_alias> (e.g., `edu.univalle.gadim.nucleus.acchat`)
     - package_path = `src/main/java/${base_package.replace('.', '/')}`
 5. Create module directory structure:
     - <component_name>/${package_path}/
