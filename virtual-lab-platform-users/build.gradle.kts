@@ -7,7 +7,9 @@ dependencies {
     implementation(project(":virtual-lab-platform-commons"))
 
     implementation(libs.findbugs)
+    implementation(libs.jackson.annotations)
     implementation(libs.jakarta.persistence.api)
+    implementation(libs.jakarta.servlet.api)
     implementation(libs.spring.context)
     implementation(libs.spring.core)
     implementation(libs.spring.data.jpa)

@@ -73,33 +73,42 @@ class InstanceMetricsJpaBuilderTest {
   class HashCodeContract {
 
     @Test
-    @DisplayName("should have same hashCode when ids are the same")
-    void shouldHaveSameHashCodeWhenIdsAreSame() {
+    @DisplayName("should have same hashCode when all fields are the same")
+    void shouldHaveSameHashCodeWhenAllFieldsAreTheSame() {
       InstanceMetricsJpa metrics1 =
           InstanceMetricsJpa.builder()
               .id(ID)
               .instanceId(INSTANCE_ID)
               .currentCpuUsage(CPU_USAGE)
+              .currentMemoryUsage(MEMORY_USAGE)
+              .currentDiskUsage(DISK_USAGE)
+              .currentTimeUsage(TIME_USAGE)
               .build();
 
       InstanceMetricsJpa metrics2 =
           InstanceMetricsJpa.builder()
               .id(ID)
-              .instanceId("other-inst")
-              .currentCpuUsage(0.99)
+              .instanceId(INSTANCE_ID)
+              .currentCpuUsage(CPU_USAGE)
+              .currentMemoryUsage(MEMORY_USAGE)
+              .currentDiskUsage(DISK_USAGE)
+              .currentTimeUsage(TIME_USAGE)
               .build();
 
       assertThat(metrics1).hasSameHashCodeAs(metrics2);
     }
 
     @Test
-    @DisplayName("should use reference equality since equals is not overridden")
-    void shouldUseReferenceEquality() {
+    @DisplayName("should be equal when all fields are the same")
+    void shouldBeEqualWhenAllFieldsAreTheSame() {
       InstanceMetricsJpa metrics1 =
           InstanceMetricsJpa.builder()
               .id(ID)
               .instanceId(INSTANCE_ID)
               .currentCpuUsage(CPU_USAGE)
+              .currentMemoryUsage(MEMORY_USAGE)
+              .currentDiskUsage(DISK_USAGE)
+              .currentTimeUsage(TIME_USAGE)
               .build();
 
       InstanceMetricsJpa metrics2 =
@@ -107,9 +116,12 @@ class InstanceMetricsJpaBuilderTest {
               .id(ID)
               .instanceId(INSTANCE_ID)
               .currentCpuUsage(CPU_USAGE)
+              .currentMemoryUsage(MEMORY_USAGE)
+              .currentDiskUsage(DISK_USAGE)
+              .currentTimeUsage(TIME_USAGE)
               .build();
 
-      assertThat(metrics1).isNotEqualTo(metrics2);
+      assertThat(metrics1).isEqualTo(metrics2);
     }
 
     @Test

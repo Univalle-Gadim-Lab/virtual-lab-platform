@@ -1,0 +1,96 @@
+package edu.univalle.gadim.virtual_lab_platform.users.web.ops;
+
+import edu.univalle.gadim.virtual_lab_platform.users.web.model.CreateUserRequest;
+import edu.univalle.gadim.virtual_lab_platform.users.web.model.CreateUserRolesRequest;
+import edu.univalle.gadim.virtual_lab_platform.users.web.model.CreateUserRoleRequest;
+import edu.univalle.gadim.virtual_lab_platform.users.web.model.UserResponse;
+import edu.univalle.gadim.virtual_lab_platform.users.web.model.UserRoleResponse;
+import java.util.List;
+import javax.annotation.Nonnull;
+
+/**
+ * Web service operations contract for user and role management.
+ *
+ * <p>Defines one method per web endpoint exposed by the users module REST API.
+ * Implementations bridge the HTTP layer to the underlying {@link edu.univalle.gadim.virtual_lab_platform.users.api.service.UserService}
+ * and {@link edu.univalle.gadim.virtual_lab_platform.users.api.service.UserRoleService} domain services,
+ * performing request-to-domain translation and domain-to-response mapping.
+ *
+ * <h2>Endpoints</h2>
+ * <ul>
+ *   <li>{@code POST /api/users} — create a new user</li>
+ *   <li>{@code GET /api/users/{id}} — retrieve a user by ID</li>
+ *   <li>{@code GET /api/users} — list all users</li>
+ *   <li>{@code GET /api/users/by-username} — retrieve a user by username</li>
+ *   <li>{@code POST /api/user-roles} — assign a single role to a user</li>
+ *   <li>{@code POST /api/user-roles/batch} — assign multiple roles to a user</li>
+ *   <li>{@code GET /api/user-roles} — list all roles for a user</li>
+ * </ul>
+ */
+public interface UsersWsOps {
+
+    /**
+     * Creates a new user with the provided information.
+     *
+     * @param request the create user request containing name, last name, optional external code,
+     *     password, and status
+     * @return the created user response with generated ID and creation date
+     */
+    @Nonnull
+    UserResponse createUser(@Nonnull CreateUserRequest request);
+
+    /**
+     * Retrieves a user by their unique identifier.
+     *
+     * @param id the unique user identifier
+     * @return the user response matching the given ID
+     * @throws IllegalArgumentException if no user is found with the given ID
+     */
+    @Nonnull
+    UserResponse getUserById(@Nonnull String id);
+
+    /**
+     * Retrieves all users from the system.
+     *
+     * @return the list of all user responses, never null but may be empty
+     */
+    @Nonnull
+    List<UserResponse> getAllUsers();
+
+    /**
+     * Retrieves a user by their username.
+     *
+     * @param username the username to search for
+     * @return the user response matching the given username
+     * @throws IllegalArgumentException if no user is found with the given username
+     */
+    @Nonnull
+    UserResponse getUserByUsername(@Nonnull String username);
+
+    /**
+     * Assigns a single role to the specified user.
+     *
+     * @param request the create user role request containing user ID and role to assign
+     * @return the created user role response with generated ID
+     */
+    @Nonnull
+    UserRoleResponse createUserRole(@Nonnull CreateUserRoleRequest request);
+
+    /**
+     * Assigns multiple roles to the specified user in a single operation.
+     *
+     * @param request the create user roles request containing user ID and list of roles to assign
+     * @return the list of created user role responses with generated IDs
+     */
+    @Nonnull
+    List<UserRoleResponse> createUserRoles(@Nonnull CreateUserRolesRequest request);
+
+    /**
+     * Retrieves all roles assigned to the specified user.
+     *
+     * @param userId the ID of the user to retrieve roles for
+     * @return the list of user role responses for the user, never null but may be empty
+     */
+    @Nonnull
+    List<UserRoleResponse> getRolesByUserId(@Nonnull String userId);
+}

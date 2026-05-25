@@ -1,13 +1,9 @@
 package edu.univalle.gadim.virtual_lab_platform.users.web.controller;
 
-import edu.univalle.gadim.virtual_lab_platform.users.api.service.UserService;
-import edu.univalle.gadim.virtual_lab_platform.users.api.type.User;
-import edu.univalle.gadim.virtual_lab_platform.users.api.type.UserStatus;
 import edu.univalle.gadim.virtual_lab_platform.users.web.model.CreateUserRequest;
 import edu.univalle.gadim.virtual_lab_platform.users.web.model.UserResponse;
-import java.time.LocalDateTime;
+import edu.univalle.gadim.virtual_lab_platform.users.web.ops.UsersWsOps;
 import java.util.List;
-import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
 import org.springframework.http.ResponseEntity;
@@ -23,130 +19,89 @@ import org.springframework.web.bind.annotation.RestController;
  * REST controller for user management operations.
  *
  * <p>This controller provides endpoints for creating, retrieving, and listing users.
+ * All operations are delegated to {@link UsersWsOps}, keeping this class as a thin
+ * HTTP adapter that handles request routing and response status mapping.
+ *
+ * <h2>Endpoints</h2>
+ * <ul>
+ *   <li>{@code POST /api/users} — create a new user</li>
+ *   <li>{@code GET /api/users/{id}} — retrieve a user by ID</li>
+ *   <li>{@code GET /api/users} — list all users</li>
+ *   <li>{@code GET /api/users/by-username} — retrieve a user by username</li>
+ * </ul>
+ *
+ * @see UsersWsOps
  */
 @RestController
 @RequestMapping("/api/users")
 @ParametersAreNonnullByDefault
 public class UserController {
 
-  private final UserService userService;
+    private final UsersWsOps usersWsOps;
 
-  public UserController(UserService userService) {
-    this.userService = userService;
-  }
+    /**
+     * Constructs a new {@code UserController} with the required operations dependency.
+     *
+     * @param usersWsOps the web service operations interface for user management
+     */
+    public UserController(UsersWsOps usersWsOps) {
+        this.usersWsOps = usersWsOps;
+    }
 
-  /**
-   * Creates a new user.
-   *
-   * @param request the create user request containing user details
-   * @return the created user response
-   */
-  @PostMapping
-  @Nonnull
-  public ResponseEntity<UserResponse> createUser(@RequestBody CreateUserRequest request) {
-    User user =
-        new UserCreateRecord(
-            "temp",
-            request.name(),
-            request.lastName(),
-            Optional.ofNullable(request.externalCode()),
-            request.password(),
-            request.status(),
-            LocalDateTime.now());
+    /**
+     * Creates a new user.
+     *
+     * @param request the create user request containing user details
+     * @return a {@code 200 OK} response with the created user data
+     */
+    @PostMapping
+    @Nonnull
+    public ResponseEntity<UserResponse> createUser(@RequestBody CreateUserRequest request) {
+        return ResponseEntity.ok(usersWsOps.createUser(request));
+    }
 
-    User created = userService.createUser(user);
-    UserResponse response =
-        new UserResponse(
-            created.id(),
-            created.name(),
-            created.lastName(),
-            created.externalCode().orElse(null),
-            created.status(),
-            created.createdDate());
+    /**
+     * Retrieves a user by their unique identifier.
+     *
+     * @param id the user ID extracted from the path
+     * @return a {@code 200 OK} response with the user data, or {@code 404 Not Found}
+     *     if no user exists with the given ID
+     */
+    @GetMapping("/{id}")
+    @Nonnull
+    public ResponseEntity<UserResponse> getUser(@PathVariable @Nonnull String id) {
+        try {
+            return ResponseEntity.ok(usersWsOps.getUserById(id));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 
-    return ResponseEntity.ok(response);
-  }
+    /**
+     * Retrieves all users from the system.
+     *
+     * @return a {@code 200 OK} response with the list of all user responses
+     */
+    @GetMapping
+    @Nonnull
+    public ResponseEntity<List<UserResponse>> getAllUsers() {
+        return ResponseEntity.ok(usersWsOps.getAllUsers());
+    }
 
-  /**
-   * Retrieves a user by ID.
-   *
-   * @param id the user ID
-   * @return the user response or 404 if not found
-   */
-  @GetMapping("/{id}")
-  @Nonnull
-  public ResponseEntity<UserResponse> getUser(@PathVariable @Nonnull String id) {
-    return userService
-        .getUserById(id)
-        .map(
-            user ->
-                ResponseEntity.ok(
-                    new UserResponse(
-                        user.id(),
-                        user.name(),
-                        user.lastName(),
-                        user.externalCode().orElse(null),
-                        user.status(),
-                        user.createdDate())))
-        .orElse(ResponseEntity.notFound().build());
-  }
-
-  /**
-   * Retrieves all users.
-   *
-   * @return the list of user responses
-   */
-  @GetMapping
-  @Nonnull
-  public ResponseEntity<List<UserResponse>> getAllUsers() {
-    List<UserResponse> responses =
-        userService.getAllUsers().stream()
-            .map(
-                user ->
-                    new UserResponse(
-                        user.id(),
-                        user.name(),
-                        user.lastName(),
-                        user.externalCode().orElse(null),
-                        user.status(),
-                        user.createdDate()))
-            .toList();
-
-    return ResponseEntity.ok(responses);
-  }
-
-  /**
-   * Retrieves a user by username.
-   *
-   * @param username the username to search for
-   * @return the user response or 404 if not found
-   */
-  @GetMapping("/by-username")
-  @Nonnull
-  public ResponseEntity<UserResponse> getUserByUsername(@RequestParam String username) {
-    return userService
-        .getUserByUsername(username)
-        .map(
-            user ->
-                ResponseEntity.ok(
-                    new UserResponse(
-                        user.id(),
-                        user.name(),
-                        user.lastName(),
-                        user.externalCode().orElse(null),
-                        user.status(),
-                        user.createdDate())))
-        .orElse(ResponseEntity.notFound().build());
-  }
-
-  /** Private record implementing User interface for create operations. */
-  private record UserCreateRecord(
-      String id,
-      String name,
-      String lastName,
-      Optional<String> externalCode,
-      String password,
-      UserStatus status,
-      LocalDateTime createdDate)
-      implements User {}
+    /**
+     * Retrieves a user by their username.
+     *
+     * @param username the username query parameter to search for
+     * @return a {@code 200 OK} response with the user data, or {@code 404 Not Found}
+     *     if no user exists with the given username
+     */
+    @GetMapping("/by-username")
+    @Nonnull
+    public ResponseEntity<UserResponse> getUserByUsername(@RequestParam String username) {
+        try {
+            return ResponseEntity.ok(usersWsOps.getUserByUsername(username));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }
