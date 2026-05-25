@@ -1,0 +1,672 @@
+openapi: 3.0.3
+info:
+  title: Virtual Lab Platform API
+  description: |
+    REST API for the Virtual Lab Platform, a modular monolith providing remote management
+    and secure virtualization of computational resources through containers.
+
+    The API covers user identity management, role-based authorization, virtual workspace
+    instance lifecycle, resource metrics, and user-to-instance access control.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+tags:
+  - name: Users
+    description: User identity management
+  - name: User Roles
+    description: User role assignment operations
+  - name: Instances
+    description: Virtual workspace instance lifecycle management
+  - name: Instance Metrics
+    description: Instance resource utilization metrics
+  - name: Instance Users
+    description: User-to-instance access control associations
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/users:
+    post:
+      tags: [Users]
+      summary: Create a new user
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '200':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Invalid request payload
+    get:
+      tags: [Users]
+      summary: List all users
+      operationId: getAllUsers
+      responses:
+        '200':
+          description: List of all users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserResponse'
+
+  /api/users/{id}:
+    get:
+      tags: [Users]
+      summary: Get user by ID
+      operationId: getUserById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '404':
+          description: User not found
+
+  /api/users/by-username:
+    get:
+      tags: [Users]
+      summary: Get user by username
+      operationId: getUserByUsername
+      parameters:
+        - name: username
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '404':
+          description: User not found
+
+  /api/user-roles:
+    post:
+      tags: [User Roles]
+      summary: Assign a single role to a user
+      operationId: createUserRole
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRoleRequest'
+      responses:
+        '200':
+          description: Role assigned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRoleResponse'
+        '400':
+          description: Invalid request payload
+        '404':
+          description: User not found
+    get:
+      tags: [User Roles]
+      summary: Get roles for a user
+      operationId: getRolesByUserId
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of roles for the user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserRoleResponse'
+
+  /api/user-roles/batch:
+    post:
+      tags: [User Roles]
+      summary: Assign multiple roles to a user
+      operationId: createUserRoles
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRolesRequest'
+      responses:
+        '200':
+          description: Roles assigned successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserRoleResponse'
+        '400':
+          description: Invalid request payload
+        '404':
+          description: User not found
+
+  /api/instances:
+    post:
+      tags: [Instances]
+      summary: Create a new virtual workspace instance
+      operationId: createInstance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInstanceRequest'
+      responses:
+        '200':
+          description: Instance created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstanceResponse'
+        '400':
+          description: Invalid request payload
+    get:
+      tags: [Instances]
+      summary: List instances for the current user
+      operationId: getInstancesByUser
+      responses:
+        '200':
+          description: List of instances belonging to the current user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InstanceResponse'
+
+  /api/instances/{id}:
+    get:
+      tags: [Instances]
+      summary: Get instance by ID
+      operationId: getInstanceById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Instance found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstanceResponse'
+        '404':
+          description: Instance not found
+    delete:
+      tags: [Instances]
+      summary: Delete an instance
+      operationId: deleteInstance
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Instance deleted successfully
+        '404':
+          description: Instance not found
+
+  /api/instances/{id}/start:
+    post:
+      tags: [Instances]
+      summary: Start an instance
+      operationId: startInstance
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Instance started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstanceResponse'
+        '404':
+          description: Instance not found
+
+  /api/instances/{id}/stop:
+    post:
+      tags: [Instances]
+      summary: Stop an instance
+      operationId: stopInstance
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Instance stopped
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstanceResponse'
+        '404':
+          description: Instance not found
+
+  /api/instances/{instanceId}/metrics:
+    get:
+      tags: [Instance Metrics]
+      summary: Get metrics for an instance
+      operationId: getMetricsByInstanceId
+      parameters:
+        - name: instanceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of metrics snapshots for the instance
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InstanceMetricsResponse'
+        '404':
+          description: Instance not found
+    post:
+      tags: [Instance Metrics]
+      summary: Record new metrics for an instance
+      operationId: recordMetrics
+      parameters:
+        - name: instanceId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordMetricsRequest'
+      responses:
+        '200':
+          description: Metrics recorded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstanceMetricsResponse'
+        '400':
+          description: Invalid request payload
+        '404':
+          description: Instance not found
+
+  /api/instance-users:
+    post:
+      tags: [Instance Users]
+      summary: Assign a user to an instance
+      operationId: assignUserToInstance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInstanceUserRequest'
+      responses:
+        '200':
+          description: User assigned to instance successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstanceUserResponse'
+        '400':
+          description: Invalid request payload
+        '404':
+          description: User or instance not found
+    get:
+      tags: [Instance Users]
+      summary: Get user-instance associations
+      operationId: getInstanceUserAssociations
+      description: |
+        Returns user-instance associations filtered by query parameter.
+        Exactly one of `instanceId` or `userId` must be provided.
+      parameters:
+        - name: instanceId
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by instance ID (returns users for that instance)
+        - name: userId
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter by user ID (returns instances for that user)
+      responses:
+        '200':
+          description: List of user-instance associations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InstanceUserResponse'
+        '400':
+          description: Missing or invalid query parameters
+    delete:
+      tags: [Instance Users]
+      summary: Remove a user from an instance
+      operationId: removeUserFromInstance
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: instanceId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: User removed from instance successfully
+        '404':
+          description: Association not found
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token issued by the platform authentication service
+
+  schemas:
+    Role:
+      type: string
+      description: System authorization role
+      enum:
+        - ADMIN
+        - STUDENT
+        - TEACHER
+
+    UserStatus:
+      type: string
+      description: User account lifecycle state
+      enum:
+        - ACTIVE
+        - INACTIVE
+
+    InstanceStatus:
+      type: string
+      description: Virtual workspace instance lifecycle state
+      enum:
+        - CREATED
+        - STARTING
+        - RUNNING
+        - STOPPED
+        - EXPIRED
+        - DELETED
+
+    CreateUserRequest:
+      type: object
+      required:
+        - name
+        - lastName
+        - password
+        - status
+      properties:
+        name:
+          type: string
+        lastName:
+          type: string
+        externalCode:
+          type: string
+          nullable: true
+        password:
+          type: string
+          format: password
+        status:
+          $ref: '#/components/schemas/UserStatus'
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        lastName:
+          type: string
+        externalCode:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/UserStatus'
+        createdDate:
+          type: string
+          format: date-time
+
+    CreateUserRoleRequest:
+      type: object
+      required:
+        - userId
+        - role
+      properties:
+        userId:
+          type: string
+        role:
+          $ref: '#/components/schemas/Role'
+
+    CreateUserRolesRequest:
+      type: object
+      required:
+        - userId
+        - roles
+      properties:
+        userId:
+          type: string
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/Role'
+
+    UserRoleResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        role:
+          $ref: '#/components/schemas/Role'
+
+    CreateInstanceRequest:
+      type: object
+      required:
+        - name
+        - imageName
+        - imageVersion
+        - imageRegistry
+        - cpuCores
+        - memoryMb
+        - storageMb
+        - gpuEnabled
+        - exposedPort
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        imageName:
+          type: string
+        imageVersion:
+          type: string
+        imageRegistry:
+          type: string
+        cpuCores:
+          type: integer
+        memoryMb:
+          type: integer
+        storageMb:
+          type: integer
+        gpuEnabled:
+          type: boolean
+        exposedPort:
+          type: integer
+
+    InstanceResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        imageName:
+          type: string
+        imageVersion:
+          type: string
+        cpuCores:
+          type: integer
+        memoryMb:
+          type: integer
+        storageMb:
+          type: integer
+        gpuEnabled:
+          type: boolean
+        status:
+          $ref: '#/components/schemas/InstanceStatus'
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        startedAt:
+          type: string
+          format: date-time
+          nullable: true
+        stoppedAt:
+          type: string
+          format: date-time
+          nullable: true
+        deletedAt:
+          type: string
+          format: date-time
+          nullable: true
+        lastAccessedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    InstanceMetricsResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        instanceId:
+          type: string
+        currentCpuUsage:
+          type: number
+          format: double
+        currentMemoryUsage:
+          type: number
+          format: double
+        currentDiskUsage:
+          type: number
+          format: double
+        currentTimeUsage:
+          type: number
+          format: double
+
+    RecordMetricsRequest:
+      type: object
+      required:
+        - cpuUsage
+        - memoryUsage
+        - diskUsage
+        - timeUsage
+      properties:
+        cpuUsage:
+          type: number
+          format: double
+          minimum: 0.0
+          maximum: 1.0
+          description: Current CPU usage as a fraction (0.0 to 1.0)
+        memoryUsage:
+          type: number
+          format: double
+          minimum: 0.0
+          maximum: 1.0
+          description: Current memory usage as a fraction (0.0 to 1.0)
+        diskUsage:
+          type: number
+          format: double
+          minimum: 0.0
+          maximum: 1.0
+          description: Current disk usage as a fraction (0.0 to 1.0)
+        timeUsage:
+          type: number
+          format: double
+          minimum: 0.0
+          description: Current time usage in seconds
+
+    CreateInstanceUserRequest:
+      type: object
+      required:
+        - userId
+        - instanceId
+      properties:
+        userId:
+          type: string
+        instanceId:
+          type: string
+
+    InstanceUserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        instanceId:
+          type: string
+        userId:
+          type: string

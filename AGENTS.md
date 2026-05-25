@@ -21,6 +21,7 @@ Architecture and design documentation lives under `architecture/`:
 
 - `architecture/ARCHITECTURE.md` — Class-level system architecture, module diagrams, component relationships
 - `architecture/DATABASE.md` — Physical database schema, ERD diagram, DDL-to-JPA mapping reference
+- `architecture/openapi/atm-api.yaml` — OpenAPI specification for the Web API
 
 ## Testing
 
@@ -36,6 +37,7 @@ Architecture and design documentation lives under `architecture/`:
 ./gradlew build --no-daemon
 
 # Run tests for a specific module
+./gradlew :virtual-lab-platform-core:test --no-daemon
 ./gradlew :virtual-lab-platform-users:test --no-daemon
 ./gradlew :virtual-lab-platform-instances:test --no-daemon
 ```
