@@ -1,7 +1,7 @@
 package edu.univalle.gadim.virtual_lab_platform.instances.web.controller;
 
-import edu.univalle.gadim.virtual_lab_platform.instances.api.service.InstanceMetricsService;
 import edu.univalle.gadim.virtual_lab_platform.instances.web.model.InstanceMetricsResponse;
+import edu.univalle.gadim.virtual_lab_platform.instances.web.ops.InstanceMetricsWsOps;
 import java.util.List;
 import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -17,7 +17,15 @@ import org.springframework.web.bind.annotation.RestController;
  * REST controller for instance metrics operations.
  *
  * <p>This controller provides endpoints for retrieving performance and usage metrics for virtual
- * lab instances.
+ * lab instances. All operations are delegated to {@link InstanceMetricsWsOps}, keeping this class
+ * as a thin HTTP adapter that handles request routing and response status mapping.
+ *
+ * <h2>Endpoints</h2>
+ * <ul>
+ *   <li>{@code GET /api/instances/{instanceId}/metrics} — retrieve metrics for an instance</li>
+ * </ul>
+ *
+ * @see InstanceMetricsWsOps
  */
 @RestController
 @RequestMapping("/api/instances")
@@ -26,29 +34,23 @@ public class InstanceMetricsController {
 
   private static final Logger logger = LoggerFactory.getLogger(InstanceMetricsController.class);
 
-  private final InstanceMetricsService instanceMetricsService;
+  private final InstanceMetricsWsOps instanceMetricsWsOps;
 
-  public InstanceMetricsController(InstanceMetricsService instanceMetricsService) {
-    this.instanceMetricsService = instanceMetricsService;
+  public InstanceMetricsController(InstanceMetricsWsOps instanceMetricsWsOps) {
+    this.instanceMetricsWsOps = instanceMetricsWsOps;
   }
 
   /**
    * Retrieves metrics for a specific instance.
    *
    * @param instanceId the instance ID
-   * @return the list of metrics responses
+   * @return a {@code 200 OK} response with the list of metrics responses
    */
   @GetMapping("/{instanceId}/metrics")
   @Nonnull
   public ResponseEntity<List<InstanceMetricsResponse>> getMetricsByInstanceId(
       @PathVariable String instanceId) {
     logger.debug("Retrieving metrics for instance: {}", instanceId);
-
-    List<InstanceMetricsResponse> responses =
-        instanceMetricsService.getMetricsByInstanceId(instanceId).stream()
-            .map(InstanceMetricsResponse::from)
-            .toList();
-
-    return ResponseEntity.ok(responses);
+    return ResponseEntity.ok(instanceMetricsWsOps.getMetricsByInstanceId(instanceId));
   }
 }
