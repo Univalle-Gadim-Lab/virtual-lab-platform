@@ -10,6 +10,7 @@ h2 = "2.2.224"
 assertj = "3.27.3"
 junit = "6.0.3"
 lombok = "1.18.44"
+mockito = "5.15.2"
 postgresql = "42.7.5"
 springBoot = "4.0.3"
 springManagement = "1.1.7"
@@ -44,6 +45,8 @@ jakarta-persistence-api = { module = "jakarta.persistence:jakarta.persistence-ap
 junit = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 assertj = { module = "org.assertj:assertj-core", version.ref = "assertj" }
 lombok = { module = "org.projectlombok:lombok", version.ref = "lombok" }
+mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
+mockito-junit-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
 findbugs = { module = "com.google.code.findbugs:jsr305", version.ref = "findbugs"}
 docker-client = { module = "com.github.docker-java:docker-java", version.ref = "docerClient"}
 postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
