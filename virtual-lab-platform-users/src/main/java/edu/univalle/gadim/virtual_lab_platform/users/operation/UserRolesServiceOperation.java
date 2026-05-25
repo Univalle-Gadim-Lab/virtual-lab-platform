@@ -9,7 +9,6 @@ import edu.univalle.gadim.virtual_lab_platform.users.data.model.UserRoleJpa;
 import edu.univalle.gadim.virtual_lab_platform.users.data.repository.UserRepository;
 import edu.univalle.gadim.virtual_lab_platform.users.data.repository.UserRoleRepository;
 import java.util.List;
-import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
 import org.springframework.stereotype.Service;
@@ -23,6 +22,8 @@ import org.springframework.stereotype.Service;
 @Service
 @ParametersAreNonnullByDefault
 public class UserRolesServiceOperation implements UserRoleService {
+
+  private static final String USER_NOT_FOUND = "User with ID ";
 
   private final UniqueIdGenerator idGenerator;
   private final UserRepository userRepository;
@@ -48,17 +49,10 @@ public class UserRolesServiceOperation implements UserRoleService {
   @Nonnull
   @Override
   public UserRole createUserRole(String userId, Role role) {
-    Optional<UserJpa> userOptional = userRepository.findById(userId);
-    if (userOptional.isEmpty()) {
-      throw new IllegalArgumentException("User with ID " + userId + " does not exist");
-    }
+    final var user = requireUserById(userId);
 
     UserRoleJpa userRoleJpa =
-        UserRoleJpa.builder()
-            .id(idGenerator.generate())
-            .userId(userOptional.get().id())
-            .role(role)
-            .build();
+        UserRoleJpa.builder().id(idGenerator.generate()).userId(user.id()).role(role).build();
 
     return userRoleRepository.save(userRoleJpa);
   }
@@ -74,10 +68,7 @@ public class UserRolesServiceOperation implements UserRoleService {
   @Nonnull
   @Override
   public List<UserRole> createUserRoles(String userId, List<Role> roles) {
-    Optional<UserJpa> userOptional = userRepository.findById(userId);
-    if (userOptional.isEmpty()) {
-      throw new IllegalArgumentException("User with ID " + userId + " does not exist");
-    }
+    final var user = requireUserById(userId);
 
     List<UserRoleJpa> userRoleJpas =
         roles.stream()
@@ -85,7 +76,7 @@ public class UserRolesServiceOperation implements UserRoleService {
                 role ->
                     UserRoleJpa.builder()
                         .id(idGenerator.generate())
-                        .userId(userOptional.get().id())
+                        .userId(user.id())
                         .role(role)
                         .build())
             .toList();
@@ -94,14 +85,21 @@ public class UserRolesServiceOperation implements UserRoleService {
   }
 
   /**
-   * Retrieves all roles assigned to the specified user.
+   * Retrieves all role assignments for the specified user.
    *
-   * @param userId the ID of the user to retrieve roles for
-   * @return the list of UserRole instances for the user
+   * @param userId the ID of the user whose roles to retrieve
+   * @return a list of role assignments, never null but may be empty if the user has no roles
    */
   @Nonnull
   @Override
   public List<UserRole> getRoleByUserId(String userId) {
     return userRoleRepository.findByUserId(userId).stream().map(UserRole.class::cast).toList();
+  }
+
+  private UserJpa requireUserById(String userId) {
+    return userRepository
+        .findById(userId)
+        .orElseThrow(
+            () -> new IllegalArgumentException(USER_NOT_FOUND + userId + " does not exist"));
   }
 }
