@@ -36,21 +36,37 @@ public class InstanceMetricsServiceOperation implements InstanceMetricsService {
     this.uniqueIdGenerator = uniqueIdGenerator;
   }
 
+  /**
+   * Retrieves all recorded metrics for the specified instance.
+   *
+   * @param instanceId the ID of the instance whose metrics to retrieve
+   * @return a list of metrics records, never null but may be empty if no metrics have been recorded
+   */
   @Override
   @Nonnull
   @Transactional(readOnly = true)
-  public List<InstanceMetrics> getMetricsByInstanceId(@Nonnull String instanceId) {
+  public List<InstanceMetrics> getMetricsByInstanceId(String instanceId) {
     logger.debug("Retrieving metrics for instance: {}", instanceId);
     return instanceMetricsRepository.findByInstanceId(instanceId).stream()
         .map(InstanceMetrics.class::cast)
         .toList();
   }
 
+  /**
+   * Records a new metrics snapshot for the specified instance.
+   *
+   * @param instanceId the ID of the instance to record metrics for
+   * @param cpuUsage the current CPU usage as a fraction (0.0 to 1.0)
+   * @param memoryUsage the current memory usage as a fraction (0.0 to 1.0)
+   * @param diskUsage the current disk usage as a fraction (0.0 to 1.0)
+   * @param timeUsage the cumulative time usage in seconds
+   * @return the persisted metrics record with its generated ID
+   */
   @Override
   @Nonnull
   @Transactional
   public InstanceMetrics recordMetrics(
-      @Nonnull String instanceId,
+      String instanceId,
       double cpuUsage,
       double memoryUsage,
       double diskUsage,

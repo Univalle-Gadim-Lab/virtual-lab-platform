@@ -1,24 +1,25 @@
 package edu.univalle.gadim.virtual_lab_platform.instances.data.model;
 
+import com.google.common.base.Objects;
 import edu.univalle.gadim.virtual_lab_platform.instances.api.type.InstanceMetrics;
+import edu.univalle.gadim.virtual_lab_platform.instances.data.repository.InstanceMetricsRepository;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.util.Objects;
+import javax.annotation.Nonnull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
 /**
  * JPA entity representing resource utilization metrics for a virtual lab instance.
  *
- * <p>Mapped to the {@code instance_metrics} table and implements the {@link InstanceMetrics}
- * domain contract. Stores point-in-time snapshots of CPU, memory, disk, and time usage.
+ * <p>Mapped to the {@code instance_metrics} table and implements the {@link InstanceMetrics} domain
+ * contract. Stores point-in-time snapshots of CPU, memory, disk, and time usage.
  *
  * @see InstanceMetrics
  * @see InstanceMetricsRepository
@@ -53,11 +54,13 @@ public class InstanceMetricsJpa implements InstanceMetrics {
   private Double currentTimeUsage;
 
   @Override
+  @Nonnull
   public String id() {
     return this.id;
   }
 
   @Override
+  @Nonnull
   public String instanceId() {
     return this.instanceId;
   }
@@ -83,7 +86,26 @@ public class InstanceMetricsJpa implements InstanceMetrics {
   }
 
   @Override
-  public final int hashCode() {
-    return Objects.hash(getId());
+  public boolean equals(Object o) {
+    if (!(o instanceof InstanceMetricsJpa that)) {
+      return false;
+    }
+    return Objects.equal(getId(), that.getId())
+        && Objects.equal(getInstanceId(), that.getInstanceId())
+        && Objects.equal(getCurrentCpuUsage(), that.getCurrentCpuUsage())
+        && Objects.equal(getCurrentMemoryUsage(), that.getCurrentMemoryUsage())
+        && Objects.equal(getCurrentDiskUsage(), that.getCurrentDiskUsage())
+        && Objects.equal(getCurrentTimeUsage(), that.getCurrentTimeUsage());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(
+        getId(),
+        getInstanceId(),
+        getCurrentCpuUsage(),
+        getCurrentMemoryUsage(),
+        getCurrentDiskUsage(),
+        getCurrentTimeUsage());
   }
 }

@@ -14,15 +14,16 @@ import org.springframework.stereotype.Service;
 /**
  * Docker adapter that implements the {@link WorkspaceProvisionerService} contract.
  *
- * <p>Bridges the domain service layer to the Docker daemon using the {@code docker-java}
- * client library. Creates containers with configurable resource limits (CPU, memory, disk)
- * and manages their lifecycle.
+ * <p>Bridges the domain service layer to the Docker daemon using the {@code docker-java} client
+ * library. Creates containers with configurable resource limits (CPU, memory, disk) and manages
+ * their lifecycle.
  *
  * <p><b>Resource Configuration:</b>
+ *
  * <ul>
- *   <li>CPU: 2 cores (quota 200000/period 100000)</li>
- *   <li>Memory: 4 GB RAM (swap disabled)</li>
- *   <li>Disk: 10 GB storage limit</li>
+ *   <li>CPU: 2 cores (quota 200000/period 100000)
+ *   <li>Memory: 4 GB RAM (swap disabled)
+ *   <li>Disk: 10 GB storage limit
  * </ul>
  *
  * @see WorkspaceProvisionerService
@@ -37,6 +38,17 @@ public class WorkspaceProvisionerOperation implements WorkspaceProvisionerServic
     this.dockerClient = dockerClient;
   }
 
+  /**
+   * Creates and starts a new Docker container workspace with preconfigured resource limits.
+   *
+   * <p>The container is allocated 2 CPU cores, 4 GB of RAM (swap disabled), and 10 GB of disk
+   * storage. If {@code isPersistent} is true, a named Docker volume is mounted at {@code
+   * /home/labuser/projects} to retain user data across restarts.
+   *
+   * @param userId the user ID used to name the container and volume
+   * @param isPersistent whether to mount a persistent volume for user projects
+   * @return the Docker container ID of the newly created workspace
+   */
   @Override
   public @NonNull String createWorkspace(String userId, boolean isPersistent) {
     // 1 Core = 100000 quota / 100000 period
@@ -60,19 +72,26 @@ public class WorkspaceProvisionerOperation implements WorkspaceProvisionerServic
           com.github.dockerjava.api.model.Bind.parse("vol_" + userId + ":/home/labuser/projects"));
     }
 
-    CreateContainerResponse container =
-        dockerClient
-            .createContainerCmd("lab-kicad:latest")
-            .withName("workspace-" + userId)
-            .withHostConfig(hostConfig)
-            .withExposedPorts(ExposedPort.tcp(8080))
-            .exec();
+    CreateContainerResponse container;
+    try (var createCmd = dockerClient.createContainerCmd("lab-kicad:latest")) {
+      container =
+          createCmd
+              .withName("workspace-" + userId)
+              .withHostConfig(hostConfig)
+              .withExposedPorts(ExposedPort.tcp(8080))
+              .exec();
+    }
 
     dockerClient.startContainerCmd(container.getId()).exec();
 
     return container.getId();
   }
 
+  /**
+   * Stops the Docker container workspace identified by the given container ID.
+   *
+   * @param containerId the Docker container ID to stop
+   */
   @Override
   public void stopWorkSpace(String containerId) {
     dockerClient.stopContainerCmd(containerId).exec();

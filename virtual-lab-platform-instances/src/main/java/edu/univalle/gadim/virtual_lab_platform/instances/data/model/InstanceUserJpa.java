@@ -1,24 +1,25 @@
 package edu.univalle.gadim.virtual_lab_platform.instances.data.model;
 
 import edu.univalle.gadim.virtual_lab_platform.instances.api.type.InstanceUser;
+import edu.univalle.gadim.virtual_lab_platform.instances.data.repository.InstanceUserRepository;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.util.Objects;
+import javax.annotation.Nonnull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
 /**
  * JPA entity representing the many-to-many association between users and instances.
  *
- * <p>Mapped to the {@code instance_users} table and implements the {@link InstanceUser}
- * domain contract. Establishes ownership and access rights for users to specific instances.
+ * <p>Mapped to the {@code instance_users} table and implements the {@link InstanceUser} domain
+ * contract. Establishes ownership and access rights for users to specific instances.
  *
  * @see InstanceUser
  * @see InstanceUserRepository
@@ -56,16 +57,19 @@ public class InstanceUserJpa implements InstanceUser {
   }
 
   @Override
+  @Nonnull
   public String id() {
     return this.id;
   }
 
   @Override
+  @Nonnull
   public String instanceId() {
     return this.instanceId;
   }
 
   @Override
+  @Nonnull
   public String userId() {
     return this.userId;
   }

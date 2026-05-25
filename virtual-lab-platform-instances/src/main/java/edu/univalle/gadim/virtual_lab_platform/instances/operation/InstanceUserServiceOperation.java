@@ -35,10 +35,17 @@ public class InstanceUserServiceOperation implements InstanceUserService {
     this.uniqueIdGenerator = uniqueIdGenerator;
   }
 
+  /**
+   * Creates an ownership association between a user and an instance.
+   *
+   * @param userId the ID of the user to assign
+   * @param instanceId the ID of the instance to assign the user to
+   * @return the persisted instance-user association with its generated ID
+   */
   @Override
   @Nonnull
   @Transactional
-  public InstanceUser assignUserToInstance(@Nonnull String userId, @Nonnull String instanceId) {
+  public InstanceUser assignUserToInstance(String userId, String instanceId) {
     logger.info("Assigning user {} to instance {}", userId, instanceId);
 
     InstanceUserJpa instanceUser =
@@ -53,29 +60,49 @@ public class InstanceUserServiceOperation implements InstanceUserService {
     return saved;
   }
 
+  /**
+   * Retrieves all user associations for the specified instance.
+   *
+   * @param instanceId the ID of the instance whose users to retrieve
+   * @return a list of instance-user associations, never null but may be empty
+   */
   @Override
   @Nonnull
   @Transactional(readOnly = true)
-  public List<InstanceUser> getUsersByInstanceId(@Nonnull String instanceId) {
+  public List<InstanceUser> getUsersByInstanceId(String instanceId) {
     logger.debug("Retrieving users for instance: {}", instanceId);
     return instanceUserRepository.findByInstanceId(instanceId).stream()
         .map(InstanceUser.class::cast)
         .toList();
   }
 
+  /**
+   * Retrieves all instance associations for the specified user.
+   *
+   * @param userId the ID of the user whose instances to retrieve
+   * @return a list of instance-user associations, never null but may be empty
+   */
   @Override
   @Nonnull
   @Transactional(readOnly = true)
-  public List<InstanceUser> getInstancesByUserId(@Nonnull String userId) {
+  public List<InstanceUser> getInstancesByUserId(String userId) {
     logger.debug("Retrieving instances for user: {}", userId);
     return instanceUserRepository.findByUserId(userId).stream()
         .map(InstanceUser.class::cast)
         .toList();
   }
 
+  /**
+   * Removes the association between a user and an instance.
+   *
+   * <p>If no matching association exists, the call is a no-op.
+   *
+   * @param userId the ID of the user to remove
+   * @param instanceId the ID of the instance to remove the user from
+   */
   @Override
   @Transactional
-  public void removeUserFromInstance(@Nonnull String userId, @Nonnull String instanceId) {
+  public void removeUserFromInstance(String userId, String instanceId) {
     logger.info("Removing user {} from instance {}", userId, instanceId);
 
     List<InstanceUserJpa> associations = instanceUserRepository.findByInstanceId(instanceId);
