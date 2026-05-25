@@ -8,6 +8,18 @@ able to remotely access virtual environments (instances). Within these environme
 access to specialized software such as **Vivado**, **Quartus**, and **KiCad**, as well as
 specialized hardware resources.
 
+# Specific Objectives
+
+1. Analyze the technical and cybersecurity requirements involved in the virtualization of
+   computational environments in university laboratories in order to define the minimum software and
+   hardware tools required for its development.
+2. Design the architecture of a web platform that integrates user management, authentication, access
+   control, and resource administration.
+3. Implement secure and configurable virtual environments for the execution of specialized software
+   and access to physical devices (e.g., FPGAs, Raspberry Pi, and Arduinos), facilitating their use.
+4. Validate the platform through a use case in the Digital Architectures laboratory, evaluating
+   remote access to computational resources and physical devices.
+
 ## Stack Tech
 
 * Java 21
