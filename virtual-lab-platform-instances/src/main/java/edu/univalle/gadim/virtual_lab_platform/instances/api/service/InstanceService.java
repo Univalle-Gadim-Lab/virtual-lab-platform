@@ -85,4 +85,13 @@ public interface InstanceService {
      * @param instanceId The instance ID to delete
      */
     void deleteInstance(@Nonnull String instanceId);
+
+    /**
+     * Checks whether a user is the owner of a specific instance.
+     *
+     * @param instanceId The instance ID
+     * @param userId The user ID
+     * @return true if the user is associated with the instance, false otherwise
+     */
+    boolean checkOwnership(@Nonnull String instanceId, @Nonnull String userId);
 }

@@ -140,34 +140,23 @@ public class InstanceServiceOperation implements InstanceService {
   @Transactional(readOnly = true)
   public Optional<Instance> getInstanceById(String instanceId) {
     logger.debug("Retrieving instance by ID: {}", instanceId);
-    return instanceRepository.findById(instanceId).map(Instance.class::cast);
+    return instanceRepository
+        .findById(instanceId)
+        .filter(i -> i.getStatus() != InstanceStatus.DELETED)
+        .map(Instance.class::cast);
   }
 
-  /**
-   * Retrieves all instances owned by the specified user.
-   *
-   * @param userId the ID of the user whose instances to retrieve
-   * @return a list of instances belonging to the user, never null but may be empty
-   */
   @Override
   @Nonnull
   @Transactional(readOnly = true)
   public List<Instance> getInstancesByUserId(String userId) {
     logger.debug("Retrieving instances for user: {}", userId);
-    return instanceRepository.findByUserId(userId).stream().map(Instance.class::cast).toList();
+    return instanceRepository.findByUserId(userId).stream()
+        .filter(i -> i.getStatus() != InstanceStatus.DELETED)
+        .map(Instance.class::cast)
+        .toList();
   }
 
-  /**
-   * Transitions an instance to {@link InstanceStatus#RUNNING} and starts its backing Docker
-   * container via the workspace provisioner.
-   *
-   * <p>If the instance is already running, the call is a no-op and the current state is returned
-   * unchanged.
-   *
-   * @param instanceId the unique identifier of the instance to start
-   * @return the updated instance reflecting its new status
-   * @throws IllegalArgumentException if no instance exists with the given ID
-   */
   @Override
   @Nonnull
   @Transactional
@@ -175,6 +164,7 @@ public class InstanceServiceOperation implements InstanceService {
     logger.info("Starting instance: {}", instanceId);
 
     final var instance = requireInstanceById(instanceId);
+    rejectDeleted(instance);
 
     if (instance.getStatus() == InstanceStatus.RUNNING) {
       logger.warn("Instance {} is already running", instanceId);
@@ -185,9 +175,8 @@ public class InstanceServiceOperation implements InstanceService {
     instance.setStartedAt(LocalDateTime.now());
     InstanceJpa savedInstance = instanceRepository.save(instance);
 
-    // Start the container via workspace provisioner
     try {
-      workspaceProvisionerService.createWorkspace(instance.getExternalIp(), true);
+      workspaceProvisionerService.startWorkspace(instance.getExternalIp());
       savedInstance.setStatus(InstanceStatus.RUNNING);
       savedInstance.setLastAccessedAt(LocalDateTime.now());
     } catch (Exception e) {
@@ -198,17 +187,6 @@ public class InstanceServiceOperation implements InstanceService {
     return instanceRepository.save(savedInstance);
   }
 
-  /**
-   * Transitions an instance to {@link InstanceStatus#STOPPED} and stops its backing Docker
-   * container via the workspace provisioner.
-   *
-   * <p>If the instance is already stopped, the call is a no-op and the current state is returned
-   * unchanged.
-   *
-   * @param instanceId the unique identifier of the instance to stop
-   * @return the updated instance reflecting its new status
-   * @throws IllegalArgumentException if no instance exists with the given ID
-   */
   @Override
   @Nonnull
   @Transactional
@@ -216,6 +194,7 @@ public class InstanceServiceOperation implements InstanceService {
     logger.info("Stopping instance: {}", instanceId);
 
     final var instance = requireInstanceById(instanceId);
+    rejectDeleted(instance);
 
     if (instance.getStatus() == InstanceStatus.STOPPED) {
       logger.warn("Instance {} is already stopped", instanceId);
@@ -225,7 +204,6 @@ public class InstanceServiceOperation implements InstanceService {
     instance.setStatus(InstanceStatus.STOPPED);
     instance.setStoppedAt(LocalDateTime.now());
 
-    // Stop the container via workspace provisioner
     try {
       workspaceProvisionerService.stopWorkSpace(instance.getExternalIp());
     } catch (Exception e) {
@@ -235,15 +213,6 @@ public class InstanceServiceOperation implements InstanceService {
     return instanceRepository.save(instance);
   }
 
-  /**
-   * Soft-deletes an instance by transitioning it to {@link InstanceStatus#DELETED} status.
-   *
-   * <p>If the instance is currently running, its backing Docker container is stopped first. All
-   * user associations are removed after the status change.
-   *
-   * @param instanceId the unique identifier of the instance to delete
-   * @throws IllegalArgumentException if no instance exists with the given ID
-   */
   @Override
   @Transactional
   public void deleteInstance(String instanceId) {
@@ -251,28 +220,34 @@ public class InstanceServiceOperation implements InstanceService {
 
     final var instance = requireInstanceById(instanceId);
 
-    // Stop the container if running
-    if (instance.getStatus() == InstanceStatus.RUNNING) {
-      try {
-        workspaceProvisionerService.stopWorkSpace(instance.getExternalIp());
-      } catch (Exception e) {
-        logger.error("Failed to stop container during instance deletion: {}", instanceId, e);
-      }
+    if (instance.getStatus() != InstanceStatus.STOPPED) {
+      throw new IllegalStateException(
+          "Instance must be STOPPED before deletion, current status: " + instance.getStatus());
     }
 
     instance.setStatus(InstanceStatus.DELETED);
     instance.setDeletedAt(LocalDateTime.now());
     instanceRepository.save(instance);
 
-    // Remove user associations
-    instanceUserRepository.findByInstanceId(instanceId).forEach(instanceUserRepository::delete);
-
     logger.info("Instance deleted successfully: {}", instanceId);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public boolean checkOwnership(String instanceId, String userId) {
+    return instanceUserRepository.findByInstanceId(instanceId).stream()
+        .anyMatch(a -> a.getUserId().equals(userId));
   }
 
   private InstanceJpa requireInstanceById(String instanceId) {
     return instanceRepository
         .findById(instanceId)
         .orElseThrow(() -> new IllegalArgumentException(INSTANCE_NOT_FOUND + instanceId));
+  }
+
+  private void rejectDeleted(InstanceJpa instance) {
+    if (instance.getStatus() == InstanceStatus.DELETED) {
+      throw new IllegalArgumentException(INSTANCE_NOT_FOUND + instance.getId());
+    }
   }
 }
