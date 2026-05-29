@@ -5,6 +5,7 @@ import edu.univalle.gadim.virtual_lab_platform.instances.api.service.InstanceMet
 import edu.univalle.gadim.virtual_lab_platform.instances.api.type.InstanceMetrics;
 import edu.univalle.gadim.virtual_lab_platform.instances.data.model.InstanceMetricsJpa;
 import edu.univalle.gadim.virtual_lab_platform.instances.data.repository.InstanceMetricsRepository;
+import edu.univalle.gadim.virtual_lab_platform.instances.data.repository.InstanceRepository;
 import java.util.List;
 import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -13,12 +14,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Service implementation for managing instance metrics.
- *
- * <p>This class provides the core business logic for recording and retrieving performance and usage
- * metrics for virtual lab instances.
- */
 @Service
 @Transactional
 @ParametersAreNonnullByDefault
@@ -26,13 +21,18 @@ public class InstanceMetricsServiceOperation implements InstanceMetricsService {
 
   private static final Logger logger =
       LoggerFactory.getLogger(InstanceMetricsServiceOperation.class);
+  private static final String INSTANCE_NOT_FOUND = "Instance not found: ";
 
   private final InstanceMetricsRepository instanceMetricsRepository;
+  private final InstanceRepository instanceRepository;
   private final UniqueIdGenerator uniqueIdGenerator;
 
   public InstanceMetricsServiceOperation(
-      InstanceMetricsRepository instanceMetricsRepository, UniqueIdGenerator uniqueIdGenerator) {
+      InstanceMetricsRepository instanceMetricsRepository,
+      InstanceRepository instanceRepository,
+      UniqueIdGenerator uniqueIdGenerator) {
     this.instanceMetricsRepository = instanceMetricsRepository;
+    this.instanceRepository = instanceRepository;
     this.uniqueIdGenerator = uniqueIdGenerator;
   }
 
@@ -73,6 +73,10 @@ public class InstanceMetricsServiceOperation implements InstanceMetricsService {
       double timeUsage) {
 
     logger.info("Recording metrics for instance: {}", instanceId);
+
+    instanceRepository
+        .findById(instanceId)
+        .orElseThrow(() -> new IllegalArgumentException(INSTANCE_NOT_FOUND + instanceId));
 
     InstanceMetricsJpa metrics =
         InstanceMetricsJpa.builder()
