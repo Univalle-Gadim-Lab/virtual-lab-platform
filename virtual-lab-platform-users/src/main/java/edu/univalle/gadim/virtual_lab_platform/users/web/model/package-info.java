@@ -10,6 +10,7 @@
  *   <li>{@link edu.univalle.gadim.virtual_lab_platform.users.web.model.UserResponse} — user data response</li>
  *   <li>{@link edu.univalle.gadim.virtual_lab_platform.users.web.model.CreateUserRoleRequest} — single role assignment request</li>
  *   <li>{@link edu.univalle.gadim.virtual_lab_platform.users.web.model.CreateUserRolesRequest} — batch role assignment request</li>
+ *   <li>{@link edu.univalle.gadim.virtual_lab_platform.users.web.model.UpdateUserRequest} — user update request</li>
  *   <li>{@link edu.univalle.gadim.virtual_lab_platform.users.web.model.UserRoleResponse} — role assignment response</li>
  * </ul>
  */

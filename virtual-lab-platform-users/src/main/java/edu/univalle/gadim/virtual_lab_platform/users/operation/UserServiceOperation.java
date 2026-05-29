@@ -3,6 +3,7 @@ package edu.univalle.gadim.virtual_lab_platform.users.operation;
 import edu.univalle.gadim.virtual_lab_platform.commons.type.UniqueIdGenerator;
 import edu.univalle.gadim.virtual_lab_platform.users.api.service.UserService;
 import edu.univalle.gadim.virtual_lab_platform.users.api.type.User;
+import edu.univalle.gadim.virtual_lab_platform.users.api.type.UserStatus;
 import edu.univalle.gadim.virtual_lab_platform.users.data.model.UserJpa;
 import edu.univalle.gadim.virtual_lab_platform.users.data.repository.UserRepository;
 import java.time.LocalDateTime;
@@ -96,5 +97,42 @@ public class UserServiceOperation implements UserService {
     return userRepository.findAll().stream()
         .map(User.class::cast)
         .toList();
+  }
+
+  @Nonnull
+  @Override
+  public User updateUser(String id, User user) {
+    final var existing =
+        userRepository
+            .findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("User not found: " + id));
+
+    existing.setName(user.name());
+    existing.setLastName(user.lastName());
+    existing.setExternalCode(user.externalCode().orElse(null));
+    existing.setStatus(user.status());
+
+    final var newPassword = user.password();
+    if (newPassword != null && !newPassword.isEmpty()) {
+      existing.setPassword(passwordEncoder.encode(newPassword));
+    }
+
+    return userRepository.save(existing);
+  }
+
+  @Override
+  public void deleteUser(String id) {
+    final var user =
+        userRepository
+            .findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("User not found: " + id));
+
+    if (user.status() != UserStatus.INACTIVE) {
+      throw new IllegalStateException(
+          "User must be INACTIVE before deletion. Current status: " + user.status());
+    }
+
+    user.setStatus(UserStatus.DELETED);
+    userRepository.save(user);
   }
 }

@@ -1,7 +1,7 @@
 # Virtual Lab Platform
 
-Objective: “Design and Implementation of a Web Platform for Remote Management and Secure
-Virtualization of Computational Resources Using Containers”
+Objective: "Design and Implementation of a Web Platform for Remote Management and Secure
+Virtualization of Computational Resources Using Containers"
 
 The application is a modular web platform designed for university laboratories, where users will be
 able to remotely access virtual environments (instances). Within these environments, users will have
@@ -20,36 +20,97 @@ specialized hardware resources.
 4. Validate the platform through a use case in the Digital Architectures laboratory, evaluating
    remote access to computational resources and physical devices.
 
-## Stack Tech
+## Tech Stack
 
-* Java 21
-* Spring Boot 4.0.3
-* Gradle 9.3.1 (Kotlin DSL)
+* **Java 21**
+* **Spring Boot 4.0.3**
+* **Gradle 9.3.1** (Kotlin DSL)
+* **PostgreSQL** — production database
+* **H2** — embedded database (testing)
+* **Spring Data JPA** — data access layer
+* **Spring Security** — authentication and authorization
+* **Lombok** — compile-time code generation
+* **docker-java** — Docker client for workspace provisioning
+* **MongoDB BSON** — object ID generation
+* **Jackson** — JSON serialization
+* **JUnit 5, AssertJ, Mockito** — testing
+* **Checkstyle / SpotBugs** — static analysis
 
-## Main Structure
+## Project Modules
 
 ```text
 virtual-lab-platform
- ├── virtual-lab-platform-boot         # Main application module (entry point)
- ├── virtual-lab-platform-users        # User management module
- ├── virtual-lab-platform-security     # Security module (Not implemented yet) (Spring Security + JWT)
- ├── virtual-lab-platform-instances    # Virtual environments management module
+ ├── virtual-lab-platform-boot          # Spring Boot runtime / entry point
+ ├── virtual-lab-platform-commons       # Shared utilities (ID generators, helpers)
+ ├── virtual-lab-platform-users         # User management bounded context
+ └── virtual-lab-platform-instances     # Virtual environment management bounded context
 ```
 
 ### Module Descriptions
 
-- **virtual-lab-platform-boot**  
-  Main application module responsible for bootstrapping and running the backend system.
+- **virtual-lab-platform-boot**
+  Main application module. Applies the Spring Boot plugin and is the only runnable module.
+  Bootstraps the entire backend and contains `SecurityConfig` for Spring Security setup.
 
-- **virtual-lab-platform-users**  
-  Handles user-related operations such as registration, profile management, roles, and permissions.
+- **virtual-lab-platform-commons**
+  Shared infrastructure utilities such as `UniqueIdGenerator`, `UuidGenerator`, and
+  `ObjectIdGenerator`. Required as a compile dependency by both `users` and `instances`.
 
-- **virtual-lab-platform-security**  
-  Planned security layer that will manage authentication and authorization using Spring Security and
-  JWT.
+- **virtual-lab-platform-users**
+  Handles user-related operations such as registration, profile management, roles, and
+  permissions. Also contains `UserSecurityConfig` for user-specific security rules.
 
-- **virtual-lab-platform-instances**  
-  Responsible for managing virtual environments, isolated instances, and remote execution resources.
+- **virtual-lab-platform-instances**
+  Responsible for managing virtual environments, isolated instances, remote execution resources,
+  and workspace provisioning via Docker.
+
+> **Note:** Security is implemented via Spring Security and JWT inside `boot` and `users`, not as a
+> separate Gradle module.
+
+---
+
+# Getting Started
+
+## Prerequisites
+
+- Java 21 JDK
+- PostgreSQL 14+ (or Docker to run it)
+- Docker (for workspace provisioning and KiCad environments)
+
+## Database Setup
+
+Create the database using the provided scripts:
+
+```bash
+# Create database and user
+psql -U postgres -f database/create-db.sql
+
+# Create tables
+psql -U postgres -d gadim_virtual_lab -f database/schema.sql
+```
+
+Connection settings are in `virtual-lab-platform-boot/src/main/resources/application.yml`:
+
+```yaml
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/gadim_virtual_lab
+    username: postgres
+    password: postgres
+```
+
+## Build and Run
+
+```bash
+# Build the entire project
+./gradlew build --no-daemon
+
+# Run all tests
+./gradlew test --no-daemon
+
+# Run the application
+./gradlew :virtual-lab-platform-boot:bootRun --no-daemon
+```
 
 ---
 
@@ -58,32 +119,34 @@ virtual-lab-platform
 ```text
 module
  ├── api
- │   ├── type        # Entity interfaces (User, Role, etc.)
+ │   ├── type        # Domain interfaces (User, Role, Instance, etc.)
  │   └── service     # Service interfaces
  │
  ├── data
- │   ├── model       # JPA entities (UserJpa)
- │   └── repository  # Repositories
+ │   ├── model       # JPA entities (UserJpa, InstanceJpa)
+ │   └── repository  # Spring Data JPA repositories
  │
- ├── operation       # Service implementations
+ ├── operation       # Service implementations (*Operation)
  │
  ├── web
- │   ├── model       # DTOs
+ │   ├── ops         # Web operation interfaces (*WsOps)
+ │   ├── operation   # Web operation implementations (*SpringWsOps)
+ │   ├── model       # Request/response DTOs (Java records)
  │   └── controller  # REST controllers
  │
- └── config          # Configuration
+ └── config          # Spring @Configuration classes
 ```
 
 ## Layer Responsibilities
 
 ### `api`
 
-Defines the public contracts of the module, including entity abstractions and service interfaces.  
+Defines the public contracts of the module, including entity abstractions and service interfaces.
 This layer helps decouple implementations from consumers.
 
 ### `data`
 
-Contains persistence-related components such as JPA entities and repositories.  
+Contains persistence-related components such as JPA entities and repositories.
 Responsible for database interaction and data access.
 
 ### `operation`
@@ -92,7 +155,17 @@ Implements the business logic and service behaviors defined in the `api` layer.
 
 ### `web`
 
-Exposes the module functionality through REST APIs using controllers and DTOs.
+Exposes the module functionality through REST APIs using controllers, DTOs, and web operation
+interfaces/implementations.
+
+**Web Layer Flow:**
+
+```
+Controller -> *WsOps interface -> *SpringWsOps impl -> Service interface -> *Operation impl
+```
+
+Controllers are thin and return `ResponseEntity<T>`. `IllegalArgumentException` is commonly caught
+to produce `404 Not Found`.
 
 ### `config`
 
@@ -119,3 +192,38 @@ This modular approach improves:
 
 ---
 
+# Additional Documentation
+
+| Document | Description |
+|----------|-------------|
+| [`architecture/ARCHITECTURE.md`](architecture/ARCHITECTURE.md) | System architecture, module diagrams, component relationships |
+| [`architecture/DATABASE.md`](architecture/DATABASE.md) | Physical database schema, ERD diagram, DDL-to-JPA mapping |
+| [`architecture/openapi/openapi.yaml`](architecture/openapi/openapi.yaml) | Full OpenAPI 3.0 specification for the REST API |
+
+---
+
+# Code Quality
+
+- **Checkstyle:** Google Java Style enforced with `maxWarnings = 0`. Configuration in
+  `build-tools/checkstyle/checkstyle.xml`.
+- **SpotBugs:** Static analysis with exclusions in `build-tools/spotbugs/spotbugs-exclude.xml`.
+- **Line length:** 100 characters.
+- **Indentation:** 2 spaces.
+- **No wildcard imports**.
+- **Mandatory Javadoc** for public types and methods.
+
+---
+
+# Docker Workspaces
+
+A specialized Dockerfile exists for KiCad environments:
+
+```text
+virtual-lab-platform-instances/docker/kicad/
+ ├── Dockerfile       # Ubuntu 24.04 + KiCad + LXDE + VNC + noVNC
+ └── supervisord.conf # Process management for Xvfb, LXDE, X11vnc, websockify
+```
+
+This image exposes port `8080` for noVNC remote desktop access.
+
+---

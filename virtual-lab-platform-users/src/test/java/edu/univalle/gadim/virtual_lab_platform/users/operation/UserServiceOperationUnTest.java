@@ -1,6 +1,7 @@
 package edu.univalle.gadim.virtual_lab_platform.users.operation;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -203,6 +204,111 @@ class UserServiceOperationUnTest {
 
       // Then
       assertThat(result).isEmpty();
+    }
+  }
+
+  @Nested
+  @DisplayName("updateUser")
+  class UpdateUser {
+
+    @Test
+    @DisplayName("should update mutable fields and save")
+    void shouldUpdateMutableFieldsAndSave() {
+      // Given
+      final var existing = buildUser(GENERATED_ID, "Ana", "Martinez");
+      final var updates = buildInputUser("Maria", "Garcia");
+
+      when(userRepository.findById(GENERATED_ID)).thenReturn(Optional.of(existing));
+      when(userRepository.save(any(UserJpa.class))).thenReturn(existing);
+
+      // When
+      final var result = serviceOperation.updateUser(GENERATED_ID, updates);
+
+      // Then
+      assertThat(result).isEqualTo(existing);
+      verify(userRepository).findById(GENERATED_ID);
+      verify(userRepository).save(any(UserJpa.class));
+    }
+
+    @Test
+    @DisplayName("should re-encode password when non-empty")
+    void shouldReEncodePasswordWhenNonEmpty() {
+      // Given
+      final var existing = buildUser(GENERATED_ID, "Ana", "Martinez");
+      final var updates = buildInputUser("Ana", "Martinez");
+
+      when(userRepository.findById(GENERATED_ID)).thenReturn(Optional.of(existing));
+      when(passwordEncoder.encode(RAW_PASSWORD)).thenReturn("new-encoded");
+      when(userRepository.save(any(UserJpa.class))).thenReturn(existing);
+
+      // When
+      serviceOperation.updateUser(GENERATED_ID, updates);
+
+      // Then
+      verify(passwordEncoder).encode(RAW_PASSWORD);
+    }
+
+    @Test
+    @DisplayName("should throw IllegalArgumentException when user not found")
+    void shouldThrowWhenUserNotFound() {
+      // Given
+      final var updates = buildInputUser("Ana", "Martinez");
+      when(userRepository.findById("nonexistent")).thenReturn(Optional.empty());
+
+      // When / Then
+      assertThatThrownBy(() -> serviceOperation.updateUser("nonexistent", updates))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("nonexistent");
+    }
+  }
+
+  @Nested
+  @DisplayName("deleteUser")
+  class DeleteUser {
+
+    @Test
+    @DisplayName("should set status to DELETED when user is INACTIVE")
+    void shouldSetStatusToDeletedWhenInactive() {
+      // Given
+      final var user = buildUser(GENERATED_ID, "Ana", "Martinez");
+      user.setStatus(UserStatus.INACTIVE);
+
+      when(userRepository.findById(GENERATED_ID)).thenReturn(Optional.of(user));
+      when(userRepository.save(any(UserJpa.class))).thenReturn(user);
+
+      // When
+      serviceOperation.deleteUser(GENERATED_ID);
+
+      // Then
+      assertThat(user.status()).isEqualTo(UserStatus.DELETED);
+      verify(userRepository).save(user);
+    }
+
+    @Test
+    @DisplayName("should throw IllegalStateException when user is ACTIVE")
+    void shouldThrowWhenUserIsActive() {
+      // Given
+      final var user = buildUser(GENERATED_ID, "Ana", "Martinez");
+      user.setStatus(UserStatus.ACTIVE);
+
+      when(userRepository.findById(GENERATED_ID)).thenReturn(Optional.of(user));
+
+      // When / Then
+      assertThatThrownBy(() -> serviceOperation.deleteUser(GENERATED_ID))
+          .isInstanceOf(IllegalStateException.class)
+          .hasMessageContaining("INACTIVE");
+    }
+
+    @Test
+    @DisplayName("should throw IllegalArgumentException when user not found")
+    void shouldThrowWhenUserNotFound() {
+      // Given
+      when(userRepository.findById("nonexistent")).thenReturn(Optional.empty());
+
+      // When / Then
+      assertThatThrownBy(() -> serviceOperation.deleteUser("nonexistent"))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("nonexistent");
     }
   }
 }

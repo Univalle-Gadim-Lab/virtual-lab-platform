@@ -8,7 +8,9 @@ import java.util.List;
 import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -84,5 +86,23 @@ public class UserRoleController {
     public ResponseEntity<List<UserRoleResponse>> getRolesByUserId(
             @RequestParam @Nonnull String userId) {
         return ResponseEntity.ok(usersWsOps.getRolesByUserId(userId));
+    }
+
+    /**
+     * Removes a role assignment by its unique identifier.
+     *
+     * @param id the role assignment ID extracted from the path
+     * @return a {@code 204 No Content} response on success, or {@code 404 Not Found}
+     *     if no role assignment exists with the given ID
+     */
+    @DeleteMapping("/{id}")
+    @Nonnull
+    public ResponseEntity<Void> deleteUserRole(@PathVariable @Nonnull String id) {
+        try {
+            usersWsOps.deleteUserRole(id);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 }

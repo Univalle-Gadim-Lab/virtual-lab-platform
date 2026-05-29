@@ -8,7 +8,7 @@
  *
  * <h2>Key Classes</h2>
  * <ul>
- *   <li>{@link edu.univalle.gadim.virtual_lab_platform.users.web.operation.UsersWsOpsImpl} —
+ *   <li>{@link edu.univalle.gadim.virtual_lab_platform.users.web.operation.UsersSpringWsOps} —
  *       delegates to {@code UserService} and {@code UserRoleService}</li>
  * </ul>
  */

@@ -7,6 +7,7 @@ import edu.univalle.gadim.virtual_lab_platform.users.api.type.UserStatus;
 import edu.univalle.gadim.virtual_lab_platform.users.web.model.CreateUserRequest;
 import edu.univalle.gadim.virtual_lab_platform.users.web.model.CreateUserRolesRequest;
 import edu.univalle.gadim.virtual_lab_platform.users.web.model.CreateUserRoleRequest;
+import edu.univalle.gadim.virtual_lab_platform.users.web.model.UpdateUserRequest;
 import edu.univalle.gadim.virtual_lab_platform.users.web.model.UserResponse;
 import edu.univalle.gadim.virtual_lab_platform.users.web.model.UserRoleResponse;
 import edu.univalle.gadim.virtual_lab_platform.users.web.ops.UsersWsOps;
@@ -30,29 +31,22 @@ import org.springframework.stereotype.Service;
  * @see UserRoleService
  */
 @Service
-public class UsersWsOpsImpl implements UsersWsOps {
+public class UsersSpringWsOps implements UsersWsOps {
 
     private final UserService userService;
     private final UserRoleService userRoleService;
 
     /**
-     * Constructs a new {@code UsersWsOpsImpl} with the required service dependencies.
+     * Constructs a new {@code UsersSpringWsOps} with the required service dependencies.
      *
      * @param userService the user domain service for user lifecycle operations
      * @param userRoleService the user role domain service for role assignment operations
      */
-    public UsersWsOpsImpl(UserService userService, UserRoleService userRoleService) {
+    public UsersSpringWsOps(UserService userService, UserRoleService userRoleService) {
         this.userService = userService;
         this.userRoleService = userRoleService;
     }
 
-    /**
-     * Creates a new user by translating the request DTO into a domain object
-     * and delegating to {@link UserService#createUser(User)}.
-     *
-     * @param request the create user request containing user details
-     * @return the created user response with generated ID and creation date
-     */
     @Override
     @Nonnull
     public UserResponse createUser(@Nonnull CreateUserRequest request) {
@@ -69,13 +63,6 @@ public class UsersWsOpsImpl implements UsersWsOps {
         return toUserResponse(created);
     }
 
-    /**
-     * Retrieves a user by their unique identifier.
-     *
-     * @param id the unique user identifier
-     * @return the user response matching the given ID
-     * @throws IllegalArgumentException if no user is found with the given ID
-     */
     @Override
     @Nonnull
     public UserResponse getUserById(@Nonnull String id) {
@@ -84,12 +71,6 @@ public class UsersWsOpsImpl implements UsersWsOps {
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + id));
     }
 
-    /**
-     * Retrieves all users from the system by delegating to
-     * {@link UserService#getAllUsers()}.
-     *
-     * @return the list of all user responses, never null but may be empty
-     */
     @Override
     @Nonnull
     public List<UserResponse> getAllUsers() {
@@ -98,13 +79,6 @@ public class UsersWsOpsImpl implements UsersWsOps {
                 .toList();
     }
 
-    /**
-     * Retrieves a user by their username.
-     *
-     * @param username the username to search for
-     * @return the user response matching the given username
-     * @throws IllegalArgumentException if no user is found with the given username
-     */
     @Override
     @Nonnull
     public UserResponse getUserByUsername(@Nonnull String username) {
@@ -113,13 +87,6 @@ public class UsersWsOpsImpl implements UsersWsOps {
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
     }
 
-    /**
-     * Assigns a single role to the specified user by translating the request
-     * and delegating to {@link UserRoleService#createUserRole(String, edu.univalle.gadim.virtual_lab_platform.users.api.type.Role)}.
-     *
-     * @param request the create user role request containing user ID and role
-     * @return the created user role response with generated ID
-     */
     @Override
     @Nonnull
     public UserRoleResponse createUserRole(@Nonnull CreateUserRoleRequest request) {
@@ -127,13 +94,6 @@ public class UsersWsOpsImpl implements UsersWsOps {
         return new UserRoleResponse(userRole.id(), userRole.userId(), userRole.role());
     }
 
-    /**
-     * Assigns multiple roles to the specified user by translating the request
-     * and delegating to {@link UserRoleService#createUserRoles(String, List)}.
-     *
-     * @param request the create user roles request containing user ID and list of roles
-     * @return the list of created user role responses with generated IDs
-     */
     @Override
     @Nonnull
     public List<UserRoleResponse> createUserRoles(@Nonnull CreateUserRolesRequest request) {
@@ -142,13 +102,6 @@ public class UsersWsOpsImpl implements UsersWsOps {
                 .toList();
     }
 
-    /**
-     * Retrieves all roles assigned to the specified user by delegating to
-     * {@link UserRoleService#getRoleByUserId(String)}.
-     *
-     * @param userId the ID of the user to retrieve roles for
-     * @return the list of user role responses for the user, never null but may be empty
-     */
     @Override
     @Nonnull
     public List<UserRoleResponse> getRolesByUserId(@Nonnull String userId) {
@@ -157,13 +110,37 @@ public class UsersWsOpsImpl implements UsersWsOps {
                 .toList();
     }
 
-    /**
-     * Converts a {@link User} domain object into a {@link UserResponse} DTO
-     * suitable for HTTP serialization.
-     *
-     * @param user the domain user object to convert
-     * @return the corresponding response DTO
-     */
+    @Override
+    @Nonnull
+    public UserResponse updateUser(@Nonnull String id, @Nonnull UpdateUserRequest request) {
+        final var existing = userService.getUserById(id)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + id));
+
+        final var updated = new UserUpdateRecord(
+                existing.id(),
+                request.name() != null ? request.name() : existing.name(),
+                request.lastName() != null ? request.lastName() : existing.lastName(),
+                request.externalCode() != null
+                        ? Optional.of(request.externalCode())
+                        : existing.externalCode(),
+                request.password() != null ? request.password() : "",
+                request.status() != null ? request.status() : existing.status(),
+                existing.createdDate());
+
+        final var result = userService.updateUser(id, updated);
+        return toUserResponse(result);
+    }
+
+    @Override
+    public void deleteUser(@Nonnull String id) {
+        userService.deleteUser(id);
+    }
+
+    @Override
+    public void deleteUserRole(@Nonnull String id) {
+        userRoleService.deleteUserRole(id);
+    }
+
     private UserResponse toUserResponse(User user) {
         return new UserResponse(
                 user.id(),
@@ -175,6 +152,16 @@ public class UsersWsOpsImpl implements UsersWsOps {
     }
 
     private record UserCreateRecord(
+            String id,
+            String name,
+            String lastName,
+            Optional<String> externalCode,
+            String password,
+            UserStatus status,
+            LocalDateTime createdDate)
+            implements User {}
+
+    private record UserUpdateRecord(
             String id,
             String name,
             String lastName,

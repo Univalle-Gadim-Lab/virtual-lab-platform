@@ -3,6 +3,7 @@ package edu.univalle.gadim.virtual_lab_platform.users.web.ops;
 import edu.univalle.gadim.virtual_lab_platform.users.web.model.CreateUserRequest;
 import edu.univalle.gadim.virtual_lab_platform.users.web.model.CreateUserRolesRequest;
 import edu.univalle.gadim.virtual_lab_platform.users.web.model.CreateUserRoleRequest;
+import edu.univalle.gadim.virtual_lab_platform.users.web.model.UpdateUserRequest;
 import edu.univalle.gadim.virtual_lab_platform.users.web.model.UserResponse;
 import edu.univalle.gadim.virtual_lab_platform.users.web.model.UserRoleResponse;
 import java.util.List;
@@ -93,4 +94,34 @@ public interface UsersWsOps {
      */
     @Nonnull
     List<UserRoleResponse> getRolesByUserId(@Nonnull String userId);
+
+    /**
+     * Updates an existing user's mutable fields.
+     *
+     * @param id the unique identifier of the user to update
+     * @param request the update user request containing fields to update
+     * @return the updated user response
+     * @throws IllegalArgumentException if no user is found with the given ID
+     */
+    @Nonnull
+    UserResponse updateUser(@Nonnull String id, @Nonnull UpdateUserRequest request);
+
+    /**
+     * Marks a user as deleted by transitioning their status to {@code DELETED}.
+     *
+     * <p>The user must currently be in {@code INACTIVE} status.
+     *
+     * @param id the unique identifier of the user to delete
+     * @throws IllegalArgumentException if no user is found with the given ID
+     * @throws IllegalStateException if the user is not currently {@code INACTIVE}
+     */
+    void deleteUser(@Nonnull String id);
+
+    /**
+     * Removes a role assignment by its unique identifier.
+     *
+     * @param id the unique identifier of the role assignment to remove
+     * @throws IllegalArgumentException if no role assignment exists with the given ID
+     */
+    void deleteUserRole(@Nonnull String id);
 }

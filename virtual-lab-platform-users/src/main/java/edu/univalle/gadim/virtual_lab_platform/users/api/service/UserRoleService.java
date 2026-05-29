@@ -43,4 +43,12 @@ public interface UserRoleService {
    * @return the list of role assignments for the user, never null but may be empty
    */
   List<UserRole> getRoleByUserId(String userId);
+
+  /**
+   * Removes a role assignment by its unique identifier.
+   *
+   * @param id the unique identifier of the role assignment to remove
+   * @throws IllegalArgumentException if no role assignment exists with the given ID
+   */
+  void deleteUserRole(String id);
 }

@@ -96,6 +96,14 @@ public class UserRolesServiceOperation implements UserRoleService {
     return userRoleRepository.findByUserId(userId).stream().map(UserRole.class::cast).toList();
   }
 
+  @Override
+  public void deleteUserRole(String id) {
+    if (!userRoleRepository.existsById(id)) {
+      throw new IllegalArgumentException("User role not found: " + id);
+    }
+    userRoleRepository.deleteById(id);
+  }
+
   private UserJpa requireUserById(String userId) {
     return userRepository
         .findById(userId)

@@ -175,4 +175,36 @@ class UserRolesServiceOperationUnTest {
       assertThat(result).isEmpty();
     }
   }
+
+  @Nested
+  @DisplayName("deleteUserRole")
+  class DeleteUserRole {
+
+    @Test
+    @DisplayName("should delete role when it exists")
+    void shouldDeleteRoleWhenExists() {
+      // Given
+      final var roleId = "role-to-delete";
+      when(userRoleRepository.existsById(roleId)).thenReturn(true);
+
+      // When
+      serviceOperation.deleteUserRole(roleId);
+
+      // Then
+      verify(userRoleRepository).existsById(roleId);
+      verify(userRoleRepository).deleteById(roleId);
+    }
+
+    @Test
+    @DisplayName("should throw IllegalArgumentException when role not found")
+    void shouldThrowWhenRoleNotFound() {
+      // Given
+      when(userRoleRepository.existsById("nonexistent")).thenReturn(false);
+
+      // When / Then
+      assertThatThrownBy(() -> serviceOperation.deleteUserRole("nonexistent"))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("nonexistent");
+    }
+  }
 }

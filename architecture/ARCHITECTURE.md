@@ -60,6 +60,7 @@ classDiagram
         <<enumeration>>
         ACTIVE
         INACTIVE
+        DELETED
     }
 
     class InstanceStatus {
@@ -114,7 +115,7 @@ Domain contracts are defined as interfaces in the `api.type` package, with enume
 | `User` | `api.type` | Core domain interface exposing user identity, name, credentials, and status |
 | `UserRole` | `api.type` | Domain interface linking a user to a specific role |
 | `Role` | `api.type` | Enumeration of system roles: `ADMIN`, `STUDENT`, `TEACHER` |
-| `UserStatus` | `api.type` | Enumeration of user lifecycle states: `ACTIVE`, `INACTIVE` |
+| `UserStatus` | `api.type` | Enumeration of user lifecycle states: `ACTIVE`, `INACTIVE`, `DELETED` |
 
 #### API Services
 
@@ -122,8 +123,8 @@ Service contract interfaces in the `api.service` package define the bounded-cont
 
 | Interface | Methods |
 |---|---|
-| `UserService` | `createUser`, `getUserById`, `getUserByUsername`, `getAllUsers` |
-| `UserRoleService` | `createUserRole`, `createUserRoles`, `getRoleByUserId` |
+| `UserService` | `createUser`, `getUserById`, `getUserByUsername`, `getAllUsers`, `updateUser`, `deleteUser` |
+| `UserRoleService` | `createUserRole`, `createUserRoles`, `getRoleByUserId`, `deleteUserRole` |
 
 #### Data Layer
 
@@ -154,6 +155,7 @@ REST controllers and request/response DTOs exposing the user domain over HTTP.
 | `UserController` | `/api/users` — CRUD for users |
 | `UserRoleController` | `/api/user-roles` — role assignment |
 | `CreateUserRequest` | Request DTO for user creation |
+| `UpdateUserRequest` | Request DTO for user update (partial) |
 | `CreateUserRoleRequest` | Request DTO for single role assignment |
 | `CreateUserRolesRequest` | Request DTO for batch role assignment |
 | `UserDto` | Response DTO with `static from(User)` factory |
@@ -194,6 +196,7 @@ classDiagram
         <<enumeration>>
         ACTIVE
         INACTIVE
+        DELETED
     }
 
     class UserService {
@@ -202,6 +205,8 @@ classDiagram
         +getUserById(id) Optional~User~
         +getUserByUsername(username) Optional~User~
         +getAllUsers() List~User~
+        +updateUser(id, user) User
+        +deleteUser(id) void
     }
 
     class UserRoleService {
@@ -209,6 +214,7 @@ classDiagram
         +createUserRole(userId, role) UserRole
         +createUserRoles(userId, roles) List~UserRole~
         +getRoleByUserId(userId) List~UserRole~
+        +deleteUserRole(id) void
     }
 
     class UserJpa {
@@ -245,6 +251,8 @@ classDiagram
         +getUserById(...)
         +getUserByUsername(...)
         +getAllUsers()
+        +updateUser(id, user)
+        +deleteUser(id)
     }
 
     class UserRolesServiceOperation {
@@ -254,16 +262,25 @@ classDiagram
         +createUserRole(...)
         +createUserRoles(...)
         +getRoleByUserId(...)
+        +deleteUserRole(id)
     }
 
     class UserController {
         -UserService service
         +createUser(...)
+        +getUserById(id)
+        +getAllUsers()
+        +getUserByUsername(username)
+        +updateUser(id, request)
+        +deleteUser(id)
     }
 
     class UserRoleController {
         -UserRoleService service
         +createUserRole(...)
+        +createUserRoles(...)
+        +getRolesByUserId(userId)
+        +deleteUserRole(id)
     }
 
     class UserDto {
@@ -765,6 +782,7 @@ The `UniqueIdGenerator` interface in commons has two implementations (`UuidGener
 - `SecurityConfig` currently permits all requests (no authentication or authorization enforced). This is a placeholder for future JWT-based security integration.
 - `InstanceController` contains a hardcoded `userId = "current-user-id"` placeholder, intended to be replaced with JWT-based principal extraction.
 - Passwords are hashed using `BCryptPasswordEncoder`, provided by `UserSecurityConfig` in the users module.
+- User deletion is a soft-delete: the status transitions to `DELETED` only from `INACTIVE`. The user record is never physically removed to preserve historical associations with instances.
 
 ### JPA Repository Custom Queries
 

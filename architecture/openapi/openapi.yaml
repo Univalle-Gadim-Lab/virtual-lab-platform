@@ -83,6 +83,51 @@ paths:
                 $ref: '#/components/schemas/UserResponse'
         '404':
           description: User not found
+    put:
+      tags: [Users]
+      summary: Update an existing user
+      operationId: updateUser
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '404':
+          description: User not found
+    delete:
+      tags: [Users]
+      summary: Mark a user as deleted
+      operationId: deleteUser
+      description: |
+        Soft-deletes a user by changing their status to DELETED.
+        The user must currently be INACTIVE. The user record is retained for historical integrity.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: User marked as deleted successfully
+        '404':
+          description: User not found
+        '409':
+          description: User is not in INACTIVE status
 
   /api/users/by-username:
     get:
@@ -146,6 +191,23 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/UserRoleResponse'
+
+  /api/user-roles/{id}:
+    delete:
+      tags: [User Roles]
+      summary: Remove a role assignment
+      operationId: deleteUserRole
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Role assignment removed successfully
+        '404':
+          description: Role assignment not found
 
   /api/user-roles/batch:
     post:
@@ -431,6 +493,7 @@ components:
       enum:
         - ACTIVE
         - INACTIVE
+        - DELETED
 
     InstanceStatus:
       type: string
@@ -461,6 +524,29 @@ components:
         password:
           type: string
           format: password
+        status:
+          $ref: '#/components/schemas/UserStatus'
+
+    UpdateUserRequest:
+      type: object
+      description: |
+        Request body for updating a user. All fields are optional.
+        Only non-null fields will be applied. If password is provided,
+        it will be re-encoded before persistence.
+      properties:
+        name:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+        externalCode:
+          type: string
+          nullable: true
+        password:
+          type: string
+          format: password
+          nullable: true
         status:
           $ref: '#/components/schemas/UserStatus'
 

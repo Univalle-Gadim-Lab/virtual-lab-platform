@@ -15,5 +15,12 @@ public enum UserStatus {
     /**
      * The user account is disabled and cannot authenticate.
      */
-    INACTIVE
+    INACTIVE,
+    /**
+     * The user account has been permanently deactivated.
+     *
+     * <p>A user can only transition to this state from {@link #INACTIVE}.
+     * Deleted users are retained for historical record integrity.
+     */
+    DELETED
 }
