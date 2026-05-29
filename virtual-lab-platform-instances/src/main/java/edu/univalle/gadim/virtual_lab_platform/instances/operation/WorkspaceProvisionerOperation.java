@@ -96,4 +96,9 @@ public class WorkspaceProvisionerOperation implements WorkspaceProvisionerServic
   public void stopWorkSpace(String containerId) {
     dockerClient.stopContainerCmd(containerId).exec();
   }
+
+  @Override
+  public void startWorkspace(String containerId) {
+    dockerClient.startContainerCmd(containerId).exec();
+  }
 }

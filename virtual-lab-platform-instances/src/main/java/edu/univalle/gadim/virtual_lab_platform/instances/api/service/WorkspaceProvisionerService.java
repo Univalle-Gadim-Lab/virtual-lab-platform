@@ -29,4 +29,11 @@ public interface WorkspaceProvisionerService {
    * @param containerId the Docker container ID to stop
    */
   void stopWorkSpace(String containerId);
+
+  /**
+   * Starts an existing Docker container workspace identified by the given container ID.
+   *
+   * @param containerId the Docker container ID to start
+   */
+  void startWorkspace(String containerId);
 }
