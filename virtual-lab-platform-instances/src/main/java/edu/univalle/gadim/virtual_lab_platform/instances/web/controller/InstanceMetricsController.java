@@ -1,6 +1,7 @@
 package edu.univalle.gadim.virtual_lab_platform.instances.web.controller;
 
 import edu.univalle.gadim.virtual_lab_platform.instances.web.model.InstanceMetricsResponse;
+import edu.univalle.gadim.virtual_lab_platform.instances.web.model.RecordMetricsRequest;
 import edu.univalle.gadim.virtual_lab_platform.instances.web.ops.InstanceMetricsWsOps;
 import java.util.List;
 import javax.annotation.Nonnull;
@@ -10,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -23,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
  * <h2>Endpoints</h2>
  * <ul>
  *   <li>{@code GET /api/instances/{instanceId}/metrics} — retrieve metrics for an instance</li>
+ *   <li>{@code POST /api/instances/{instanceId}/metrics} — record new metrics for an instance</li>
  * </ul>
  *
  * @see InstanceMetricsWsOps
@@ -52,5 +56,17 @@ public class InstanceMetricsController {
       @PathVariable String instanceId) {
     logger.debug("Retrieving metrics for instance: {}", instanceId);
     return ResponseEntity.ok(instanceMetricsWsOps.getMetricsByInstanceId(instanceId));
+  }
+
+  @PostMapping("/{instanceId}/metrics")
+  @Nonnull
+  public ResponseEntity<InstanceMetricsResponse> recordMetrics(
+      @PathVariable String instanceId, @RequestBody RecordMetricsRequest request) {
+    logger.info("Recording metrics for instance: {}", instanceId);
+    try {
+      return ResponseEntity.ok(instanceMetricsWsOps.recordMetrics(instanceId, request));
+    } catch (IllegalArgumentException e) {
+      return ResponseEntity.notFound().build();
+    }
   }
 }

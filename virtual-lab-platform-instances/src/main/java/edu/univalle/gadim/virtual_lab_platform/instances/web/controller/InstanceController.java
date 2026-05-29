@@ -145,6 +145,8 @@ public class InstanceController {
       return ResponseEntity.noContent().build();
     } catch (IllegalArgumentException e) {
       return ResponseEntity.notFound().build();
+    } catch (IllegalStateException e) {
+      return ResponseEntity.status(409).build();
     }
   }
 }
