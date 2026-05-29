@@ -292,6 +292,9 @@ paths:
       tags: [Instances]
       summary: Delete an instance
       operationId: deleteInstance
+      description: |
+        Soft-deletes an instance by changing its status to DELETED.
+        The instance must currently be STOPPED. The instance record is retained for historical integrity.
       parameters:
         - name: id
           in: path
@@ -303,6 +306,8 @@ paths:
           description: Instance deleted successfully
         '404':
           description: Instance not found
+        '409':
+          description: Instance is not in STOPPED status
 
   /api/instances/{id}/start:
     post:

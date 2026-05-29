@@ -335,7 +335,7 @@ The instances module governs the full lifecycle of containerized workspaces—cr
 | `InstanceService` | `createInstance`, `startInstance`, `stopInstance`, `getInstanceById`, `getInstancesByUserId`, `deleteInstance`, `checkOwnership` |
 | `InstanceMetricsService` | `getMetricsByInstanceId`, `recordMetrics` |
 | `InstanceUserService` | `assignUserToInstance`, `getUsersByInstanceId`, `removeUserFromInstance` |
-| `WorkspaceProvisionerService` | `createWorkspace`, `stopWorkSpace` |
+| `WorkspaceProvisionerService` | `createWorkspace`, `stopWorkSpace`, `startWorkspace` |
 
 #### Data Layer
 
@@ -353,7 +353,7 @@ The instances module governs the full lifecycle of containerized workspaces—cr
 | Class | Implements | Dependencies |
 |---|---|---|
 | `InstanceServiceOperation` | `InstanceService` | `InstanceRepository`, `InstanceUserRepository`, `WorkspaceProvisionerService`, `UniqueIdGenerator` |
-| `InstanceMetricsServiceOperation` | `InstanceMetricsService` | `InstanceMetricsRepository`, `UniqueIdGenerator` |
+| `InstanceMetricsServiceOperation` | `InstanceMetricsService` | `InstanceMetricsRepository`, `InstanceRepository`, `UniqueIdGenerator` |
 | `InstanceUserServiceOperation` | `InstanceUserService` | `InstanceUserRepository`, `UniqueIdGenerator` |
 | `WorkspaceProvisionerOperation` | `WorkspaceProvisionerService` | `DockerClient` (docker-java library) |
 
@@ -364,7 +364,8 @@ The `WorkspaceProvisionerOperation` is the adapter that bridges the domain servi
 | Class / Record | Base Path / Purpose |
 |---|---|
 | `InstanceController` | `/api/instances` — full CRUD + start/stop lifecycle |
-| `InstanceMetricsController` | `/api/instances/{instanceId}/metrics` — read metrics |
+| `InstanceMetricsController` | `/api/instances/{instanceId}/metrics` — read and record metrics |
+| `InstanceUsersController` | `/api/instance-users` — user-to-instance association management |
 | `CreateInstanceRequest` | Request record for instance creation |
 | `InstanceResponse` | Response record with `static from(Instance)` factory |
 | `InstanceMetricsResponse` | Response record with `static from(InstanceMetrics)` factory |
@@ -531,6 +532,7 @@ classDiagram
     class WorkspaceProvisionerOperation {
         +createWorkspace(userId, isPersistent)
         +stopWorkSpace(containerId)
+        +startWorkspace(containerId)
     }
 
     class CreateInstanceRequest {
@@ -589,6 +591,14 @@ classDiagram
     class InstanceMetricsController {
         -InstanceMetricsService service
         +getMetricsByInstanceId(instanceId)
+        +recordMetrics(instanceId, request)
+    }
+
+    class InstanceUsersController {
+        -InstanceUsersWsOps instanceUsersWsOps
+        +assignUserToInstance(request)
+        +getInstanceUserAssociations(instanceId, userId)
+        +removeUserFromInstance(userId, instanceId)
     }
 
     class InstanceConfig
@@ -604,6 +614,7 @@ classDiagram
     InstanceServiceOperation --> InstanceUserRepository
     InstanceServiceOperation --> WorkspaceProvisionerOperation
     InstanceMetricsServiceOperation --> InstanceMetricsRepository
+    InstanceMetricsServiceOperation --> InstanceRepository
     InstanceUserServiceOperation --> InstanceUserRepository
     InstanceController --> InstanceService
     InstanceMetricsController --> InstanceMetricsService

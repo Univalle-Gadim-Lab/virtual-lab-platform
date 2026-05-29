@@ -170,7 +170,7 @@ Enumerated columns are persisted as `VARCHAR` strings matching the Java enum con
 
 | DDL Column | Java Enum | Values |
 |---|---|---|
-| `users.status` | `UserStatus` | `ACTIVE`, `INACTIVE` |
+| `users.status` | `UserStatus` | `ACTIVE`, `INACTIVE`, `DELETED` |
 | `user_roles.role` | `Role` | `ADMIN`, `STUDENT`, `TEACHER` |
 | `instances.status` | `InstanceStatus` | `CREATED`, `STARTING`, `RUNNING`, `STOPPED`, `EXPIRED`, `DELETED` |
 
