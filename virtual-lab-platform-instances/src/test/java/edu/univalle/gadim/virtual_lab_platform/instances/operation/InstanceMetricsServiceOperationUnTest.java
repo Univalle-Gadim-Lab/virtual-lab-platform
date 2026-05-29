@@ -1,15 +1,20 @@
 package edu.univalle.gadim.virtual_lab_platform.instances.operation;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import edu.univalle.gadim.virtual_lab_platform.commons.type.UniqueIdGenerator;
 import edu.univalle.gadim.virtual_lab_platform.instances.api.type.InstanceMetrics;
+import edu.univalle.gadim.virtual_lab_platform.instances.data.model.InstanceJpa;
 import edu.univalle.gadim.virtual_lab_platform.instances.data.model.InstanceMetricsJpa;
 import edu.univalle.gadim.virtual_lab_platform.instances.data.repository.InstanceMetricsRepository;
+import edu.univalle.gadim.virtual_lab_platform.instances.data.repository.InstanceRepository;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import org.jspecify.annotations.NullMarked;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,6 +36,8 @@ class InstanceMetricsServiceOperationUnTest {
 
   @Mock private InstanceMetricsRepository instanceMetricsRepository;
 
+  @Mock private InstanceRepository instanceRepository;
+
   @Mock private UniqueIdGenerator uniqueIdGenerator;
 
   private InstanceMetricsServiceOperation serviceOperation;
@@ -39,7 +46,29 @@ class InstanceMetricsServiceOperationUnTest {
   void setUp() {
     MockitoAnnotations.openMocks(this);
     serviceOperation =
-        new InstanceMetricsServiceOperation(instanceMetricsRepository, uniqueIdGenerator);
+        new InstanceMetricsServiceOperation(
+            instanceMetricsRepository, instanceRepository, uniqueIdGenerator);
+  }
+
+  private InstanceJpa buildInstance(String id) {
+    return InstanceJpa.builder()
+        .id(id)
+        .name("lab")
+        .externalIp("container-001")
+        .imageName("lab-kicad")
+        .imageVersion("1.0")
+        .imageRegistry("registry")
+        .cpuCores(4)
+        .memoryMb(8192)
+        .storageMb(20480)
+        .gpuEnabled(true)
+        .exposedPort(8080)
+        .internalIp("127.0.0.1")
+        .createdAt(LocalDateTime.now())
+        .expiresAt(LocalDateTime.now().plusDays(7))
+        .startedAt(LocalDateTime.now())
+        .status(edu.univalle.gadim.virtual_lab_platform.instances.api.type.InstanceStatus.RUNNING)
+        .build();
   }
 
   private InstanceMetricsJpa buildMetrics(String id, String instanceId) {
@@ -96,7 +125,9 @@ class InstanceMetricsServiceOperationUnTest {
     @DisplayName("should generate id, build metrics entity, save, and return saved result")
     void shouldRecordAndReturnMetrics() {
       // Given
+      final var instance = buildInstance(INSTANCE_ID);
       final var savedMetrics = buildMetrics(METRICS_ID, INSTANCE_ID);
+      when(instanceRepository.findById(INSTANCE_ID)).thenReturn(Optional.of(instance));
       when(uniqueIdGenerator.generate()).thenReturn(METRICS_ID);
       when(instanceMetricsRepository.save(any(InstanceMetricsJpa.class))).thenReturn(savedMetrics);
 
@@ -115,6 +146,21 @@ class InstanceMetricsServiceOperationUnTest {
       assertThat(result.currentTimeUsage()).isEqualTo(TIME_USAGE);
       verify(uniqueIdGenerator).generate();
       verify(instanceMetricsRepository).save(any(InstanceMetricsJpa.class));
+    }
+
+    @Test
+    @DisplayName("should throw IllegalArgumentException when instance does not exist")
+    void shouldThrowExceptionWhenInstanceDoesNotExist() {
+      // Given
+      when(instanceRepository.findById(INSTANCE_ID)).thenReturn(Optional.empty());
+
+      // When / Then
+      assertThatThrownBy(
+              () ->
+                  serviceOperation.recordMetrics(
+                      INSTANCE_ID, CPU_USAGE, MEMORY_USAGE, DISK_USAGE, TIME_USAGE))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining(INSTANCE_ID);
     }
   }
 }

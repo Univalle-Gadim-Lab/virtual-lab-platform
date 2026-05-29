@@ -147,6 +147,36 @@ class InstanceMetricsJpaBuilderTest {
 
       assertThat(metrics).isNotEqualTo("not-a-metrics");
     }
+
+    @Test
+    @DisplayName("should not be equal when ids differ")
+    void shouldNotBeEqualWhenIdsDiffer() {
+      final var metrics1 = fullBuilder().id("metrics-001").build();
+      final var metrics2 = fullBuilder().id("metrics-002").build();
+
+      assertThat(metrics1).isNotEqualTo(metrics2);
+    }
+
+    @Test
+    @DisplayName("should be equal when ids are the same but other fields differ")
+    void shouldBeEqualWhenIdsAreTheSameButOtherFieldsDiffer() {
+      final var metrics1 = fullBuilder().id(ID).instanceId(INSTANCE_ID).build();
+      final var metrics2 = fullBuilder().id(ID).instanceId("other-inst").currentCpuUsage(0.99).build();
+
+      assertThat(metrics1).isEqualTo(metrics2).hasSameHashCodeAs(metrics2);
+    }
+
+    @Test
+    @DisplayName("should not be equal when other has null id")
+    void shouldNotBeEqualWhenOtherHasNullId() {
+      final var metricsWithId = fullBuilder().id(ID).build();
+      final var metricsWithoutId = InstanceMetricsJpa.builder()
+          .instanceId(INSTANCE_ID)
+          .currentCpuUsage(CPU_USAGE)
+          .build();
+
+      assertThat(metricsWithId).isNotEqualTo(metricsWithoutId);
+    }
   }
 
   @Nested

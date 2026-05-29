@@ -186,6 +186,20 @@ class InstanceServiceOperationUnTest {
       // Then
       assertThat(result).isEmpty();
     }
+
+    @Test
+    @DisplayName("should return empty when instance is DELETED")
+    void shouldReturnEmptyWhenDeleted() {
+      // Given
+      final var instance = buildInstance(INSTANCE_ID, InstanceStatus.DELETED);
+      when(instanceRepository.findById(INSTANCE_ID)).thenReturn(Optional.of(instance));
+
+      // When
+      final var result = serviceOperation.getInstanceById(INSTANCE_ID);
+
+      // Then
+      assertThat(result).isEmpty();
+    }
   }
 
   @Nested
@@ -219,6 +233,22 @@ class InstanceServiceOperationUnTest {
       // Then
       assertThat(result).isEmpty();
     }
+
+    @Test
+    @DisplayName("should filter out DELETED instances")
+    void shouldFilterOutDeletedInstances() {
+      // Given
+      final var instance1 = buildInstance("inst-001", InstanceStatus.RUNNING);
+      final var instance2 = buildInstance("inst-002", InstanceStatus.DELETED);
+      when(instanceRepository.findByUserId(USER_ID)).thenReturn(List.of(instance1, instance2));
+
+      // When
+      final var result = serviceOperation.getInstancesByUserId(USER_ID);
+
+      // Then
+      assertThat(result).hasSize(1);
+      assertThat(result.get(0).id()).isEqualTo("inst-001");
+    }
   }
 
   @Nested
@@ -239,7 +269,7 @@ class InstanceServiceOperationUnTest {
 
       // Then
       assertThat(result.status()).isEqualTo(InstanceStatus.RUNNING);
-      verify(workspaceProvisionerService).createWorkspace(CONTAINER_ID, true);
+      verify(workspaceProvisionerService).startWorkspace(CONTAINER_ID);
     }
 
     @Test
@@ -254,7 +284,7 @@ class InstanceServiceOperationUnTest {
 
       // Then
       assertThat(result.status()).isEqualTo(InstanceStatus.RUNNING);
-      verify(workspaceProvisionerService, never()).createWorkspace(anyString(), anyBoolean());
+      verify(workspaceProvisionerService, never()).startWorkspace(anyString());
     }
 
     @Test
@@ -263,8 +293,9 @@ class InstanceServiceOperationUnTest {
       // Given
       final var instance = buildInstance(INSTANCE_ID, InstanceStatus.CREATED);
       when(instanceRepository.findById(INSTANCE_ID)).thenReturn(Optional.of(instance));
-      when(workspaceProvisionerService.createWorkspace(CONTAINER_ID, true))
-          .thenThrow(new RuntimeException("Docker error"));
+      doThrow(new RuntimeException("Docker error"))
+          .when(workspaceProvisionerService)
+          .startWorkspace(CONTAINER_ID);
       when(instanceRepository.save(any(InstanceJpa.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -280,6 +311,19 @@ class InstanceServiceOperationUnTest {
     void shouldThrowExceptionWhenNotFound() {
       // Given
       when(instanceRepository.findById(INSTANCE_ID)).thenReturn(Optional.empty());
+
+      // When / Then
+      assertThatThrownBy(() -> serviceOperation.startInstance(INSTANCE_ID))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining(INSTANCE_ID);
+    }
+
+    @Test
+    @DisplayName("should throw IllegalArgumentException when instance is DELETED")
+    void shouldThrowExceptionWhenDeleted() {
+      // Given
+      final var instance = buildInstance(INSTANCE_ID, InstanceStatus.DELETED);
+      when(instanceRepository.findById(INSTANCE_ID)).thenReturn(Optional.of(instance));
 
       // When / Then
       assertThatThrownBy(() -> serviceOperation.startInstance(INSTANCE_ID))
@@ -355,6 +399,19 @@ class InstanceServiceOperationUnTest {
           .isInstanceOf(IllegalArgumentException.class)
           .hasMessageContaining(INSTANCE_ID);
     }
+
+    @Test
+    @DisplayName("should throw IllegalArgumentException when instance is DELETED")
+    void shouldThrowExceptionWhenDeleted() {
+      // Given
+      final var instance = buildInstance(INSTANCE_ID, InstanceStatus.DELETED);
+      when(instanceRepository.findById(INSTANCE_ID)).thenReturn(Optional.of(instance));
+
+      // When / Then
+      assertThatThrownBy(() -> serviceOperation.stopInstance(INSTANCE_ID))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining(INSTANCE_ID);
+    }
   }
 
   @Nested
@@ -362,15 +419,11 @@ class InstanceServiceOperationUnTest {
   class DeleteInstance {
 
     @Test
-    @DisplayName("should stop running container, mark DELETED, and remove user associations")
-    void shouldDeleteRunningInstance() {
+    @DisplayName("should mark STOPPED instance as DELETED")
+    void shouldMarkStoppedInstanceAsDeleted() {
       // Given
-      final var instance = buildInstance(INSTANCE_ID, InstanceStatus.RUNNING);
-      final var userAssociation =
-          InstanceUserJpa.builder().id("iu-001").instanceId(INSTANCE_ID).userId(USER_ID).build();
+      final var instance = buildInstance(INSTANCE_ID, InstanceStatus.STOPPED);
       when(instanceRepository.findById(INSTANCE_ID)).thenReturn(Optional.of(instance));
-      when(instanceUserRepository.findByInstanceId(INSTANCE_ID))
-          .thenReturn(List.of(userAssociation));
       when(instanceRepository.save(any(InstanceJpa.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -378,41 +431,52 @@ class InstanceServiceOperationUnTest {
       serviceOperation.deleteInstance(INSTANCE_ID);
 
       // Then
-      verify(workspaceProvisionerService).stopWorkSpace(CONTAINER_ID);
-      verify(instanceUserRepository).delete(userAssociation);
+      verify(instanceRepository).save(any(InstanceJpa.class));
+      verify(instanceUserRepository, never()).findByInstanceId(anyString());
     }
 
     @Test
-    @DisplayName("should handle already-stopped instance without calling stop")
-    void shouldHandleStoppedInstance() {
-      // Given
-      final var instance = buildInstance(INSTANCE_ID, InstanceStatus.STOPPED);
-      when(instanceRepository.findById(INSTANCE_ID)).thenReturn(Optional.of(instance));
-      when(instanceUserRepository.findByInstanceId(INSTANCE_ID)).thenReturn(List.of());
-
-      // When
-      serviceOperation.deleteInstance(INSTANCE_ID);
-
-      // Then
-      verify(workspaceProvisionerService, never()).stopWorkSpace(anyString());
-    }
-
-    @Test
-    @DisplayName("should swallow stop exceptions during deletion")
-    void shouldSwallowStopExceptionsDuringDeletion() {
+    @DisplayName("should throw IllegalStateException when instance is RUNNING")
+    void shouldThrowIllegalStateExceptionWhenRunning() {
       // Given
       final var instance = buildInstance(INSTANCE_ID, InstanceStatus.RUNNING);
       when(instanceRepository.findById(INSTANCE_ID)).thenReturn(Optional.of(instance));
-      doThrow(new RuntimeException("Docker error"))
-          .when(workspaceProvisionerService)
-          .stopWorkSpace(CONTAINER_ID);
-      when(instanceUserRepository.findByInstanceId(INSTANCE_ID)).thenReturn(List.of());
+
+      // When / Then
+      assertThatThrownBy(() -> serviceOperation.deleteInstance(INSTANCE_ID))
+          .isInstanceOf(IllegalStateException.class)
+          .hasMessageContaining("STOPPED")
+          .hasMessageContaining("RUNNING");
+    }
+
+    @Test
+    @DisplayName("should throw IllegalStateException when instance is CREATED")
+    void shouldThrowIllegalStateExceptionWhenCreated() {
+      // Given
+      final var instance = buildInstance(INSTANCE_ID, InstanceStatus.CREATED);
+      when(instanceRepository.findById(INSTANCE_ID)).thenReturn(Optional.of(instance));
+
+      // When / Then
+      assertThatThrownBy(() -> serviceOperation.deleteInstance(INSTANCE_ID))
+          .isInstanceOf(IllegalStateException.class)
+          .hasMessageContaining("STOPPED");
+    }
+
+    @Test
+    @DisplayName("should not delete instance_user associations")
+    void shouldNotDeleteInstanceUserAssociations() {
+      // Given
+      final var instance = buildInstance(INSTANCE_ID, InstanceStatus.STOPPED);
+      when(instanceRepository.findById(INSTANCE_ID)).thenReturn(Optional.of(instance));
+      when(instanceRepository.save(any(InstanceJpa.class)))
+          .thenAnswer(invocation -> invocation.getArgument(0));
 
       // When
       serviceOperation.deleteInstance(INSTANCE_ID);
 
       // Then
-      verify(instanceRepository).save(any(InstanceJpa.class));
+      verify(instanceUserRepository, never()).findByInstanceId(anyString());
+      verify(instanceUserRepository, never()).delete(any());
     }
 
     @Test
@@ -425,6 +489,60 @@ class InstanceServiceOperationUnTest {
       assertThatThrownBy(() -> serviceOperation.deleteInstance(INSTANCE_ID))
           .isInstanceOf(IllegalArgumentException.class)
           .hasMessageContaining(INSTANCE_ID);
+    }
+  }
+
+  @Nested
+  @DisplayName("checkOwnership")
+  class CheckOwnership {
+
+    @Test
+    @DisplayName("should return true when user is associated with instance")
+    void shouldReturnTrueWhenAssociated() {
+      // Given
+      final var association =
+          InstanceUserJpa.builder().id("iu-001").instanceId(INSTANCE_ID).userId(USER_ID).build();
+      when(instanceUserRepository.findByInstanceId(INSTANCE_ID))
+          .thenReturn(List.of(association));
+
+      // When
+      final var result = serviceOperation.checkOwnership(INSTANCE_ID, USER_ID);
+
+      // Then
+      assertThat(result).isTrue();
+    }
+
+    @Test
+    @DisplayName("should return false when user is not associated with instance")
+    void shouldReturnFalseWhenNotAssociated() {
+      // Given
+      final var association =
+          InstanceUserJpa.builder()
+              .id("iu-001")
+              .instanceId(INSTANCE_ID)
+              .userId("other-user")
+              .build();
+      when(instanceUserRepository.findByInstanceId(INSTANCE_ID))
+          .thenReturn(List.of(association));
+
+      // When
+      final var result = serviceOperation.checkOwnership(INSTANCE_ID, USER_ID);
+
+      // Then
+      assertThat(result).isFalse();
+    }
+
+    @Test
+    @DisplayName("should return false when no associations exist")
+    void shouldReturnFalseWhenNoAssociations() {
+      // Given
+      when(instanceUserRepository.findByInstanceId(INSTANCE_ID)).thenReturn(List.of());
+
+      // When
+      final var result = serviceOperation.checkOwnership(INSTANCE_ID, USER_ID);
+
+      // Then
+      assertThat(result).isFalse();
     }
   }
 }

@@ -281,5 +281,63 @@ class InstanceMetricsJpaUnTest {
 
       assertThat(metrics).isNotEqualTo("not-a-metrics");
     }
+
+    @Test
+    @DisplayName("should not be equal when ids differ")
+    void shouldNotBeEqualWhenIdsDiffer() {
+      final var metrics1 =
+          InstanceMetricsJpa.builder()
+              .id(ID)
+              .instanceId(INSTANCE_ID)
+              .currentCpuUsage(CPU_USAGE)
+              .build();
+      final var metrics2 =
+          InstanceMetricsJpa.builder()
+              .id("metrics-002")
+              .instanceId(INSTANCE_ID)
+              .currentCpuUsage(CPU_USAGE)
+              .build();
+
+      assertThat(metrics1).isNotEqualTo(metrics2);
+    }
+
+    @Test
+    @DisplayName("should be equal when ids are the same but other fields differ")
+    void shouldBeEqualWhenIdsAreTheSameButOtherFieldsDiffer() {
+      final var metrics1 =
+          InstanceMetricsJpa.builder()
+              .id(ID)
+              .instanceId(INSTANCE_ID)
+              .currentCpuUsage(CPU_USAGE)
+              .currentMemoryUsage(MEMORY_USAGE)
+              .build();
+      final var metrics2 =
+          InstanceMetricsJpa.builder()
+              .id(ID)
+              .instanceId("other-inst")
+              .currentCpuUsage(0.99)
+              .currentMemoryUsage(0.01)
+              .build();
+
+      assertThat(metrics1).isEqualTo(metrics2).hasSameHashCodeAs(metrics2);
+    }
+
+    @Test
+    @DisplayName("should not be equal when other has null id")
+    void shouldNotBeEqualWhenOtherHasNullId() {
+      final var metricsWithId =
+          InstanceMetricsJpa.builder()
+              .id(ID)
+              .instanceId(INSTANCE_ID)
+              .currentCpuUsage(CPU_USAGE)
+              .build();
+      final var metricsWithoutId =
+          InstanceMetricsJpa.builder()
+              .instanceId(INSTANCE_ID)
+              .currentCpuUsage(CPU_USAGE)
+              .build();
+
+      assertThat(metricsWithId).isNotEqualTo(metricsWithoutId);
+    }
   }
 }
