@@ -24,11 +24,97 @@ tags:
     description: Instance resource utilization metrics
   - name: Instance Users
     description: User-to-instance access control associations
+  - name: Authentication
+    description: JWT-based authentication and token management
 
 security:
   - bearerAuth: []
 
 paths:
+  /api/auth/login:
+    post:
+      tags: [Authentication]
+      summary: Authenticate user and obtain tokens
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Invalid request payload
+        '404':
+          description: User not found
+        '409':
+          description: User account is not active
+
+  /api/auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Exchange refresh token for new access token
+      operationId: refreshToken
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Invalid request payload
+        '404':
+          description: Refresh token not found
+        '409':
+          description: Refresh token revoked or expired
+
+  /api/auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Revoke refresh token
+      operationId: logout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+      responses:
+        '204':
+          description: Refresh token revoked successfully
+        '404':
+          description: Refresh token not found
+
+  /api/auth/me:
+    get:
+      tags: [Authentication]
+      summary: Get current authenticated user
+      operationId: getCurrentUser
+      responses:
+        '200':
+          description: Current user identity and roles
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthenticatedUserResponse'
+        '401':
+          description: Unauthorized - invalid or missing token
+
   /api/users:
     post:
       tags: [Users]
@@ -761,3 +847,57 @@ components:
           type: string
         userId:
           type: string
+
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+
+    LoginResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        token_type:
+          type: string
+        expires_in:
+          type: integer
+
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refresh_token
+      properties:
+        refresh_token:
+          type: string
+
+    LogoutRequest:
+      type: object
+      required:
+        - refresh_token
+      properties:
+        refresh_token:
+          type: string
+
+    AuthenticatedUserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        lastName:
+          type: string
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/Role'
