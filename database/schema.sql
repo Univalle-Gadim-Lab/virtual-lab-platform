@@ -61,3 +61,15 @@ CREATE TABLE IF NOT EXISTS instance_users
     FOREIGN KEY (instance_id) REFERENCES instances (id),
     FOREIGN KEY (user_id) REFERENCES users (id)
 );
+
+CREATE TABLE IF NOT EXISTS refresh_tokens
+(
+    id          VARCHAR(100) NOT NULL PRIMARY KEY,
+    user_id     VARCHAR(100) NOT NULL,
+    token       TEXT         NOT NULL,
+    expires_at  TIMESTAMP    NOT NULL,
+    revoked     BOOLEAN      NOT NULL DEFAULT FALSE,
+    created_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (user_id, token),
+    FOREIGN KEY (user_id) REFERENCES users (id)
+);

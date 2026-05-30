@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Virtual Lab Platform uses a relational database with five tables organized around two primary entities—**users** and **instances—and three supporting tables that capture roles, metrics, and the many-to-many association between users and instances. All primary keys are `VARCHAR(100)` strings generated at application level via the `UniqueIdGenerator` strategy. Every foreign key references the owning entity's primary key without ON DELETE cascades, meaning deletions must be handled explicitly by the application layer. Enumerated domains (`status`, `role`) are stored as `VARCHAR` with the Java enum constant names, persisted via JPA's `@Enumerated(EnumType.STRING)`.
+The Virtual Lab Platform uses a relational database with six tables organized around two primary entities—**users** and **instances**—and four supporting tables that capture roles, metrics, the many-to-many association between users and instances, and refresh tokens for JWT authentication. All primary keys are `VARCHAR(100)` strings generated at application level via the `UniqueIdGenerator` strategy. Every foreign key references the owning entity's primary key without ON DELETE cascades, meaning deletions must be handled explicitly by the application layer. Enumerated domains (`status`, `role`) are stored as `VARCHAR` with the Java enum constant names, persisted via JPA's `@Enumerated(EnumType.STRING)`.
 
 ## Entity Relationship Diagram
 
@@ -62,8 +62,18 @@ erDiagram
         VARCHAR_100 user_id FK
     }
 
+    refresh_tokens {
+        VARCHAR_100 id PK
+        VARCHAR_100 user_id FK
+        TEXT token
+        TIMESTAMP expires_at
+        BOOLEAN revoked
+        TIMESTAMP created_at
+    }
+
     users ||--o{ user_roles : "has roles"
     users ||--o{ instance_users : "assigned to instances"
+    users ||--o{ refresh_tokens : "has tokens"
     instances ||--o{ instance_users : "has assigned users"
     instances ||--o{ instance_metrics : "has metrics"
 ```
@@ -164,6 +174,23 @@ Join table establishing the many-to-many association between users and instances
 - **JPA Entity:** `InstanceUserJpa` (`edu.univalle.gadim.virtual_lab_platform.instances.data.model`)
 - **API Type Interface:** `InstanceUser` (`edu.univalle.gadim.virtual_lab_platform.instances.api.type`)
 
+### `refresh_tokens`
+
+Stores JWT refresh tokens for authentication, enabling secure token revocation on logout.
+
+| Column | Type | Nullable | Constraints | Default | JPA Mapping |
+|---|---|---|---|---|---|
+| `id` | `VARCHAR(100)` | NOT NULL | PRIMARY KEY | — | `RefreshTokenJpa.id` → `RefreshToken.id()` |
+| `user_id` | `VARCHAR(100)` | NOT NULL | FK → `users(id)`, UNIQUE with `token` | — | `RefreshTokenJpa.userId` → `RefreshToken.userId()` |
+| `token` | `TEXT` | NOT NULL | UNIQUE with `user_id` | — | `RefreshTokenJpa.token` → `RefreshToken.token()` |
+| `expires_at` | `TIMESTAMP` | NOT NULL | — | — | `RefreshTokenJpa.expiresAt` → `RefreshToken.expiresAt()` |
+| `revoked` | `BOOLEAN` | NOT NULL | — | `FALSE` | `RefreshTokenJpa.revoked` → `RefreshToken.revoked()` |
+| `created_at` | `TIMESTAMP` | NOT NULL | — | `CURRENT_TIMESTAMP` | `RefreshTokenJpa.createdAt` → `RefreshToken.createdAt()` |
+
+- **Module:** `virtual-lab-platform-authentication`
+- **JPA Entity:** `RefreshTokenJpa` (`edu.univalle.gadim.virtual_lab_platform.authentication.data.model`)
+- **API Type Interface:** `RefreshToken` (`edu.univalle.gadim.virtual_lab_platform.authentication.api.type`)
+
 ## Enumerated Domains
 
 Enumerated columns are persisted as `VARCHAR` strings matching the Java enum constant names.
@@ -185,6 +212,7 @@ Enumerated columns are persisted as `VARCHAR` strings matching the Java enum con
 | `instances` | `id` | `VARCHAR(100)` |
 | `instance_metrics` | `id` | `VARCHAR(100)` |
 | `instance_users` | `id` | `VARCHAR(100)` |
+| `refresh_tokens` | `id` | `VARCHAR(100)` |
 
 ### Foreign Keys
 
@@ -194,12 +222,14 @@ Enumerated columns are persisted as `VARCHAR` strings matching the Java enum con
 | `instance_metrics` | `instance_id` | `instances` | `id` | An instance has zero or more metric snapshots |
 | `instance_users` | `instance_id` | `instances` | `id` | An instance has zero or more assigned users |
 | `instance_users` | `user_id` | `users` | `id` | A user is assigned to zero or more instances |
+| `refresh_tokens` | `user_id` | `users` | `id` | A user has zero or more refresh tokens |
 
 ### Unique Constraints
 
 | Table | Columns | Semantics |
 |---|---|---|
 | `user_roles` | `(user_id, role)` | A user cannot hold the same role twice |
+| `refresh_tokens` | `(user_id, token)` | A user cannot have duplicate refresh tokens |
 
 ## Design Notes
 
@@ -208,4 +238,5 @@ Enumerated columns are persisted as `VARCHAR` strings matching the Java enum con
 - **No ON DELETE cascades:** Foreign key constraints do not specify `ON DELETE CASCADE`. The application layer is responsible for cleaning up related rows (e.g., `user_roles`, `instance_users`, `instance_metrics`) when a parent entity is removed.
 - **Nullable metric columns:** All metric value columns (`current_cpu_usage`, `current_memory_usage`, `current_disk_usage`, `current_time_usage`) and the instance lifecycle timestamp columns (`expires_at`, `started_at`, `stopped_at`, `deleted_at`, `last_accessed_at`) allow `NULL`, reflecting that these values are populated over the course of an instance's lifecycle.
 - **No unique constraint on `instance_users`:** The `(instance_id, user_id)` pair is not constrained as unique by the DDL. Business-level enforcement of uniqueness is handled by the application layer in `InstanceUserService`.
-- **No explicit indexes beyond PKs and the unique constraint:** The DDL does not define additional indexes. Query optimization may require indexes on `user_roles.user_id`, `instance_users.user_id`, `instance_users.instance_id`, and `instance_metrics.instance_id` as data volumes grow.
+- **No explicit indexes beyond PKs and the unique constraint:** The DDL does not define additional indexes. Query optimization may require indexes on `user_roles.user_id`, `instance_users.user_id`, `instance_users.instance_id`, `instance_metrics.instance_id`, and `refresh_tokens.user_id` as data volumes grow.
+- **Refresh token revocation:** Refresh tokens support explicit revocation via the `revoked` flag, enabling secure logout without deleting historical records. The `TEXT` type for the `token` column accommodates variable-length JWT strings.
