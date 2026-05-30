@@ -16,3 +16,8 @@ spring:
     idle-timeout: 30000
     max-lifetime: 1800000
     connection-timeout: 30000
+
+jwt:
+  secret: ${JWT_SECRET:change-me-in-production-256-bits-minimum-key}
+  access-token-expiration-ms: 900000
+  refresh-token-expiration-ms: 604800000

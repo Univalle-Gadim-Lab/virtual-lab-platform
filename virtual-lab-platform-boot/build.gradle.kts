@@ -5,6 +5,7 @@ plugins {
 dependencies {
     implementation(project(":virtual-lab-platform-commons"))
     implementation(project(":virtual-lab-platform-users"))
+    implementation(project(":virtual-lab-platform-authentication"))
     implementation(project(":virtual-lab-platform-instances"))
 
 
