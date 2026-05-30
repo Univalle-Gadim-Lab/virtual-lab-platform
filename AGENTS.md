@@ -8,10 +8,11 @@ Multi-module Gradle project using Java 21 and Spring Boot.
 
 | Module | Role | Depends on |
 |--------|------|------------|
-| `virtual-lab-platform-boot` | Spring Boot runtime / entry point | commons, users, instances |
+| `virtual-lab-platform-boot` | Spring Boot runtime / entry point | commons, users, instances, authentication |
 | `virtual-lab-platform-commons` | Shared utilities | — |
 | `virtual-lab-platform-users` | User bounded context | commons |
 | `virtual-lab-platform-instances` | Instance bounded context | commons, users |
+| `virtual-lab-platform-authentication` | Authentication bounded context (JWT tokens, login, refresh, logout) | commons, users |
 
 ## External File Loading
 
@@ -87,6 +88,7 @@ Controllers are thin and return `ResponseEntity<T>`. `IllegalArgumentException` 
 ./gradlew :virtual-lab-platform-commons:test --no-daemon
 ./gradlew :virtual-lab-platform-users:test --no-daemon
 ./gradlew :virtual-lab-platform-instances:test --no-daemon
+./gradlew :virtual-lab-platform-authentication:test --no-daemon
 ```
 
 ### Dependency Setup
@@ -148,3 +150,4 @@ Architecture and design documentation lives under `architecture/`:
 - `architecture/ARCHITECTURE.md` — Class-level system architecture, module diagrams, component relationships
 - `architecture/DATABASE.md` — Physical database schema, ERD diagram, DDL-to-JPA mapping reference
 - `architecture/openapi/atm-api.yaml` — OpenAPI specification for the Web API
+- `architecture/virtual-lab-authentication.puml` — PlantUML class diagram for the authentication module
