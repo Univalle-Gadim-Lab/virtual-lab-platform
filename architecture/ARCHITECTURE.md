@@ -2,11 +2,11 @@
 
 ## High-Level Overview
 
-The Virtual Lab Platform is a modular monolith that provides remote management and secure virtualization of computational resources through containers. Built on Java 21 and Spring Boot 4.0, the system divides its responsibilities across four Gradle sub-projects: **commons**, **users**, **instances**, and **boot**. Each business module (users, instances) follows a layered, hexagonal-inspired architecture where domain contracts are defined as interfaces in an `api` package and concretely implemented by JPA entities, service operations, and REST controllers in dedicated downstream packages.
+The Virtual Lab Platform is a modular monolith that provides remote management and secure virtualization of computational resources through containers. Built on Java 21 and Spring Boot 4.0, the system divides its responsibilities across five Gradle sub-projects: **commons**, **users**, **instances**, **authentication**, and **boot**. Each business module (users, instances, authentication) follows a layered, hexagonal-inspired architecture where domain contracts are defined as interfaces in an `api` package and concretely implemented by JPA entities, service operations, and REST controllers in dedicated downstream packages.
 
-The **users** module handles identity concerns—user registration, authentication metadata, and role-based authorization (ADMIN, STUDENT, TEACHER). The **instances** module governs the full lifecycle of containerized workspaces, from provisioning through Docker to monitoring resource consumption metrics, and it links users to their instances via a many-to-many join entity. The **commons** module provides shared infrastructure, currently centering on unique-ID generation through a strategy pattern that is resolved at assembly time by the boot module.
+The **users** module handles identity concerns—user registration, authentication metadata, and role-based authorization (ADMIN, STUDENT, TEACHER). The **instances** module governs the full lifecycle of containerized workspaces, from provisioning through Docker to monitoring resource consumption metrics, and it links users to their instances via a many-to-many join entity. The **authentication** module provides JWT-based authentication and authorization, issuing and validating access tokens, managing refresh token lifecycle (including revocation on logout), and securing API endpoints via a servlet filter. The **commons** module provides shared infrastructure, currently centering on unique-ID generation through a strategy pattern that is resolved at assembly time by the boot module.
 
-The **boot** module acts as the application entry point and composition root: it assembles Spring Boot, configures security, scans JPA entities and repositories from both business modules, and selects the concrete `UniqueIdGenerator` implementation (`ObjectIdGenerator`) that will be injected across the entire system.
+The **boot** module acts as the application entry point and composition root: it assembles Spring Boot, configures security with JWT filter chain, scans JPA entities and repositories from all three business modules, and selects the concrete `UniqueIdGenerator` implementation (`ObjectIdGenerator`) that will be injected across the entire system.
 
 ## Modules Breakdown
 
@@ -623,6 +623,151 @@ classDiagram
     Instance --> InstanceStatus
 ```
 
+### Authentication Module
+
+The authentication module provides JWT-based authentication and authorization for the platform. It issues and validates access tokens, manages refresh token lifecycle (including revocation on logout), and secures API endpoints via a servlet filter. It depends on both the commons module (for ID generation) and the users module (for credential verification and role loading).
+
+#### API Types
+
+| Class / Interface | Package | Responsibility |
+|---|---|---|
+| `RefreshToken` | `api.type` | Domain interface for refresh token persistence: id, userId, token, expiresAt, revoked, createdAt |
+| `TokenType` | `api.type` | Enumeration distinguishing `ACCESS` and `REFRESH` JWT categories |
+
+#### API Services
+
+| Interface | Methods |
+|---|---|
+| `AuthenticationService` | `login`, `refresh`, `logout`, `validateAccessToken` |
+| `TokenService` | `generateAccessToken`, `generateRefreshToken`, `validateAccessToken`, `extractUserId`, `extractUsername`, `extractRoles` |
+
+#### Data Layer
+
+| Class / Interface | Package | Key Detail |
+|---|---|---|
+| `RefreshTokenJpa` | `data.model` | `implements RefreshToken`; mapped to `refresh_tokens` table |
+| `RefreshTokenRepository` | `data.repository` | Extends `JpaRepository<RefreshTokenJpa, String>`; provides `findByToken`, `findByUserId` |
+
+#### Operation Layer
+
+| Class | Implements | Dependencies |
+|---|---|---|
+| `AuthenticationOperation` | `AuthenticationService` | `UserRepository`, `UserRoleRepository`, `PasswordEncoder`, `RefreshTokenRepository`, `UniqueIdGenerator`, `TokenService` |
+| `JwtTokenOperation` | `TokenService` | `SecretKey` (from `jwt.secret` property), expiration configuration |
+
+#### Web Layer
+
+| Class / Record | Base Path / Purpose |
+|---|---|
+| `AuthController` | `/api/auth` — login, refresh, logout, current user |
+| `LoginRequest` | Request DTO for user credentials |
+| `LoginResponse` | Response DTO with access token, refresh token, token type, expiresIn |
+| `RefreshTokenRequest` | Request DTO for token refresh |
+| `LogoutRequest` | Request DTO for logout |
+| `AuthenticatedUserResponse` | Response DTO with user identity and roles |
+
+#### Authentication Module Diagram
+
+```mermaid
+classDiagram
+    direction TB
+
+    class RefreshToken {
+        <<interface>>
+        +id() String
+        +userId() String
+        +token() String
+        +expiresAt() LocalDateTime
+        +revoked() boolean
+        +createdAt() LocalDateTime
+    }
+
+    class TokenType {
+        <<enumeration>>
+        ACCESS
+        REFRESH
+    }
+
+    class AuthenticationService {
+        <<interface>>
+        +login(username, password) AuthenticationResult
+        +refresh(refreshToken) AuthenticationResult
+        +logout(refreshToken) void
+        +validateAccessToken(accessToken) boolean
+    }
+
+    class TokenService {
+        <<interface>>
+        +generateAccessToken(userId, username, roles) String
+        +generateRefreshToken(userId) String
+        +validateAccessToken(token) boolean
+        +extractUserId(token) String
+        +extractUsername(token) String
+        +extractRoles(token) List~Role~
+    }
+
+    class RefreshTokenJpa {
+        -String id
+        -String userId
+        -String token
+        -LocalDateTime expiresAt
+        -boolean revoked
+        -LocalDateTime createdAt
+    }
+
+    class RefreshTokenRepository {
+        <<interface>>
+        +findByToken(token) Optional~RefreshTokenJpa~
+        +findByUserId(userId) List~RefreshTokenJpa~
+    }
+
+    class AuthenticationOperation {
+        -UserRepository userRepository
+        -UserRoleRepository userRoleRepository
+        -PasswordEncoder passwordEncoder
+        -RefreshTokenRepository refreshTokenRepository
+        -UniqueIdGenerator idGenerator
+        -TokenService tokenService
+        +login(...)
+        +refresh(...)
+        +logout(...)
+        +validateAccessToken(...)
+    }
+
+    class JwtTokenOperation {
+        -SecretKey signingKey
+        +generateAccessToken(...)
+        +generateRefreshToken(...)
+        +validateAccessToken(...)
+        +extractUserId(...)
+        +extractUsername(...)
+        +extractRoles(...)
+    }
+
+    class AuthController {
+        -AuthWsOps authWsOps
+        +login(...)
+        +refresh(...)
+        +logout(...)
+        +me(...)
+    }
+
+    class JwtAuthenticationFilter {
+        -TokenService tokenService
+        +doFilterInternal(...)
+    }
+
+    class AuthenticationConfig
+
+    RefreshTokenJpa ..|> RefreshToken
+    AuthenticationOperation ..|> AuthenticationService
+    JwtTokenOperation ..|> TokenService
+    AuthenticationOperation --> RefreshTokenRepository
+    AuthenticationOperation --> TokenService
+    AuthController --> AuthenticationService
+    JwtAuthenticationFilter --> TokenService
+```
+
 ### Boot Module
 
 The boot module is the composition root that assembles the Spring Boot application. It declares the entry point, configures JPA entity scanning and repository discovery across modules, sets up security policy, and selects the global ID-generation strategy.
@@ -652,7 +797,9 @@ classDiagram
     VirtualLabPlatformApplication --> UserService : depends on
     VirtualLabPlatformApplication --> SecurityConfig : depends on
     VirtualLabPlatformApplication --> InstanceService : depends on
+    VirtualLabPlatformApplication --> AuthenticationService : depends on
     SecurityConfig --> UserService : depends on
+    SecurityConfig --> JwtAuthenticationFilter : uses
     BootConfig --> ObjectIdGenerator : imports
     BootConfig --> UniqueIdGenerator : provides
 ```
@@ -692,6 +839,17 @@ classDiagram
         class InstanceServiceOp
     }
 
+    package authentication {
+        class RefreshToken
+        class AuthenticationService
+        class TokenService
+        class AuthenticationOperation
+        class JwtTokenOperation
+        class AuthController
+        class JwtAuthenticationFilter
+        class AuthenticationConfig
+    }
+
     UserJpa ..|> User
     UserServiceOp ..|> UserService
     UserServiceOp --> UserRepository
@@ -700,9 +858,16 @@ classDiagram
 
     InstanceServiceOp ..|> InstanceService
 
+    AuthenticationOperation ..|> AuthenticationService
+    JwtTokenOperation ..|> TokenService
+    AuthenticationOperation --> UserRepository
+    AuthenticationOperation --> UserRoleRepository
+
     VirtualLabPlatformApplication --> UserServiceOp
     VirtualLabPlatformApplication --> SecurityConfig
     VirtualLabPlatformApplication --> InstanceServiceOp
+    VirtualLabPlatformApplication --> AuthenticationOperation
+    SecurityConfig --> JwtAuthenticationFilter
     SecurityConfig --> UserService
 ```
 
@@ -719,6 +884,7 @@ All domain interfaces in both modules are realized by their corresponding JPA en
 | `Instance` | `InstanceJpa` |
 | `InstanceMetrics` | `InstanceMetricsJpa` |
 | `InstanceUser` | `InstanceUserJpa` |
+| `RefreshToken` | `RefreshTokenJpa` |
 | `UniqueIdGenerator` | `UuidGenerator`, `ObjectIdGenerator` |
 
 Similarly, all service interfaces are realized by operation classes:
@@ -731,6 +897,8 @@ Similarly, all service interfaces are realized by operation classes:
 | `InstanceMetricsService` | `InstanceMetricsServiceOperation` |
 | `InstanceUserService` | `InstanceUserServiceOperation` |
 | `WorkspaceProvisionerService` | `WorkspaceProvisionerOperation` |
+| `AuthenticationService` | `AuthenticationOperation` |
+| `TokenService` | `JwtTokenOperation` |
 
 ### Composition / Dependency
 
@@ -754,15 +922,19 @@ The dependency graph flows strictly downward from the web layer through the oper
 
 ```
 commons ←── users ←── instances
+            ↑
+            └── authentication
                       ↑
-              boot ────┘
+              boot ───┘
 ```
 
 - **users → commons**: Imports `UniqueIdGenerator` in both `UserServiceOp` and `UserRolesServiceOperation`.
 - **instances → commons**: Imports `UniqueIdGenerator` in all three operation classes.
 - **instances → users**: Declared as a Gradle dependency, intended for future user-to-instance authorization checks (not yet leveraged at the Java level).
+- **authentication → commons**: Imports `UniqueIdGenerator` in `AuthenticationOperation`.
+- **authentication → users**: Imports `UserRepository`, `UserRoleRepository`, and `PasswordEncoder` for credential verification and role loading.
 - **boot → commons**: `BootConfig` imports `ObjectIdGenerator` and `UniqueIdGenerator`.
-- **boot → users, instances**: `VirtualLabPlatformApplication` scans JPA entities and repositories from both modules.
+- **boot → users, instances, authentication**: `VirtualLabPlatformApplication` scans JPA entities and repositories from all three business modules.
 
 ## Implementation Notes
 
@@ -790,9 +962,11 @@ The `UniqueIdGenerator` interface in commons has two implementations (`UuidGener
 
 ### Security Considerations
 
-- `SecurityConfig` currently permits all requests (no authentication or authorization enforced). This is a placeholder for future JWT-based security integration.
-- `InstanceController` contains a hardcoded `userId = "current-user-id"` placeholder, intended to be replaced with JWT-based principal extraction.
+- `SecurityConfig` enables JWT-based authentication with stateless sessions. The `JwtAuthenticationFilter` validates Bearer tokens on each request and populates the `SecurityContextHolder` with the authenticated principal.
+- Login (`POST /api/auth/login`) and refresh (`POST /api/auth/refresh`) endpoints are publicly accessible; all other endpoints require a valid Bearer token.
+- `InstanceController` and other controllers extract the authenticated user ID from the `SecurityContext` instead of a hardcoded placeholder.
 - Passwords are hashed using `BCryptPasswordEncoder`, provided by `UserSecurityConfig` in the users module.
+- Refresh tokens are stored in the `refresh_tokens` table and can be explicitly revoked on logout, enabling secure session termination without deleting historical records.
 - User deletion is a soft-delete: the status transitions to `DELETED` only from `INACTIVE`. The user record is never physically removed to preserve historical associations with instances.
 
 ### JPA Repository Custom Queries
