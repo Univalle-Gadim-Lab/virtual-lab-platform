@@ -1,0 +1,150 @@
+@startuml VirtualLabAuthenticationModule
+title Módulo Authentication - Virtual Lab Platform
+
+package "api" {
+    package "type" {
+        interface RefreshToken {
+            +String id()
+            +String userId()
+            +String token()
+            +LocalDateTime expiresAt()
+            +boolean revoked()
+            +LocalDateTime createdAt()
+        }
+        enum TokenType {
+            ACCESS
+            REFRESH
+        }
+    }
+    package "service" {
+        interface AuthenticationService {
+            +AuthenticationResult login(String username, String password)
+            +AuthenticationResult refresh(String refreshToken)
+            +void logout(String refreshToken)
+            +boolean validateAccessToken(String accessToken)
+        }
+        interface TokenService {
+            +String generateAccessToken(String userId, String username, List<Role> roles)
+            +String generateRefreshToken(String userId)
+            +boolean validateAccessToken(String token)
+            +String extractUserId(String token)
+            +String extractUsername(String token)
+            +List<Role> extractRoles(String token)
+        }
+    }
+}
+
+package "data" {
+    package "model" {
+        class RefreshTokenJpa
+    }
+    package "repository" {
+        interface RefreshTokenRepository {
+            +Optional<RefreshTokenJpa> findByToken(String token)
+            +List<RefreshTokenJpa> findByUserId(String userId)
+        }
+    }
+}
+
+package "operation" {
+    class AuthenticationOperation {
+        -UserRepository userRepository
+        -UserRoleRepository userRoleRepository
+        -PasswordEncoder passwordEncoder
+        -RefreshTokenRepository refreshTokenRepository
+        -UniqueIdGenerator idGenerator
+        -TokenService tokenService
+        +login(username, password)
+        +refresh(refreshToken)
+        +logout(refreshToken)
+        +validateAccessToken(accessToken)
+    }
+    class JwtTokenOperation {
+        -SecretKey signingKey
+        -long accessTokenExpirationMs
+        -long refreshTokenExpirationMs
+        +generateAccessToken(userId, username, roles)
+        +generateRefreshToken(userId)
+        +validateAccessToken(token)
+        +extractUserId(token)
+        +extractUsername(token)
+        +extractRoles(token)
+    }
+}
+
+package "web" {
+    package "model" {
+        class LoginRequest {
+            +String username
+            +String password
+        }
+        class LoginResponse {
+            +String accessToken
+            +String refreshToken
+            +String tokenType
+            +long expiresIn
+        }
+        class RefreshTokenRequest {
+            +String refreshToken
+        }
+        class LogoutRequest {
+            +String refreshToken
+        }
+        class AuthenticatedUserResponse {
+            +String id
+            +String name
+            +String lastName
+            +Set<Role> roles
+        }
+    }
+    package "ops" {
+        interface AuthWsOps {
+            +LoginResponse login(LoginRequest request)
+            +LoginResponse refresh(RefreshTokenRequest request)
+            +void logout(LogoutRequest request)
+            +AuthenticatedUserResponse me(String userId)
+        }
+    }
+    package "operation" {
+        class AuthSpringWsOps {
+            -AuthenticationService authenticationService
+            -UserRepository userRepository
+            -UserRoleRepository userRoleRepository
+            +login(request)
+            +refresh(request)
+            +logout(request)
+            +me(userId)
+        }
+    }
+    package "controller" {
+        class AuthController {
+            -AuthWsOps authWsOps
+            +login(request)
+            +refresh(request)
+            +logout(request)
+            +me()
+        }
+    }
+    package "security" {
+        class JwtAuthenticationFilter {
+            -TokenService tokenService
+            +doFilterInternal(request, response, filterChain)
+        }
+    }
+}
+
+package "config" {
+    class AuthenticationConfig
+}
+
+RefreshTokenJpa ..|> RefreshToken
+AuthenticationOperation ..|> AuthenticationService
+JwtTokenOperation ..|> TokenService
+AuthenticationOperation --> RefreshTokenRepository
+AuthenticationOperation --> TokenService
+AuthSpringWsOps ..|> AuthWsOps
+AuthSpringWsOps --> AuthenticationService
+AuthController --> AuthWsOps
+JwtAuthenticationFilter --> TokenService
+
+@enduml
