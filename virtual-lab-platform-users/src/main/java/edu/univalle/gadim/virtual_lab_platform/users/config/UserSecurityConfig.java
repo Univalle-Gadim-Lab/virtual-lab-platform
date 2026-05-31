@@ -8,15 +8,23 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 /**
  * Security configuration for the users module.
  *
- * <p>Provides password encoding beans for user authentication.
+ * <p>Provides a {@link PasswordEncoder} bean backed by Spring Security's
+ * {@link BCryptPasswordEncoder} with the default strength (10). This encoder
+ * is used across the platform for hashing passwords during user creation
+ * and verifying credentials during authentication.
  */
 @Configuration
 public class UserSecurityConfig {
 
   /**
-   * Creates a BCrypt password encoder bean.
+   * Creates a BCrypt password encoder with the default strength of 10.
    *
-   * @return the password encoder instance
+   * <p>BCrypt strength 10 is the industry-standard cost factor, offering a
+   * well-balanced trade-off between security and performance. The cost factor
+   * is intentional and should not be changed without considering the impact
+   * on authentication latency.
+   *
+   * @return a BCrypt-based password encoder instance
    */
   @Bean
   public PasswordEncoder passwordEncoder() {
