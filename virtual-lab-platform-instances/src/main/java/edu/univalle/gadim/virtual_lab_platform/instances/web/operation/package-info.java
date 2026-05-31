@@ -15,6 +15,8 @@
  *       delegates to {@code InstanceMetricsService}</li>
  *   <li>{@link edu.univalle.gadim.virtual_lab_platform.instances.web.operation.InstanceUsersSpringWsOps} —
  *       delegates to {@code InstanceUserService}</li>
+ *   <li>{@link edu.univalle.gadim.virtual_lab_platform.instances.web.operation.CatalogSpringWsOps} —
+ *       delegates to {@code CatalogService}</li>
  * </ul>
  */
 package edu.univalle.gadim.virtual_lab_platform.instances.web.operation;

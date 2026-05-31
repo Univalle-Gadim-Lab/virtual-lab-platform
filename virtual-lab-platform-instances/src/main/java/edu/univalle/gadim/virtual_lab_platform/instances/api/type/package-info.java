@@ -12,6 +12,8 @@
  *   <li>{@link edu.univalle.gadim.virtual_lab_platform.instances.api.type.InstanceStatus} — instance lifecycle states</li>
  *   <li>{@link edu.univalle.gadim.virtual_lab_platform.instances.api.type.InstanceMetrics} — resource utilization snapshots</li>
  *   <li>{@link edu.univalle.gadim.virtual_lab_platform.instances.api.type.InstanceUser} — user-to-instance association contract</li>
+ *   <li>{@link edu.univalle.gadim.virtual_lab_platform.instances.api.type.WorkspaceImage} — workspace catalog image entry</li>
+ *   <li>{@link edu.univalle.gadim.virtual_lab_platform.instances.api.type.CatalogEntry} — catalog entry with running instance count</li>
  * </ul>
  */
 package edu.univalle.gadim.virtual_lab_platform.instances.api.type;

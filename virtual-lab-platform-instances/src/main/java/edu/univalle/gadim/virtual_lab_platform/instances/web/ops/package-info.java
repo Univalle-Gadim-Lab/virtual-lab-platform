@@ -14,6 +14,8 @@
  *       contract for instance metrics web operations</li>
  *   <li>{@link edu.univalle.gadim.virtual_lab_platform.instances.web.ops.InstanceUsersWsOps} —
  *       contract for instance-user association web operations</li>
+ *   <li>{@link edu.univalle.gadim.virtual_lab_platform.instances.web.ops.CatalogWsOps} —
+ *       contract for workspace catalog web operations</li>
  * </ul>
  */
 package edu.univalle.gadim.virtual_lab_platform.instances.web.ops;

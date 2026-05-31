@@ -12,6 +12,7 @@
  *   <li>{@link edu.univalle.gadim.virtual_lab_platform.instances.operation.InstanceMetricsServiceOperation} — implements {@link edu.univalle.gadim.virtual_lab_platform.instances.api.service.InstanceMetricsService}</li>
  *   <li>{@link edu.univalle.gadim.virtual_lab_platform.instances.operation.InstanceUserServiceOperation} — implements {@link edu.univalle.gadim.virtual_lab_platform.instances.api.service.InstanceUserService}</li>
  *   <li>{@link edu.univalle.gadim.virtual_lab_platform.instances.operation.WorkspaceProvisionerOperation} — implements {@link edu.univalle.gadim.virtual_lab_platform.instances.api.service.WorkspaceProvisionerService}</li>
+ *   <li>{@link edu.univalle.gadim.virtual_lab_platform.instances.operation.CatalogServiceOperation} — implements {@link edu.univalle.gadim.virtual_lab_platform.instances.api.service.CatalogService}</li>
  * </ul>
  */
 package edu.univalle.gadim.virtual_lab_platform.instances.operation;
