@@ -660,6 +660,9 @@ The authentication module provides JWT-based authentication and authorization fo
 | Class / Record | Base Path / Purpose |
 |---|---|
 | `AuthController` | `/api/auth` — login, refresh, logout, current user |
+| `JwtAuthenticationFilter` | Servlet filter extracting and validating Bearer tokens |
+| `JwtAuthenticationEntryPoint` | Returns JSON `401 Unauthorized` for unauthenticated requests |
+| `JwtAccessDeniedHandler` | Returns JSON `403 Forbidden` for insufficient roles |
 | `LoginRequest` | Request DTO for user credentials |
 | `LoginResponse` | Response DTO with access token, refresh token, token type, expiresIn |
 | `RefreshTokenRequest` | Request DTO for token refresh |
@@ -757,6 +760,14 @@ classDiagram
         +doFilterInternal(...)
     }
 
+    class JwtAuthenticationEntryPoint {
+        +commence(...)
+    }
+
+    class JwtAccessDeniedHandler {
+        +handle(...)
+    }
+
     class AuthenticationConfig
 
     RefreshTokenJpa ..|> RefreshToken
@@ -775,7 +786,7 @@ The boot module is the composition root that assembles the Spring Boot applicati
 | Class | Package | Responsibility |
 |---|---|---|
 | `VirtualLabPlatformApplication` | `boot` | `@SpringBootApplication` entry point with `@EntityScan` and `@EnableJpaRepositories` covering both users and instances modules |
-| `SecurityConfig` | `boot.config` | `@EnableWebSecurity` configuration; disables CSRF, permits all requests |
+| `SecurityConfig` | `boot.config` | `@EnableWebSecurity` configuration; disables CSRF, stateless sessions, JWT filter chain with role-based access (`/api/users/**`, `/api/user-roles/**` require `ADMIN`), custom 401/403 JSON error responses |
 | `BootConfig` | `boot.config` | Provides `UniqueIdGenerator` bean using `ObjectIdGenerator`, overriding the default `@Component` candidates |
 
 ```mermaid
@@ -787,6 +798,9 @@ classDiagram
     }
 
     class SecurityConfig {
+        -JwtAuthenticationFilter jwtAuthenticationFilter
+        -AuthenticationEntryPoint authenticationEntryPoint
+        -AccessDeniedHandler accessDeniedHandler
         +filterChain(http) SecurityFilterChain
     }
 
@@ -831,6 +845,8 @@ classDiagram
 
     package security {
         class SecurityConfig
+        class JwtAuthenticationEntryPoint
+        class JwtAccessDeniedHandler
     }
 
     package instances {
@@ -964,6 +980,8 @@ The `UniqueIdGenerator` interface in commons has two implementations (`UuidGener
 
 - `SecurityConfig` enables JWT-based authentication with stateless sessions. The `JwtAuthenticationFilter` validates Bearer tokens on each request and populates the `SecurityContextHolder` with the authenticated principal.
 - Login (`POST /api/auth/login`) and refresh (`POST /api/auth/refresh`) endpoints are publicly accessible; all other endpoints require a valid Bearer token.
+- `/api/users/**` and `/api/user-roles/**` are restricted to users with the `ADMIN` role.
+- `JwtAuthenticationEntryPoint` returns structured JSON `401` responses for unauthenticated requests; `JwtAccessDeniedHandler` returns JSON `403` responses for insufficient role permissions.
 - `InstanceController` and other controllers extract the authenticated user ID from the `SecurityContext` instead of a hardcoded placeholder.
 - Passwords are hashed using `BCryptPasswordEncoder`, provided by `UserSecurityConfig` in the users module.
 - Refresh tokens are stored in the `refresh_tokens` table and can be explicitly revoked on logout, enabling secure session termination without deleting historical records.

@@ -149,5 +149,5 @@ Architecture and design documentation lives under `architecture/`:
 
 - `architecture/ARCHITECTURE.md` — Class-level system architecture, module diagrams, component relationships
 - `architecture/DATABASE.md` — Physical database schema, ERD diagram, DDL-to-JPA mapping reference
-- `architecture/openapi/atm-api.yaml` — OpenAPI specification for the Web API
+- `architecture/openapi/openapi.yaml` — OpenAPI specification for the Web API
 - `architecture/virtual-lab-authentication.puml` — PlantUML class diagram for the authentication module
