@@ -1,12 +1,16 @@
 package edu.univalle.gadim.virtual_lab_platform.boot.config;
 
+import edu.univalle.gadim.virtual_lab_platform.authentication.web.security.JwtAccessDeniedHandler;
+import edu.univalle.gadim.virtual_lab_platform.authentication.web.security.JwtAuthenticationEntryPoint;
 import edu.univalle.gadim.virtual_lab_platform.authentication.web.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
@@ -23,23 +27,18 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
+  private final AuthenticationEntryPoint authenticationEntryPoint;
+  private final AccessDeniedHandler accessDeniedHandler;
 
-  /**
-   * Constructs a new {@code SecurityConfig} with the JWT authentication filter.
-   *
-   * @param jwtAuthenticationFilter the filter that validates JWT tokens on each request
-   */
-  public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+  public SecurityConfig(
+      JwtAuthenticationFilter jwtAuthenticationFilter,
+      AuthenticationEntryPoint authenticationEntryPoint,
+      AccessDeniedHandler accessDeniedHandler) {
     this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    this.authenticationEntryPoint = authenticationEntryPoint;
+    this.accessDeniedHandler = accessDeniedHandler;
   }
 
-  /**
-   * Configures the security filter chain with JWT authentication.
-   *
-   * @param http the HTTP security builder
-   * @return the configured security filter chain
-   * @throws Exception if configuration fails
-   */
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http.csrf(csrf -> csrf.disable())
@@ -51,6 +50,10 @@ public class SecurityConfig {
                     .permitAll()
                     .anyRequest()
                     .authenticated())
+        .exceptionHandling(
+            ex ->
+                ex.authenticationEntryPoint(authenticationEntryPoint)
+                    .accessDeniedHandler(accessDeniedHandler))
         .addFilterBefore(
             jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

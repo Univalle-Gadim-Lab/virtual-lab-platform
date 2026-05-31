@@ -28,6 +28,9 @@ dependencies {
     runtimeOnly(libs.jjwt.impl)
     runtimeOnly(libs.jjwt.jackson)
 
+    testImplementation(platform(libs.spring.boot.bom))
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-webmvc")
     testImplementation(libs.junit)
     testImplementation(libs.assertj)
     testImplementation(libs.mockito.core)
