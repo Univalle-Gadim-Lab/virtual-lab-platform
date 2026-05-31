@@ -99,7 +99,17 @@ class InstanceServiceOperationUnTest {
       // Given
       final var savedInstance = buildInstance(INSTANCE_ID, InstanceStatus.CREATED);
       when(uniqueIdGenerator.generate()).thenReturn(INSTANCE_ID, "iu-001");
-      when(workspaceProvisionerService.createWorkspace(USER_ID, true)).thenReturn(CONTAINER_ID);
+      when(workspaceProvisionerService.createWorkspace(
+              USER_ID,
+              true,
+              IMAGE_NAME,
+              IMAGE_VERSION,
+              CPU_CORES,
+              MEMORY_MB,
+              STORAGE_MB,
+              GPU_ENABLED,
+              EXPOSED_PORT))
+          .thenReturn(CONTAINER_ID);
       when(instanceRepository.save(any(InstanceJpa.class))).thenReturn(savedInstance);
       when(instanceUserRepository.save(any(InstanceUserJpa.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
@@ -121,7 +131,17 @@ class InstanceServiceOperationUnTest {
 
       // Then
       assertThat(result).isNotNull();
-      verify(workspaceProvisionerService).createWorkspace(USER_ID, true);
+      verify(workspaceProvisionerService)
+          .createWorkspace(
+              USER_ID,
+              true,
+              IMAGE_NAME,
+              IMAGE_VERSION,
+              CPU_CORES,
+              MEMORY_MB,
+              STORAGE_MB,
+              GPU_ENABLED,
+              EXPOSED_PORT);
       verify(instanceRepository).save(any(InstanceJpa.class));
       verify(instanceUserRepository).save(any(InstanceUserJpa.class));
     }
@@ -132,7 +152,17 @@ class InstanceServiceOperationUnTest {
       // Given
       final var savedInstance = buildInstance(INSTANCE_ID, InstanceStatus.CREATED);
       when(uniqueIdGenerator.generate()).thenReturn(INSTANCE_ID, "iu-001");
-      when(workspaceProvisionerService.createWorkspace(USER_ID, true)).thenReturn(CONTAINER_ID);
+      when(workspaceProvisionerService.createWorkspace(
+              USER_ID,
+              true,
+              IMAGE_NAME,
+              IMAGE_VERSION,
+              CPU_CORES,
+              MEMORY_MB,
+              STORAGE_MB,
+              GPU_ENABLED,
+              EXPOSED_PORT))
+          .thenReturn(CONTAINER_ID);
       when(instanceRepository.save(any(InstanceJpa.class))).thenReturn(savedInstance);
 
       // When

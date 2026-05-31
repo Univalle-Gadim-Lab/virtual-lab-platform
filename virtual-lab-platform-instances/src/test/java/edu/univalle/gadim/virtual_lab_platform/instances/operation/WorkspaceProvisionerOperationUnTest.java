@@ -46,22 +46,26 @@ class WorkspaceProvisionerOperationUnTest {
     provisioner = new WorkspaceProvisionerOperation(dockerClient);
   }
 
+  private void stubCreateContainer() {
+    when(dockerClient.createContainerCmd(anyString())).thenReturn(createContainerCmd);
+    when(createContainerCmd.withName(anyString())).thenReturn(createContainerCmd);
+    when(createContainerCmd.withHostConfig(any(HostConfig.class))).thenReturn(createContainerCmd);
+    when(createContainerCmd.withExposedPorts(any(ExposedPort.class)))
+        .thenReturn(createContainerCmd);
+    when(createContainerCmd.exec()).thenReturn(createContainerResponse);
+    when(createContainerResponse.getId()).thenReturn(CONTAINER_ID);
+    when(dockerClient.startContainerCmd(anyString())).thenReturn(startContainerCmd);
+  }
+
   @Nested
-  @DisplayName("createWorkspace")
-  class CreateWorkspace {
+  @DisplayName("createWorkspace (legacy)")
+  class CreateWorkspaceLegacy {
 
     @Test
-    @DisplayName("should create and start container without persistent volume")
-    void shouldCreateAndStartContainerWithoutPersistentVolume() {
+    @DisplayName("should create and start container with default image and resource limits")
+    void shouldCreateAndStartContainerWithDefaults() {
       // Given
-      when(dockerClient.createContainerCmd(anyString())).thenReturn(createContainerCmd);
-      when(createContainerCmd.withName(anyString())).thenReturn(createContainerCmd);
-      when(createContainerCmd.withHostConfig(any(HostConfig.class))).thenReturn(createContainerCmd);
-      when(createContainerCmd.withExposedPorts(any(ExposedPort.class)))
-          .thenReturn(createContainerCmd);
-      when(createContainerCmd.exec()).thenReturn(createContainerResponse);
-      when(createContainerResponse.getId()).thenReturn(CONTAINER_ID);
-      when(dockerClient.startContainerCmd(anyString())).thenReturn(startContainerCmd);
+      stubCreateContainer();
 
       // When
       final var result = provisioner.createWorkspace(USER_ID, false);
@@ -81,14 +85,7 @@ class WorkspaceProvisionerOperationUnTest {
     @DisplayName("should create container with persistent volume when isPersistent is true")
     void shouldCreateContainerWithPersistentVolume() {
       // Given
-      when(dockerClient.createContainerCmd(anyString())).thenReturn(createContainerCmd);
-      when(createContainerCmd.withName(anyString())).thenReturn(createContainerCmd);
-      when(createContainerCmd.withHostConfig(any(HostConfig.class))).thenReturn(createContainerCmd);
-      when(createContainerCmd.withExposedPorts(any(ExposedPort.class)))
-          .thenReturn(createContainerCmd);
-      when(createContainerCmd.exec()).thenReturn(createContainerResponse);
-      when(createContainerResponse.getId()).thenReturn(CONTAINER_ID);
-      when(dockerClient.startContainerCmd(anyString())).thenReturn(startContainerCmd);
+      stubCreateContainer();
 
       // When
       final var result = provisioner.createWorkspace(USER_ID, true);
@@ -97,6 +94,45 @@ class WorkspaceProvisionerOperationUnTest {
       assertThat(result).isEqualTo(CONTAINER_ID);
       verify(dockerClient).createContainerCmd("lab-kicad:latest");
       verify(createContainerCmd).withHostConfig(any(HostConfig.class));
+    }
+  }
+
+  @Nested
+  @DisplayName("createWorkspace (with resource specs)")
+  class CreateWorkspaceWithResourceSpecs {
+
+    @Test
+    @DisplayName("should create container with specified image and resource limits")
+    void shouldCreateContainerWithSpecifiedImageAndResources() {
+      // Given
+      stubCreateContainer();
+
+      // When
+      final var result =
+          provisioner.createWorkspace(
+              USER_ID, true, "lab-vivado", "2023.2", 4, 8192, 20480, false, 8080);
+
+      // Then
+      assertThat(result).isEqualTo(CONTAINER_ID);
+      verify(dockerClient).createContainerCmd("lab-vivado:2023.2");
+      verify(createContainerCmd).withName("workspace-" + USER_ID);
+      verify(createContainerCmd).withHostConfig(any(HostConfig.class));
+      verify(createContainerCmd).withExposedPorts(any(ExposedPort.class));
+      verify(dockerClient).startContainerCmd(CONTAINER_ID);
+    }
+
+    @Test
+    @DisplayName("should use specified exposed port")
+    void shouldUseSpecifiedExposedPort() {
+      // Given
+      stubCreateContainer();
+
+      // When
+      provisioner.createWorkspace(
+          USER_ID, false, "lab-quartus", "22.1", 2, 4096, 10240, false, 3000);
+
+      // Then
+      verify(createContainerCmd).withExposedPorts(ExposedPort.tcp(3000));
     }
   }
 
