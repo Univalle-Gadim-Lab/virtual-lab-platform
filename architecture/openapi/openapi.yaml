@@ -26,6 +26,8 @@ tags:
     description: User-to-instance access control associations
   - name: Authentication
     description: JWT-based authentication and token management
+  - name: Catalog
+    description: Workspace catalog and image discovery
 
 security:
   - bearerAuth: []
@@ -589,6 +591,45 @@ paths:
         '404':
           description: Association not found
 
+  /api/catalog:
+    get:
+      tags: [Catalog]
+      summary: Get the complete workspace catalog
+      operationId: getCatalog
+      description: |
+        Returns the complete catalog of available workspace templates.
+        Each entry includes the workspace image definition and the count of
+        currently running (non-deleted) instances using that image.
+        Available to all authenticated users.
+      responses:
+        '200':
+          description: Workspace catalog with running instance counts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CatalogEntryResponse'
+
+  /api/catalog/images:
+    get:
+      tags: [Catalog]
+      summary: List available workspace images
+      operationId: getAvailableImages
+      description: |
+        Returns the list of all configured workspace images with their
+        metadata (name, description, version, category).
+        Available to all authenticated users.
+      responses:
+        '200':
+          description: List of available workspace images
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkspaceImageResponse'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -929,3 +970,35 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Role'
+
+    WorkspaceImageResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the workspace image
+        name:
+          type: string
+          description: Human-readable display name
+        description:
+          type: string
+          description: Brief description of the workspace purpose
+        version:
+          type: string
+          description: Image version tag
+        image:
+          type: string
+          description: Full Docker image reference (name:tag)
+        category:
+          type: string
+          description: Grouping category (e.g. "EDA", "FPGA")
+
+    CatalogEntryResponse:
+      type: object
+      properties:
+        image:
+          $ref: '#/components/schemas/WorkspaceImageResponse'
+        runningInstanceCount:
+          type: integer
+          format: int64
+          description: Number of non-deleted instances currently using this image

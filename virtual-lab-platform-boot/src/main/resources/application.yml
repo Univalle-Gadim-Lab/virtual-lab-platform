@@ -21,3 +21,34 @@ jwt:
   secret: ${JWT_SECRET:change-me-in-production-256-bits-minimum-key}
   access-token-expiration-ms: 900000
   refresh-token-expiration-ms: 604800000
+
+workspace:
+  catalog:
+    images:
+      - id: "kicad"
+        name: "KiCad"
+        description: "Electronic design automation suite"
+        version: "latest"
+        image: "lab-kicad:latest"
+        category: "EDA"
+        default-cpu-cores: 2
+        default-memory-mb: 4096
+        default-storage-mb: 10240
+      - id: "vivado"
+        name: "Vivado"
+        description: "Xilinx FPGA design suite"
+        version: "2023.2"
+        image: "lab-vivado:2023.2"
+        category: "FPGA"
+        default-cpu-cores: 4
+        default-memory-mb: 8192
+        default-storage-mb: 20480
+      - id: "quartus"
+        name: "Quartus Prime"
+        description: "Intel FPGA design software"
+        version: "22.1"
+        image: "lab-quartus:22.1"
+        category: "FPGA"
+        default-cpu-cores: 4
+        default-memory-mb: 8192
+        default-storage-mb: 20480

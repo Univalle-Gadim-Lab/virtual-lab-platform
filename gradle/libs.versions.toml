@@ -47,6 +47,7 @@ postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" 
 # Spring Boot libraries
 dependency-management-plugin = { module = "io.spring.gradle:dependency-management-plugin", version.ref = "springManagement" }
 spring-boot-bom = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "springBoot"}
+spring-boot-autoconfigure = { module = "org.springframework.boot:spring-boot-autoconfigure"}
 spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa"}
 spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security"}
 spring-boot-starter-webmvc = { module = "org.springframework.boot:spring-boot-starter-webmvc"}

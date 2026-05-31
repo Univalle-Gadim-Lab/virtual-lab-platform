@@ -318,6 +318,8 @@ The instances module governs the full lifecycle of containerized workspaces—cr
 | `InstanceStatus` | `api.type` | Enumeration: `CREATED`, `STARTING`, `RUNNING`, `STOPPED`, `EXPIRED`, `DELETED` |
 | `InstanceUser` | `api.type` | Join entity interface linking a user to an instance |
 | `InstanceMetrics` | `api.type` | Domain interface for resource utilization snapshots (CPU, memory, disk, time) |
+| `WorkspaceImage` | `api.type` | Immutable value object representing a workspace image entry in the catalog |
+| `CatalogEntry` | `api.type` | Record combining a `WorkspaceImage` with its running instance count |
 
 **`Instance` attribute breakdown:**
 
@@ -335,7 +337,8 @@ The instances module governs the full lifecycle of containerized workspaces—cr
 | `InstanceService` | `createInstance`, `startInstance`, `stopInstance`, `getInstanceById`, `getInstancesByUserId`, `deleteInstance`, `checkOwnership` |
 | `InstanceMetricsService` | `getMetricsByInstanceId`, `recordMetrics` |
 | `InstanceUserService` | `assignUserToInstance`, `getUsersByInstanceId`, `removeUserFromInstance` |
-| `WorkspaceProvisionerService` | `createWorkspace`, `stopWorkSpace`, `startWorkspace` |
+| `WorkspaceProvisionerService` | `createWorkspace(userId, isPersistent)`, `createWorkspace(userId, isPersistent, imageName, imageVersion, cpuCores, memoryMb, storageMb, gpuEnabled, exposedPort)`, `stopWorkSpace`, `startWorkspace` |
+| `CatalogService` | `getAvailableImages`, `getCatalog` |
 
 #### Data Layer
 
@@ -344,7 +347,7 @@ The instances module governs the full lifecycle of containerized workspaces—cr
 | `InstanceJpa` | `data.model` | `implements Instance`; mapped to `instances` table; 20 fields |
 | `InstanceMetricsJpa` | `data.model` | `implements InstanceMetrics`; mapped to `instance_metrics` table |
 | `InstanceUserJpa` | `data.model` | `implements InstanceUser`; mapped to `instance_users` table |
-| `InstanceRepository` | `data.repository` | Extends `JpaRepository<InstanceJpa, String>`; includes `findByUserId` via JPQL join |
+| `InstanceRepository` | `data.repository` | Extends `JpaRepository<InstanceJpa, String>`; includes `findByUserId` via JPQL join, `countByImageNameAndStatusNot` |
 | `InstanceMetricsRepository` | `data.repository` | `findByInstanceId` |
 | `InstanceUserRepository` | `data.repository` | `findByUserId`, `findByInstanceId` |
 
@@ -356,6 +359,7 @@ The instances module governs the full lifecycle of containerized workspaces—cr
 | `InstanceMetricsServiceOperation` | `InstanceMetricsService` | `InstanceMetricsRepository`, `InstanceRepository`, `UniqueIdGenerator` |
 | `InstanceUserServiceOperation` | `InstanceUserService` | `InstanceUserRepository`, `UniqueIdGenerator` |
 | `WorkspaceProvisionerOperation` | `WorkspaceProvisionerService` | `DockerClient` (docker-java library) |
+| `CatalogServiceOperation` | `CatalogService` | `WorkspaceImageProperties`, `InstanceRepository` |
 
 The `WorkspaceProvisionerOperation` is the adapter that bridges the domain service layer to the Docker daemon: it creates containers with configurable resource limits and manages their lifecycle.
 
@@ -366,9 +370,12 @@ The `WorkspaceProvisionerOperation` is the adapter that bridges the domain servi
 | `InstanceController` | `/api/instances` — full CRUD + start/stop lifecycle |
 | `InstanceMetricsController` | `/api/instances/{instanceId}/metrics` — read and record metrics |
 | `InstanceUsersController` | `/api/instance-users` — user-to-instance association management |
+| `CatalogController` | `/api/catalog` — workspace catalog; `/api/catalog/images` — image discovery |
 | `CreateInstanceRequest` | Request record for instance creation |
 | `InstanceResponse` | Response record with `static from(Instance)` factory |
 | `InstanceMetricsResponse` | Response record with `static from(InstanceMetrics)` factory |
+| `WorkspaceImageResponse` | Response record for workspace image catalog entries |
+| `CatalogEntryResponse` | Response record for catalog entries with running instance count |
 
 #### Instances Module Diagram
 
@@ -974,7 +981,11 @@ The `UniqueIdGenerator` interface in commons has two implementations (`UuidGener
 
 ### Docker Integration
 
-`WorkspaceProvisionerOperation` directly uses the `docker-java` client library to create and stop containers. This is the only service that interacts with external infrastructure. The provisioner currently uses a hardcoded container image (`lab-kicad:latest`) and configures resource limits (CPU, memory, disk) based on parameters supplied during instance creation.
+`WorkspaceProvisionerOperation` directly uses the `docker-java` client library to create and stop containers. This is the only service that interacts with external infrastructure. The provisioner configures resource limits (CPU, memory, disk) dynamically based on parameters supplied during instance creation. The overloaded `createWorkspace` method accepts image name, version, CPU cores, memory MB, storage MB, GPU flag, and exposed port. A backward-compatible overload with default values (2 CPU cores, 4 GB RAM, 10 GB disk, `lab-kicad:latest`) is also provided.
+
+### Workspace Catalog
+
+The workspace catalog provides read-only access to the available workspace images and their running instance counts. Image definitions are configured in `application.yml` under the `workspace.catalog.images` prefix and bound to `WorkspaceImageProperties` via `@ConfigurationProperties`. The `CatalogService` exposes `getAvailableImages()` for raw image listing and `getCatalog()` for the full catalog enriched with live instance counts from `InstanceRepository.countByImageNameAndStatusNot()`.
 
 ### Security Considerations
 
