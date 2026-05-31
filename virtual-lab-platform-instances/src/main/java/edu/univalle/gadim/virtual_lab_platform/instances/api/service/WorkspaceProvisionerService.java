@@ -16,12 +16,42 @@ public interface WorkspaceProvisionerService {
   /**
    * Creates and starts a new Docker container workspace for the specified user.
    *
+   * <p>Uses hardcoded default resource limits. Prefer
+   * {@link #createWorkspace(String, boolean, String, String, int, int, int, boolean, int)}
+   * for dynamic resource configuration.
+   *
    * @param userId the user ID to associate with the workspace
    * @param isPersistent whether to mount a persistent volume for user data
    * @return the Docker container ID
    */
   @Nonnull
   String createWorkspace(String userId, boolean isPersistent);
+
+  /**
+   * Creates and starts a new Docker container workspace with explicit resource limits.
+   *
+   * @param userId the user ID to associate with the workspace
+   * @param isPersistent whether to mount a persistent volume for user data
+   * @param imageName the Docker image name (without registry/tag)
+   * @param imageVersion the Docker image version tag
+   * @param cpuCores the number of CPU cores to allocate
+   * @param memoryMb the amount of memory in megabytes to allocate
+   * @param storageMb the amount of disk storage in megabytes to allocate
+   * @param gpuEnabled whether GPU acceleration is enabled
+   * @param exposedPort the port to expose on the container
+   * @return the Docker container ID
+   */
+  @Nonnull
+  String createWorkspace(
+      String userId,
+      boolean isPersistent,
+      String imageName,
+      String imageVersion,
+      int cpuCores,
+      int memoryMb,
+      int storageMb,
+      boolean gpuEnabled,
+      int exposedPort);
 
   /**
    * Stops the Docker container workspace identified by the given container ID.

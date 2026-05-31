@@ -1,5 +1,6 @@
 package edu.univalle.gadim.virtual_lab_platform.instances.data.repository;
 
+import edu.univalle.gadim.virtual_lab_platform.instances.api.type.InstanceStatus;
 import edu.univalle.gadim.virtual_lab_platform.instances.data.model.InstanceJpa;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -24,4 +25,13 @@ public interface InstanceRepository extends JpaRepository<InstanceJpa, String> {
   @Query(
       "SELECT i FROM InstanceJpa i JOIN InstanceUserJpa iu ON i.id = iu.instanceId WHERE iu.userId = :userId")
   List<InstanceJpa> findByUserId(@Param("userId") String userId);
+
+  /**
+   * Counts instances by image name and status not equal to the given exclusion.
+   *
+   * @param imageName the Docker image name
+   * @param excludedStatus the status to exclude (typically DELETED)
+   * @return count of matching instances
+   */
+  long countByImageNameAndStatusNot(String imageName, InstanceStatus excludedStatus);
 }

@@ -8,6 +8,7 @@ import edu.univalle.gadim.virtual_lab_platform.instances.web.ops.InstancesWsOps;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nonnull;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 /**
@@ -34,7 +35,7 @@ public class InstancesSpringWsOps implements InstancesWsOps {
   @Override
   @Nonnull
   public InstanceResponse createInstance(@Nonnull CreateInstanceRequest request) {
-    final var userId = "current-user-id";
+    final var userId = currentUserId();
     final var instance =
         instanceService.createInstance(
             userId,
@@ -63,7 +64,7 @@ public class InstancesSpringWsOps implements InstancesWsOps {
   @Override
   @Nonnull
   public List<InstanceResponse> getInstancesByUser() {
-    final var userId = "current-user-id";
+    final var userId = currentUserId();
     return instanceService.getInstancesByUserId(userId).stream()
         .map(InstanceResponse::from)
         .toList();
@@ -84,5 +85,10 @@ public class InstancesSpringWsOps implements InstancesWsOps {
   @Override
   public void deleteInstance(@Nonnull String id) {
     instanceService.deleteInstance(id);
+  }
+
+  @Nonnull
+  private static String currentUserId() {
+    return SecurityContextHolder.getContext().getAuthentication().getName();
   }
 }

@@ -7,6 +7,7 @@ import com.github.dockerjava.api.model.HostConfig;
 import edu.univalle.gadim.virtual_lab_platform.instances.api.service.WorkspaceProvisionerService;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
@@ -18,19 +19,20 @@ import org.springframework.stereotype.Service;
  * library. Creates containers with configurable resource limits (CPU, memory, disk) and manages
  * their lifecycle.
  *
- * <p><b>Resource Configuration:</b>
- *
- * <ul>
- *   <li>CPU: 2 cores (quota 200000/period 100000)
- *   <li>Memory: 4 GB RAM (swap disabled)
- *   <li>Disk: 10 GB storage limit
- * </ul>
- *
  * @see WorkspaceProvisionerService
  */
 @Service
 @ParametersAreNonnullByDefault
 public class WorkspaceProvisionerOperation implements WorkspaceProvisionerService {
+
+  private static final int CPU_PERIOD = 100_000;
+  private static final long BYTES_PER_MB = 1024L * 1024L;
+  private static final int MB_PER_GB = 1024;
+  private static final int DEFAULT_CPU_CORES = 2;
+  private static final int DEFAULT_MEMORY_MB = 4096;
+  private static final int DEFAULT_STORAGE_MB = 10240;
+  private static final String DEFAULT_IMAGE_NAME = "lab-kicad";
+  private static final String DEFAULT_IMAGE_VERSION = "latest";
 
   private final DockerClient dockerClient;
 
@@ -38,47 +40,61 @@ public class WorkspaceProvisionerOperation implements WorkspaceProvisionerServic
     this.dockerClient = dockerClient;
   }
 
-  /**
-   * Creates and starts a new Docker container workspace with preconfigured resource limits.
-   *
-   * <p>The container is allocated 2 CPU cores, 4 GB of RAM (swap disabled), and 10 GB of disk
-   * storage. If {@code isPersistent} is true, a named Docker volume is mounted at {@code
-   * /home/labuser/projects} to retain user data across restarts.
-   *
-   * @param userId the user ID used to name the container and volume
-   * @param isPersistent whether to mount a persistent volume for user projects
-   * @return the Docker container ID of the newly created workspace
-   */
   @Override
+  @Nonnull
   public @NonNull String createWorkspace(String userId, boolean isPersistent) {
-    // 1 Core = 100000 quota / 100000 period
-    long cpuQuota = 200000L; // 2 Cores
-    long ramLimitBytes = 4L * 1024 * 1024 * 1024; // 4GB RAM
+    return createWorkspace(
+        userId,
+        isPersistent,
+        DEFAULT_IMAGE_NAME,
+        DEFAULT_IMAGE_VERSION,
+        DEFAULT_CPU_CORES,
+        DEFAULT_MEMORY_MB,
+        DEFAULT_STORAGE_MB,
+        false,
+        8080);
+  }
+
+  @Override
+  @Nonnull
+  public @NonNull String createWorkspace(
+      String userId,
+      boolean isPersistent,
+      String imageName,
+      String imageVersion,
+      int cpuCores,
+      int memoryMb,
+      int storageMb,
+      boolean gpuEnabled,
+      int exposedPort) {
+
+    final var imageReference = imageName + ":" + imageVersion;
+    final var cpuQuota = (long) cpuCores * CPU_PERIOD;
+    final var ramLimitBytes = (long) memoryMb * BYTES_PER_MB;
+    final var diskSizeGb = Math.max(1, storageMb / MB_PER_GB);
 
     HostConfig hostConfig =
         HostConfig.newHostConfig()
             .withMemory(ramLimitBytes)
-            .withMemorySwap(ramLimitBytes) // Disable swap to prevent disk IO contention
+            .withMemorySwap(ramLimitBytes)
             .withCpuQuota(cpuQuota)
-            .withCpuPeriod(100000L)
+            .withCpuPeriod((long) CPU_PERIOD)
             .withSecurityOpts(List.of("no-new-privileges:true"));
 
-    // Enforce disk limits (requires overlay2 + xfs/ext4 project quotas on the host)
-    hostConfig.withStorageOpt(Map.of("size", "10G"));
+    hostConfig.withStorageOpt(Map.of("size", diskSizeGb + "G"));
 
     if (isPersistent) {
-      // Mount a named volume for the user to retain their projects
       hostConfig.withBinds(
           com.github.dockerjava.api.model.Bind.parse("vol_" + userId + ":/home/labuser/projects"));
     }
 
     CreateContainerResponse container;
-    try (var createCmd = dockerClient.createContainerCmd("lab-kicad:latest")) {
+    try (var createCmd = dockerClient.createContainerCmd(imageReference)) {
       container =
           createCmd
               .withName("workspace-" + userId)
               .withHostConfig(hostConfig)
-              .withExposedPorts(ExposedPort.tcp(8080))
+              .withExposedPorts(ExposedPort.tcp(exposedPort))
               .exec();
     }
 
@@ -87,11 +103,6 @@ public class WorkspaceProvisionerOperation implements WorkspaceProvisionerServic
     return container.getId();
   }
 
-  /**
-   * Stops the Docker container workspace identified by the given container ID.
-   *
-   * @param containerId the Docker container ID to stop
-   */
   @Override
   public void stopWorkSpace(String containerId) {
     dockerClient.stopContainerCmd(containerId).exec();

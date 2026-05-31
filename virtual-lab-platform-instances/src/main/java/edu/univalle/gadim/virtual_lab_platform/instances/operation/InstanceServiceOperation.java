@@ -88,7 +88,17 @@ public class InstanceServiceOperation implements InstanceService {
     logger.info("Creating instance for user: {}", userId);
 
     String instanceId = uniqueIdGenerator.generate();
-    String containerId = workspaceProvisionerService.createWorkspace(userId, true);
+    String containerId =
+        workspaceProvisionerService.createWorkspace(
+            userId,
+            true,
+            imageName,
+            imageVersion,
+            cpuCores,
+            memoryMb,
+            storageMb,
+            gpuEnabled,
+            exposedPort);
 
     LocalDateTime now = LocalDateTime.now();
     LocalDateTime expiresAt = now.plusDays(7); // Default 7 days expiration
