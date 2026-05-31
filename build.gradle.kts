@@ -16,6 +16,10 @@ allprojects {
 		}
 	}
 
+	tasks.withType<JavaCompile> {
+		options.compilerArgs.add("-parameters")
+	}
+
 	dependencies {
 		implementation(platform(rootProject.libs.spring.boot.bom))
 	}

@@ -26,5 +26,9 @@ dependencies {
     testImplementation(libs.assertj)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.junit.jupiter)
+    testImplementation(platform(libs.spring.boot.bom))
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-webmvc")
+    testImplementation(project(":virtual-lab-platform-authentication"))
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }

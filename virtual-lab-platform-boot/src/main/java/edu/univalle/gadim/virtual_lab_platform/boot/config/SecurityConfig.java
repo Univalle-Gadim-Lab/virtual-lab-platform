@@ -5,6 +5,7 @@ import edu.univalle.gadim.virtual_lab_platform.authentication.web.security.JwtAu
 import edu.univalle.gadim.virtual_lab_platform.authentication.web.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -48,6 +49,10 @@ public class SecurityConfig {
             auth ->
                 auth.requestMatchers("/api/auth/login", "/api/auth/refresh")
                     .permitAll()
+                    .requestMatchers("/api/users/**")
+                    .hasRole("ADMIN")
+                    .requestMatchers("/api/user-roles/**")
+                    .hasRole("ADMIN")
                     .anyRequest()
                     .authenticated())
         .exceptionHandling(

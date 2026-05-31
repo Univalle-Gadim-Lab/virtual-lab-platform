@@ -119,6 +119,9 @@ paths:
     post:
       tags: [Users]
       summary: Create a new user
+      description: |
+        Creates a new user in the system.
+        **Requires ADMIN role.**
       operationId: createUser
       requestBody:
         required: true
@@ -138,6 +141,9 @@ paths:
     get:
       tags: [Users]
       summary: List all users
+      description: |
+        Retrieves all users from the system.
+        **Requires ADMIN role.**
       operationId: getAllUsers
       responses:
         '200':
@@ -153,6 +159,9 @@ paths:
     get:
       tags: [Users]
       summary: Get user by ID
+      description: |
+        Retrieves a user by their unique identifier.
+        **Requires ADMIN role.**
       operationId: getUserById
       parameters:
         - name: id
@@ -172,6 +181,9 @@ paths:
     put:
       tags: [Users]
       summary: Update an existing user
+      description: |
+        Updates an existing user's mutable fields.
+        **Requires ADMIN role.**
       operationId: updateUser
       parameters:
         - name: id
@@ -197,6 +209,10 @@ paths:
     delete:
       tags: [Users]
       summary: Mark a user as deleted
+      description: |
+        Soft-deletes a user by changing their status to DELETED.
+        The user must currently be INACTIVE. The user record is retained for historical integrity.
+        **Requires ADMIN role.**
       operationId: deleteUser
       description: |
         Soft-deletes a user by changing their status to DELETED.
@@ -219,6 +235,9 @@ paths:
     get:
       tags: [Users]
       summary: Get user by username
+      description: |
+        Retrieves a user by their username.
+        **Requires ADMIN role.**
       operationId: getUserByUsername
       parameters:
         - name: username
@@ -240,6 +259,9 @@ paths:
     post:
       tags: [User Roles]
       summary: Assign a single role to a user
+      description: |
+        Assigns a single role to the specified user.
+        **Requires ADMIN role.**
       operationId: createUserRole
       requestBody:
         required: true
@@ -261,6 +283,9 @@ paths:
     get:
       tags: [User Roles]
       summary: Get roles for a user
+      description: |
+        Retrieves all roles assigned to the specified user.
+        **Requires ADMIN role.**
       operationId: getRolesByUserId
       parameters:
         - name: userId
@@ -282,6 +307,9 @@ paths:
     delete:
       tags: [User Roles]
       summary: Remove a role assignment
+      description: |
+        Removes a role assignment by its unique identifier.
+        **Requires ADMIN role.**
       operationId: deleteUserRole
       parameters:
         - name: id
@@ -299,6 +327,9 @@ paths:
     post:
       tags: [User Roles]
       summary: Assign multiple roles to a user
+      description: |
+        Assigns multiple roles to the specified user in a single operation.
+        **Requires ADMIN role.**
       operationId: createUserRoles
       requestBody:
         required: true
