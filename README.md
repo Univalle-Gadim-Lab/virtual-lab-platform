@@ -40,10 +40,11 @@ specialized hardware resources.
 
 ```text
 virtual-lab-platform
- ├── virtual-lab-platform-boot          # Spring Boot runtime / entry point
- ├── virtual-lab-platform-commons       # Shared utilities (ID generators, helpers)
- ├── virtual-lab-platform-users         # User management bounded context
- └── virtual-lab-platform-instances     # Virtual environment management bounded context
+ ├── virtual-lab-platform-boot              # Spring Boot runtime / entry point
+ ├── virtual-lab-platform-commons           # Shared utilities (ID generators, helpers)
+ ├── virtual-lab-platform-users             # User management bounded context
+ ├── virtual-lab-platform-instances         # Virtual environment management bounded context
+ └── virtual-lab-platform-authentication    # JWT authentication bounded context
 ```
 
 ### Module Descriptions
@@ -54,7 +55,7 @@ virtual-lab-platform
 
 - **virtual-lab-platform-commons**
   Shared infrastructure utilities such as `UniqueIdGenerator`, `UuidGenerator`, and
-  `ObjectIdGenerator`. Required as a compile dependency by both `users` and `instances`.
+  `ObjectIdGenerator`. Required as a compile dependency by `users`, `instances`, and `authentication`.
 
 - **virtual-lab-platform-users**
   Handles user-related operations such as registration, profile management, roles, and
@@ -64,8 +65,34 @@ virtual-lab-platform
   Responsible for managing virtual environments, isolated instances, remote execution resources,
   and workspace provisioning via Docker.
 
-> **Note:** Security is implemented via Spring Security and JWT inside `boot` and `users`, not as a
-> separate Gradle module.
+- **virtual-lab-platform-authentication**
+  Provides JWT-based authentication and authorization. Issues access and refresh tokens, validates
+  Bearer tokens via a servlet filter, and manages refresh token lifecycle including revocation on
+  logout. Depends on commons (for ID generation) and users (for credential verification and role
+  loading).
+
+> **Note:** Authentication is implemented as a dedicated module (`authentication`) that provides JWT
+> tokens, refresh token persistence, and a servlet filter. Spring Security configuration lives in
+> the `boot` module's `SecurityConfig`.
+
+---
+
+## Database Schema
+
+The platform uses six tables organized around two primary entities (**users** and **instances**)
+and four supporting tables:
+
+| Table | Purpose |
+|-------|---------|
+| `users` | User accounts with authentication metadata and lifecycle state |
+| `user_roles` | Maps users to roles (`ADMIN`, `STUDENT`, `TEACHER`) |
+| `instances` | Virtual lab workspaces with container config and lifecycle timestamps |
+| `instance_metrics` | Point-in-time resource utilization snapshots (CPU, memory, disk) |
+| `instance_users` | Many-to-many association between users and instances |
+| `refresh_tokens` | JWT refresh tokens with revocation support |
+
+All primary keys are application-generated `VARCHAR(100)` strings via `UniqueIdGenerator`.
+See [`architecture/DATABASE.md`](architecture/DATABASE.md) for the full schema reference and ERD.
 
 ---
 
@@ -192,6 +219,21 @@ This modular approach improves:
 
 ---
 
+# Security
+
+- **JWT authentication** with stateless sessions via `JwtAuthenticationFilter`
+- **Public endpoints:** `POST /api/auth/login`, `POST /api/auth/refresh`
+- **Role-based access:** `/api/users/**` and `/api/user-roles/**` require `ADMIN` role
+- **All other endpoints** require a valid Bearer token
+- **Passwords** hashed with `BCryptPasswordEncoder`
+- **Refresh tokens** stored in `refresh_tokens` table; explicitly revoked on logout
+- **Soft-delete users:** Status transitions to `DELETED` only from `INACTIVE`; records are never
+  physically removed
+- **Custom error responses:** JSON `401` for unauthenticated requests, JSON `403` for insufficient
+  roles
+
+---
+
 # Additional Documentation
 
 | Document | Description |
@@ -199,6 +241,10 @@ This modular approach improves:
 | [`architecture/ARCHITECTURE.md`](architecture/ARCHITECTURE.md) | System architecture, module diagrams, component relationships |
 | [`architecture/DATABASE.md`](architecture/DATABASE.md) | Physical database schema, ERD diagram, DDL-to-JPA mapping |
 | [`architecture/openapi/openapi.yaml`](architecture/openapi/openapi.yaml) | Full OpenAPI 3.0 specification for the REST API |
+| [`architecture/virtual-lab-users-module.puml`](architecture/virtual-lab-users-module.puml) | PlantUML class diagram for the users module |
+| [`architecture/virtual-lab-instances-module.puml`](architecture/virtual-lab-instances-module.puml) | PlantUML class diagram for the instances module |
+| [`architecture/virtual-lab-authentication.puml`](architecture/virtual-lab-authentication.puml) | PlantUML class diagram for the authentication module |
+| [`architecture/virtual-lab-module-integration.puml`](architecture/virtual-lab-module-integration.puml) | PlantUML module integration diagram |
 
 ---
 
