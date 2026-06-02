@@ -1,7 +1,5 @@
 package edu.univalle.gadim.virtual_lab_platform.boot.config;
 
-import edu.univalle.gadim.virtual_lab_platform.authentication.web.security.JwtAccessDeniedHandler;
-import edu.univalle.gadim.virtual_lab_platform.authentication.web.security.JwtAuthenticationEntryPoint;
 import edu.univalle.gadim.virtual_lab_platform.authentication.web.security.JwtAuthenticationFilter;
 import java.util.List;
 import org.springframework.context.annotation.Bean;

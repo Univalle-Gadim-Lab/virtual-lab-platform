@@ -2,8 +2,7 @@ package edu.univalle.gadim.virtual_lab_platform.boot;
 
 import edu.univalle.gadim.virtual_lab_platform.authentication.config.AuthenticationConfig;
 import edu.univalle.gadim.virtual_lab_platform.authentication.data.repository.RefreshTokenRepository;
-import edu.univalle.gadim.virtual_lab_platform.boot.config.BootConfig;
-import edu.univalle.gadim.virtual_lab_platform.boot.config.SecurityConfig;
+
 import edu.univalle.gadim.virtual_lab_platform.instances.data.repository.InstanceRepository;
 import edu.univalle.gadim.virtual_lab_platform.users.data.repository.UserRepository;
 import org.springframework.boot.SpringApplication;
@@ -13,9 +12,13 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @SpringBootApplication(
     scanBasePackageClasses = {
-      BootConfig.class,
-      SecurityConfig.class,
       AuthenticationConfig.class
+    },
+    scanBasePackages = {
+      "edu.univalle.gadim.virtual_lab_platform.boot",
+      "edu.univalle.gadim.virtual_lab_platform.authentication",
+      "edu.univalle.gadim.virtual_lab_platform.users",
+      "edu.univalle.gadim.virtual_lab_platform.instances"
     })
 @EntityScan(
     basePackages = {
