@@ -91,7 +91,7 @@ Stores platform user accounts with authentication metadata and lifecycle state.
 | `last_name` | `VARCHAR(200)` | NOT NULL | — | — | `UserJpa.lastName` → `User.lastName()` |
 | `external_code` | `VARCHAR(100)` | NULL | — | — | `UserJpa.externalCode` → `User.externalCode()` (wrapped in `Optional`) |
 | `password` | `VARCHAR(255)` | NOT NULL | — | — | `UserJpa.password` → `User.password()` |
-| `status` | `VARCHAR(20)` | NOT NULL | — | — | `UserJpa.status` → `User.status()` (`@Enumerated(STRING)`: `ACTIVE`, `INACTIVE`) |
+| `status` | `VARCHAR(20)` | NOT NULL | — | — | `UserJpa.status` → `User.status()` (`@Enumerated(STRING)`: `ACTIVE`, `INACTIVE`, `DELETED`) |
 | `created_date` | `TIMESTAMP` | NOT NULL | — | `CURRENT_TIMESTAMP` | `UserJpa.createdDate` → `User.createdDate()` |
 
 - **Module:** `virtual-lab-platform-users`

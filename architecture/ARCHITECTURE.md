@@ -39,11 +39,9 @@ classDiagram
     UniqueIdGenerator <|.. ObjectIdGenerator
 ```
 
-### Shared API Types
+### Shared API Types (Aspirational)
 
-The `user-api-types` diagram defines cross-cutting domain contracts and enumerations that are referenced across module boundaries. These types represent the canonical shared vocabulary of the platform.
-
-> **Note:** The `User` interface and `InstanceStatus` enumeration defined here differ from their counterparts in the module-specific diagrams. The module diagrams reflect the current implementation, while `user-api-types` represents the intended canonical type definitions. Key discrepancies are documented in the Implementation Notes section.
+> **Note:** The `user-api-types` diagram below defines cross-cutting domain contracts that were intended as a canonical shared vocabulary across module boundaries. The **module-specific diagrams** in the Users and Instances sections reflect the **current implementation**. Key discrepancies between the aspirational shared types and the actual module implementations are documented in the Implementation Notes section below.
 
 ```mermaid
 classDiagram
@@ -154,12 +152,14 @@ REST controllers and request/response DTOs exposing the user domain over HTTP.
 |---|---|
 | `UserController` | `/api/users` — CRUD for users |
 | `UserRoleController` | `/api/user-roles` — role assignment |
-| `CreateUserRequest` | Request DTO for user creation (includes institutional email as `id`) |
-| `UpdateUserRequest` | Request DTO for user update (partial) |
-| `CreateUserRoleRequest` | Request DTO for single role assignment |
-| `CreateUserRolesRequest` | Request DTO for batch role assignment |
-| `UserDto` | Response DTO with `static from(User)` factory |
-| `UserResponse` | Response record serializing user data |
+| `UsersWsOps` | Web operation interface for user and role management |
+| `UsersSpringWsOps` | Web operation implementation bridging controllers to services |
+| `CreateUserRequest` | Request record for user creation (includes institutional email as `id`) |
+| `UpdateUserRequest` | Request record for user update (partial) |
+| `CreateUserRoleRequest` | Request record for single role assignment |
+| `CreateUserRolesRequest` | Request record for batch role assignment |
+| `UserResponse` | Response record with `id`, `name`, `lastName`, `externalCode` (nullable), `status`, `createdDate`; uses `@JsonInclude(NON_NULL)` |
+| `UserRoleResponse` | Response record with `id`, `userId`, `role` |
 
 #### Users Module Diagram
 
@@ -280,12 +280,13 @@ classDiagram
         +deleteUserRole(id)
     }
 
-    class UserDto {
+    class UserResponse {
         +String id
-        +String username
-        +String email
-        +Set~String~ roles
-        +from(User user) UserDto$
+        +String name
+        +String lastName
+        +String externalCode
+        +UserStatus status
+        +LocalDateTime createdDate
     }
 
     class ModuleConfig
@@ -297,7 +298,7 @@ classDiagram
     UserRolesServiceOperation --> UserRoleRepository
     UserController --> UserService
     UserRoleController --> UserRoleService
-    UserDto ..> User
+    UserResponse ..> User
     UserRole --> User
     UserRole --> Role
     User --> UserStatus
@@ -322,8 +323,8 @@ The instances module governs the full lifecycle of containerized workspaces—cr
 
 - **Identity:** `id`, `name`, `description` (Optional)
 - **Container image:** `imageName`, `imageVersion`, `imageRegistry`
-- **Resource specs:** `cpuCores`, `memoryMb`, `storageMb`, `gpuEnabled`
-- **Networking:** `externalIp`, `internalIp`, `exposedPort`
+- **Resource specs:** `cpuCores` (int), `memoryMb` (int), `storageMb` (int), `gpuEnabled` (boolean), `exposedPort` (int)
+- **Networking:** `externalIp`, `internalIp`
 - **Lifecycle:** `createdAt`, `expiresAt`, `startedAt`, `stoppedAt` (Optional), `deletedAt` (Optional), `lastAccessedAt` (Optional)
 - **Status:** `status` → `InstanceStatus`
 
@@ -368,11 +369,22 @@ The `WorkspaceProvisionerOperation` is the adapter that bridges the domain servi
 | `InstanceMetricsController` | `/api/instances/{instanceId}/metrics` — read and record metrics |
 | `InstanceUsersController` | `/api/instance-users` — user-to-instance association management |
 | `CatalogController` | `/api/catalog` — workspace catalog; `/api/catalog/images` — image discovery |
+| `InstancesWsOps` | Web operation interface for instance lifecycle |
+| `InstanceMetricsWsOps` | Web operation interface for instance metrics |
+| `InstanceUsersWsOps` | Web operation interface for instance-user associations |
+| `CatalogWsOps` | Web operation interface for workspace catalog |
+| `InstancesSpringWsOps` | Web operation implementation for instances |
+| `InstanceMetricsSpringWsOps` | Web operation implementation for metrics |
+| `InstanceUsersSpringWsOps` | Web operation implementation for associations |
+| `CatalogSpringWsOps` | Web operation implementation for catalog |
 | `CreateInstanceRequest` | Request record for instance creation |
-| `InstanceResponse` | Response record with `static from(Instance)` factory |
+| `InstanceResponse` | Response record with `id`, `name`, `description` (nullable), `imageName`, `imageVersion`, `cpuCores`, `memoryMb`, `storageMb`, `gpuEnabled`, `status`, lifecycle timestamps; `static from(Instance)` factory |
 | `InstanceMetricsResponse` | Response record with `static from(InstanceMetrics)` factory |
 | `WorkspaceImageResponse` | Response record for workspace image catalog entries |
 | `CatalogEntryResponse` | Response record for catalog entries with running instance count |
+| `RecordMetricsRequest` | Request record for recording instance metrics (cpuUsage, memoryUsage, diskUsage, timeUsage) |
+| `CreateInstanceUserRequest` | Request record with `userId` and `instanceId` |
+| `InstanceUserResponse` | Response record with `id`, `instanceId`, `userId` |
 
 #### Instances Module Diagram
 
@@ -389,11 +401,11 @@ classDiagram
         +imageName() String
         +imageVersion() String
         +imageRegistry() String
-        +cpuCores() Integer
-        +memoryMb() Integer
-        +storageMb() Integer
-        +gpuEnabled() Boolean
-        +exposedPort() Integer
+        +cpuCores() int
+        +memoryMb() int
+        +storageMb() int
+        +gpuEnabled() boolean
+        +exposedPort() int
         +internalIp() String
         +createdAt() LocalDateTime
         +expiresAt() LocalDateTime
@@ -455,11 +467,11 @@ classDiagram
         -String imageName
         -String imageVersion
         -String imageRegistry
-        -Integer cpuCores
-        -Integer memoryMb
-        -Integer storageMb
-        -Boolean gpuEnabled
-        -Integer exposedPort
+        -int cpuCores
+        -int memoryMb
+        -int storageMb
+        -boolean gpuEnabled
+        -int exposedPort
         -String internalIp
         -LocalDateTime createdAt
         -LocalDateTime expiresAt
@@ -545,11 +557,11 @@ classDiagram
         +String imageName
         +String imageVersion
         +String imageRegistry
-        +Integer cpuCores
-        +Integer memoryMb
-        +Integer storageMb
-        +Boolean gpuEnabled
-        +Integer exposedPort
+        +int cpuCores
+        +int memoryMb
+        +int storageMb
+        +boolean gpuEnabled
+        +int exposedPort
     }
 
     class InstanceResponse {
@@ -642,7 +654,7 @@ The authentication module provides JWT-based authentication and authorization fo
 
 | Interface | Methods |
 |---|---|
-| `AuthenticationService` | `login`, `refresh`, `logout`, `validateAccessToken` |
+| `AuthenticationService` | `login`, `refresh`, `logout`, `validateAccessToken`; defines `AuthenticationResult` record (`accessToken`, `refreshToken`, `tokenType`, `expiresIn`) |
 | `TokenService` | `generateAccessToken`, `generateRefreshToken`, `validateAccessToken`, `extractUserId`, `extractName`, `extractRoles` |
 
 #### Data Layer
@@ -664,14 +676,16 @@ The authentication module provides JWT-based authentication and authorization fo
 | Class / Record | Base Path / Purpose |
 |---|---|
 | `AuthController` | `/api/auth` — login, refresh, logout, current user |
+| `AuthWsOps` | Web operation interface for authentication |
+| `AuthSpringWsOps` | Web operation implementation bridging controllers to services |
 | `JwtAuthenticationFilter` | Servlet filter extracting and validating Bearer tokens |
 | `JwtAuthenticationEntryPoint` | Returns JSON `401 Unauthorized` for unauthenticated requests |
 | `JwtAccessDeniedHandler` | Returns JSON `403 Forbidden` for insufficient roles |
-| `LoginRequest` | Request DTO for user credentials (email and password) |
-| `LoginResponse` | Response DTO with access token, refresh token, token type, expiresIn |
-| `RefreshTokenRequest` | Request DTO for token refresh |
-| `LogoutRequest` | Request DTO for logout |
-| `AuthenticatedUserResponse` | Response DTO with user identity and roles |
+| `LoginRequest` | Request record for user credentials (`email`, `password`) |
+| `LoginResponse` | Response record with `access_token`, `refresh_token`, `token_type`, `expires_in` (JSON property names in snake_case via `@JsonProperty`) |
+| `RefreshTokenRequest` | Request record for token refresh (`refresh_token`) |
+| `LogoutRequest` | Request record for logout (`refresh_token`) |
+| `AuthenticatedUserResponse` | Response record with `id`, `name`, `lastName`, `roles` (Set of Role) |
 
 #### Authentication Module Diagram
 
@@ -790,8 +804,9 @@ The boot module is the composition root that assembles the Spring Boot applicati
 | Class | Package | Responsibility |
 |---|---|---|
 | `VirtualLabPlatformApplication` | `boot` | `@SpringBootApplication` entry point with `@EntityScan` and `@EnableJpaRepositories` covering both users and instances modules |
-| `SecurityConfig` | `boot.config` | `@EnableWebSecurity` configuration; disables CSRF, stateless sessions, JWT filter chain with role-based access (`/api/users/**`, `/api/user-roles/**` require `ADMIN`), custom 401/403 JSON error responses |
+| `SecurityConfig` | `boot.config` | `@EnableWebSecurity` configuration; disables CSRF, stateless sessions, JWT filter chain with role-based access (`/api/users/**`, `/api/user-roles/**` require `ADMIN`), CORS policy for local development UIs, custom 401/403 JSON error responses |
 | `BootConfig` | `boot.config` | Provides `UniqueIdGenerator` bean using `ObjectIdGenerator`, overriding the default `@Component` candidates |
+| `HealthController` | `boot.web.controller` | `GET /api/health` — unauthenticated health check endpoint returning `{"status": "UP"}` |
 
 ```mermaid
 classDiagram
@@ -806,10 +821,15 @@ classDiagram
         -AuthenticationEntryPoint authenticationEntryPoint
         -AccessDeniedHandler accessDeniedHandler
         +filterChain(http) SecurityFilterChain
+        +corsConfigurationSource() CorsConfigurationSource
     }
 
     class BootConfig {
         +uniqueIdGenerator() UniqueIdGenerator
+    }
+
+    class HealthController {
+        +health() ResponseEntity~HealthResponse~
     }
 
     VirtualLabPlatformApplication --> UserService : depends on
@@ -821,6 +841,48 @@ classDiagram
     BootConfig --> ObjectIdGenerator : imports
     BootConfig --> UniqueIdGenerator : provides
 ```
+
+### Module Configuration Classes
+
+Each module provides Spring `@Configuration` classes that register beans needed by that module's bounded context.
+
+| Class | Module | Responsibility |
+|---|---|---|
+| `BootConfig` | boot | Provides `UniqueIdGenerator` bean (`ObjectIdGenerator`); overrides component-scanned candidates |
+| `SecurityConfig` | boot | Configures Spring Security filter chain, CORS, and role-based access rules |
+| `UserSecurityConfig` | users | Provides `PasswordEncoder` bean (`BCryptPasswordEncoder` with default strength 10) |
+| `AuthenticationConfig` | authentication | Marker `@Configuration` for component scanning within the authentication module |
+| `InstanceConfig` | instances | Provides `DockerClient` bean; enables `WorkspaceImageProperties` binding |
+| `InstancesWsConfig` | instances | Marker `@Configuration` for web service operations within the instances module |
+
+### Web Layer Architecture
+
+All modules follow a consistent web layer pattern that decouples HTTP concerns from business logic:
+
+```
+Controller → WsOps interface → SpringWsOps impl → Service interface → Operation impl
+```
+
+- **Controllers** are thin REST adapters that handle HTTP routing, request/response mapping, and status code conversion. They delegate all logic to `WsOps` interfaces.
+- **WsOps interfaces** define the web operation contracts, keeping controllers decoupled from service and persistence details.
+- **SpringWsOps implementations** bridge the web layer to the domain layer, performing request-to-domain and domain-to-response translation.
+- **Service interfaces** define the domain operation contracts.
+- **Operation implementations** contain the business logic and persistence interaction.
+
+This pattern ensures that:
+1. Controllers never directly reference service or repository types.
+2. Web-layer concerns (DTO construction, exception translation) are isolated in `SpringWsOps` classes.
+3. Service interfaces remain web-agnostic and reusable.
+
+### Security Configuration
+
+`SecurityConfig` in the boot module configures the following security policy:
+
+- **CORS:** Allows cross-origin requests from local development servers (`localhost:4200`, `localhost:3000`, `localhost:5173`) with credentials.
+- **Public endpoints:** `/api/auth/login`, `/api/auth/refresh`, and `/api/health` are accessible without authentication.
+- **Admin-only endpoints:** `/api/users/**` and `/api/user-roles/**` require the `ADMIN` role.
+- **All other endpoints:** Require a valid Bearer JWT token.
+- **Error responses:** `JwtAuthenticationEntryPoint` returns JSON `401`; `JwtAccessDeniedHandler` returns JSON `403`.
 
 ### Module Integration Diagram
 
@@ -843,7 +905,7 @@ classDiagram
         class UserRepository
         class UserServiceOp
         class UserController
-        class UserDto
+        class UserResponse
         class ModuleConfig
     }
 
@@ -963,14 +1025,15 @@ commons ←── users ←── instances
 - All entity identifiers are `String` type, generated at creation time via the `UniqueIdGenerator` strategy.
 - Timestamps use `java.time.LocalDateTime` throughout both modules.
 - Optional domain fields use `java.util.Optional<String>` in interfaces; JPA entities store them as nullable `String` columns.
-- The `Role` and `UserStatus` enums are persisted as `STRING` in JPA, matching the enum constant names.
-- The `InstanceStatus` enum is also persisted as `STRING` in JPA.
+- Non-nullable numeric and boolean fields in domain interfaces use primitive types (`int`, `boolean`); the corresponding JPA entity fields and response DTOs use boxed types (`Integer`, `Boolean`) to allow null representation in JSON responses for nullable columns.
+- The `Role`, `UserStatus`, and `InstanceStatus` enums are persisted as `STRING` in JPA, matching the enum constant names.
 
 ### Interface Requirements
 
-- Every domain type (`User`, `Instance`, `InstanceMetrics`, `InstanceUser`) is defined as a Java `interface`. JPA entities implement these interfaces directly, meaning the persistence model *is* the domain model.
+- Every domain type (`User`, `Instance`, `InstanceMetrics`, `InstanceUser`, `RefreshToken`) is defined as a Java `interface`. JPA entities implement these interfaces directly, meaning the persistence model *is* the domain model.
 - Every service (`UserService`, `InstanceService`, etc.) is defined as a Java `interface`. Concrete implementations in the `operation` package realize these contracts.
-- Controllers depend exclusively on service interfaces, ensuring the web layer is decoupled from persistence and business logic details.
+- Controllers depend exclusively on `WsOps` interfaces, never directly on service interfaces. The `SpringWsOps` implementations bridge the web layer to the domain services.
+- Immutable value objects (`WorkspaceImage`, `CatalogEntry`, `AuthenticationResult`) are defined as Java `record`s, not interfaces.
 
 ### Strategy Pattern for ID Generation
 
@@ -987,7 +1050,7 @@ The workspace catalog provides read-only access to the available workspace image
 ### Security Considerations
 
 - `SecurityConfig` enables JWT-based authentication with stateless sessions. The `JwtAuthenticationFilter` validates Bearer tokens on each request and populates the `SecurityContextHolder` with the authenticated principal.
-- Login (`POST /api/auth/login`) and refresh (`POST /api/auth/refresh`) endpoints are publicly accessible; all other endpoints require a valid Bearer token.
+- Login (`POST /api/auth/login`), refresh (`POST /api/auth/refresh`), and health check (`GET /api/health`) endpoints are publicly accessible; all other endpoints require a valid Bearer token.
 - `/api/users/**` and `/api/user-roles/**` are restricted to users with the `ADMIN` role.
 - `JwtAuthenticationEntryPoint` returns structured JSON `401` responses for unauthenticated requests; `JwtAccessDeniedHandler` returns JSON `403` responses for insufficient role permissions.
 - `InstanceController` and other controllers extract the authenticated user ID from the `SecurityContext` instead of a hardcoded placeholder.
@@ -1002,13 +1065,19 @@ The workspace catalog provides read-only access to the available workspace image
 
 ### Canonical vs. Implementation Type Discrepancies
 
-The `user-api-types` shared diagram defines canonical type contracts that differ from the current module implementations in several ways. These discrepancies represent areas where the implementation has diverged from the intended shared type definitions, or where the design is still evolving:
+The `user-api-types` shared diagram defines aspirational canonical type contracts that differ from the current module implementations. These discrepancies represent areas where the implementation has diverged from the intended shared type definitions, or where the design is still evolving:
 
-| Aspect | `user-api-types` (Canonical) | Module Implementation |
+| Aspect | Shared Types (Aspirational) | Module Implementation |
 |---|---|---|
 | `User` identifier accessor | `userId()` | `id()` — stores institutional email address |
 | `User` external code field | `studentCode()` (String) | `externalCode()` (Optional\<String\>) |
 | `User` timestamp accessor | `createdAt()` | `createdDate()` |
-| `User` password accessor | `password()` | `getPassword()` |
+| `User` password accessor | `password()` | `password()` (consistent) |
 | `InstanceStatus` values | `CREATING`, `RUNNING`, `STOPPED`, `PAUSED`, `ERROR`, `TERMINATED` | `CREATED`, `STARTING`, `RUNNING`, `STOPPED`, `EXPIRED`, `DELETED` |
 | `WorkspaceGroup` | Defined as shared type | Not yet implemented in any module |
+
+When implementing new features, always refer to the **module-specific** type definitions (Users Module, Instances Module) rather than the shared types diagram, as those reflect the actual codebase.
+
+### Health Check Endpoint
+
+The boot module provides an unauthenticated health check endpoint at `GET /api/health` that returns a JSON payload with the application status (`{"status": "UP"}`). This endpoint is configured in `SecurityConfig` as publicly accessible alongside the login and refresh endpoints.

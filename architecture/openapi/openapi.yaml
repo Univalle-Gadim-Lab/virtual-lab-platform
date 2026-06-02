@@ -28,11 +28,30 @@ tags:
     description: JWT-based authentication and token management
   - name: Catalog
     description: Workspace catalog and image discovery
+  - name: Health
+    description: Application health check
 
 security:
   - bearerAuth: []
 
 paths:
+  /api/health:
+    get:
+      tags: [Health]
+      summary: Application health check
+      description: |
+        Returns the current application health status.
+        This endpoint is publicly accessible and does not require authentication.
+      operationId: healthCheck
+      security: []
+      responses:
+        '200':
+          description: Application is running and accepting requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
   /api/auth/login:
     post:
       tags: [Authentication]
@@ -692,7 +711,7 @@ components:
         status:
           $ref: '#/components/schemas/UserStatus'
 
-UserResponse:
+    UserResponse:
       type: object
       properties:
         id:
@@ -956,6 +975,7 @@ UserResponse:
           description: User's first name
         lastName:
           type: string
+          description: User's last name
         roles:
           type: array
           items:
@@ -992,3 +1012,10 @@ UserResponse:
           type: integer
           format: int64
           description: Number of non-deleted instances currently using this image
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          description: Application health status (e.g., "UP")

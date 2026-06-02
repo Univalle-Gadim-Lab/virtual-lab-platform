@@ -2,17 +2,30 @@
 
 ## Project Overview
 
-Multi-module Gradle project using Java 21 and Spring Boot.
+Multi-module Gradle project using Java 21 and Spring Boot that provides remote management and secure virtualization of computational resources through containers.
 
 ### Modules
 
 | Module | Role | Depends on |
 |--------|------|------------|
-| `virtual-lab-platform-boot` | Spring Boot runtime / entry point | commons, users, instances, authentication |
-| `virtual-lab-platform-commons` | Shared utilities | — |
-| `virtual-lab-platform-users` | User bounded context | commons |
-| `virtual-lab-platform-instances` | Instance bounded context | commons, users |
+| `virtual-lab-platform-boot` | Spring Boot runtime / entry point / composition root | commons, users, instances, authentication |
+| `virtual-lab-platform-commons` | Shared utilities (ID generation) | — |
+| `virtual-lab-platform-users` | User bounded context (identity, roles, soft-delete) | commons |
+| `virtual-lab-platform-instances` | Instance bounded context (container lifecycle, metrics, catalog) | commons, users |
 | `virtual-lab-platform-authentication` | Authentication bounded context (JWT tokens, login, refresh, logout) | commons, users |
+
+### Cross-Module Dependencies
+
+```
+commons ←── users ←── instances
+            ↑
+            └── authentication
+                      ↑
+                boot ───┘
+```
+
+- **instances → users**: Declared as a Gradle dependency for future user-to-instance authorization checks.
+- **authentication → users**: Imports `UserRepository`, `UserRoleRepository`, and `PasswordEncoder` for credential verification and role loading.
 
 ## External File Loading
 
@@ -151,9 +164,37 @@ Architecture and design documentation lives under `architecture/`:
 - `architecture/DATABASE.md` — Physical database schema, ERD diagram, DDL-to-JPA mapping reference
 - `architecture/openapi/openapi.yaml` — OpenAPI specification for the Web API
 - `architecture/virtual-lab-authentication.puml` — PlantUML class diagram for the authentication module
+- `architecture/virtual-lab-instances-module.puml` — PlantUML class diagram for the instances module
+- `architecture/virtual-lab-users-module.puml` — PlantUML class diagram for the users module
+- `architecture/virtual-lab-module-integration.puml` — PlantUML diagram showing cross-module integration
 
 ### Virtual Lab UI (External Project)
 
 The frontend project (`virtual-lab-ui`) lives in a separate repository. Its architecture documentation covers both frontend (React/TypeScript) and backend (Java/Spring Boot) system design:
 
 - `/Users/guedaf/Proyectos/virtual-lab-ui/architecture/ARCHITECTURE.md` — Full-stack system architecture: frontend feature organization, backend module design, component relationships
+
+## Architecture and API References
+
+The following table lists all architecture and API documentation resources. Consult these documents before making architectural or implementation decisions.
+
+| Document | Purpose | When to Use |
+|----------|---------|-------------|
+| `architecture/ARCHITECTURE.md` | System architecture, module breakdown, class diagrams, web layer patterns | Before implementing new features, refactoring, or adding new modules; to understand the WsOps pattern or module boundaries |
+| `architecture/DATABASE.md` | Physical database schema, column types, constraints, foreign keys, enum values | Before modifying JPA entities, adding columns, changing relationships, or writing repository queries; to check nullable/unique constraints |
+| `architecture/openapi/openapi.yaml` | HTTP API contracts, request/response schemas, endpoint definitions | Before implementing or consuming REST endpoints; to verify endpoint paths, HTTP methods, request/response shapes, and status codes |
+| `architecture/virtual-lab-authentication.puml` | Authentication module class diagram (API types, services, operations, web layer, security) | When working on authentication features, JWT token handling, or security filter configuration |
+| `architecture/virtual-lab-users-module.puml` | Users module class diagram (User, UserRole, services, controllers) | When modifying user management, role assignment, or user-related API endpoints |
+| `architecture/virtual-lab-instances-module.puml` | Instances module class diagram (Instance, metrics, catalog, Docker integration) | When modifying instance lifecycle, metrics collection, workspace catalog, or container provisioning |
+| `architecture/virtual-lab-module-integration.puml` | Cross-module dependency and integration diagram | Before adding cross-module dependencies; to understand how boot assembles the application from all modules |
+
+### Key Architectural Decisions to Keep in Mind
+
+1. **Web layer pattern**: Controllers → `WsOps` interface → `SpringWsOps` implementation → Service interface → `Operation` implementation. Never call service interfaces directly from controllers.
+2. **Domain interfaces**: All domain types (`User`, `Instance`, etc.) are Java interfaces; JPA entities implement them directly. The persistence model *is* the domain model.
+3. **Primitive types in domain interfaces**: Non-nullable numeric and boolean fields use primitives (`int`, `boolean`) in domain interfaces; JPA entities and response DTOs use boxed types (`Integer`, `Boolean`) where nullable.
+4. **Email as user ID**: `users.id` stores the institutional email address, not a generated UUID.
+5. **Soft deletes**: Users and instances use lifecycle status transitions (`ACTIVE → INACTIVE → DELETED`) rather than physical row deletion.
+6. **ID generation**: All IDs except `users.id` are generated by `UniqueIdGenerator` (resolved to `ObjectIdGenerator` at assembly time).
+7. **Shared types vs implementation**: The "Shared API Types" diagram in ARCHITECTURE.md is aspirational. Always refer to module-specific diagrams for the current implementation.
+8. **Security**: `/api/auth/login`, `/api/auth/refresh`, and `/api/health` are public; `/api/users/**` and `/api/user-roles/**` require ADMIN role; all others require authenticated JWT.
