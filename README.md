@@ -1,14 +1,19 @@
 # Virtual Lab Platform
 
-Objective: "Design and Implementation of a Web Platform for Remote Management and Secure
-Virtualization of Computational Resources Using Containers"
+## Overview
 
 The application is a modular web platform designed for university laboratories, where users will be
 able to remotely access virtual environments (instances). Within these environments, users will have
 access to specialized software such as **Vivado**, **Quartus**, and **KiCad**, as well as
 specialized hardware resources.
 
-# Specific Objectives
+---
+
+## Project Objective
+
+> **Design and Implementation of a Web Platform for Remote Management and Secure Virtualization of Computational Resources Using Containers**
+
+## Specific Objectives
 
 1. Analyze the technical and cybersecurity requirements involved in the virtualization of
    computational environments in university laboratories in order to define the minimum software and
@@ -19,6 +24,8 @@ specialized hardware resources.
    and access to physical devices (e.g., FPGAs, Raspberry Pi, and Arduinos), facilitating their use.
 4. Validate the platform through a use case in the Digital Architectures laboratory, evaluating
    remote access to computational resources and physical devices.
+
+---
 
 ## Tech Stack
 
@@ -124,6 +131,30 @@ spring:
     url: jdbc:postgresql://localhost:5432/gadim_virtual_lab
     username: postgres
     password: postgres
+```
+
+## Seed Default Users
+
+Insert default test users (admin, teacher, student):
+
+```bash
+psql -U postgres -d gadim_virtual_lab -f database/seed.sql
+```
+
+Default credentials:
+
+| Username | Password | Role |
+|----------|----------|------|
+| `admin@correounivalle.edu.co` | `admin.GADYM.2026` | ADMIN |
+| `teacher@correounivalle.edu.co` | `teacher.GADYM.2026` | TEACHER |
+| `student@correounivalle.edu.co` | `student.GADYM.2026` | STUDENT |
+
+Login example:
+
+```bash
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin@correounivalle.edu.co","password":"admin.GADYM.2026"}'
 ```
 
 ## Build and Run
