@@ -33,7 +33,7 @@ import org.mockito.MockitoAnnotations;
 @DisplayName("InstanceServiceOperation")
 class InstanceServiceOperationUnTest {
 
-  private static final String USER_ID = "user-001";
+  private static final String USER_ID = "ana.martinez@correounivalle.edu.co";
   private static final String INSTANCE_ID = "inst-001";
   private static final String NAME = "lab-instance";
   private static final String DESCRIPTION = "KiCad workspace";

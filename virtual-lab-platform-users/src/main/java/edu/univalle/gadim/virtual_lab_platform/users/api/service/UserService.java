@@ -19,26 +19,21 @@ public interface UserService {
   /**
    * Creates a new user with the provided information.
    *
-   * @param user the user data to persist (ID and password will be generated/encoded)
-   * @return the created user with generated ID and creation date
+   * <p>The user's institutional email address is used as the unique identifier (id).
+   * Password will be encoded before persistence.
+   *
+   * @param user the user data to persist (id is the institutional email, password will be encoded)
+   * @return the created user with creation date
    */
   User createUser(User user);
 
   /**
-   * Retrieves a user by their unique identifier.
+   * Retrieves a user by their unique identifier (institutional email).
    *
-   * @param id the unique user identifier
+   * @param id the unique user identifier (institutional email)
    * @return the user if found, or {@code Optional.empty()} if not found
    */
   Optional<User> getUserById(String id);
-
-  /**
-   * Retrieves a user by their username.
-   *
-   * @param username the username to search for
-   * @return the user if found, or {@code Optional.empty()} if not found
-   */
-  Optional<User> getUserByUsername(String username);
 
   /**
    * Retrieves all users from the system.

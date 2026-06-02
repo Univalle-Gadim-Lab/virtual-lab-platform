@@ -14,13 +14,13 @@ public interface AuthenticationService {
   /**
    * Authenticates a user with the given credentials and issues token pair.
    *
-   * @param username the username to authenticate
+   * @param email the institutional email address to authenticate
    * @param password the plaintext password to verify
    * @return the authentication result containing access and refresh tokens
    * @throws IllegalArgumentException if the user is not found or credentials are invalid
    * @throws IllegalStateException    if the user account is not in {@code ACTIVE} status
    */
-  AuthenticationResult login(String username, String password);
+  AuthenticationResult login(String email, String password);
 
   /**
    * Exchanges a valid refresh token for a new access token.

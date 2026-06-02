@@ -123,7 +123,7 @@ Service contract interfaces in the `api.service` package define the bounded-cont
 
 | Interface | Methods |
 |---|---|
-| `UserService` | `createUser`, `getUserById`, `getUserByUsername`, `getAllUsers`, `updateUser`, `deleteUser` |
+| `UserService` | `createUser`, `getUserById`, `getAllUsers`, `updateUser`, `deleteUser` |
 | `UserRoleService` | `createUserRole`, `createUserRoles`, `getRoleByUserId`, `deleteUserRole` |
 
 #### Data Layer
@@ -132,9 +132,9 @@ JPA entities implement the domain interfaces directly and are persisted through 
 
 | Class / Interface | Package | Key Detail |
 |---|---|---|
-| `UserJpa` | `data.model` | `implements User`; mapped to `users` table; stores `id`, `name`, `lastName`, `externalCode`, `password`, `status`, `createdDate` |
+| `UserJpa` | `data.model` | `implements User`; mapped to `users` table; stores `id` (institutional email), `name` (first name), `lastName`, `externalCode`, `password`, `status`, `createdDate` |
 | `UserRoleJpa` | `data.model` | `implements UserRole`; mapped to `user_roles` table; stores `id`, `userId`, `role` |
-| `UserRepository` | `data.repository` | Extends `JpaRepository<UserJpa, String>`; provides `findByUsername`, `save`, `findById`, `findAll` |
+| `UserRepository` | `data.repository` | Extends `JpaRepository<UserJpa, String>`; provides `save`, `findById`, `findAll` |
 | `UserRoleRepository` | `data.repository` | Extends `JpaRepository<UserRoleJpa, String>`; provides `findByUserId` |
 
 #### Operation Layer
@@ -143,7 +143,7 @@ Service implementations that realize the `api.service` interfaces.
 
 | Class | Implements | Dependencies |
 |---|---|---|
-| `UserServiceOp` | `UserService` | `UserRepository`, `UniqueIdGenerator`, `PasswordEncoder` |
+| `UserServiceOp` | `UserService` | `UserRepository`, `PasswordEncoder` |
 | `UserRolesServiceOperation` | `UserRoleService` | `UniqueIdGenerator`, `UserRepository`, `UserRoleRepository` |
 
 #### Web Layer
@@ -154,7 +154,7 @@ REST controllers and request/response DTOs exposing the user domain over HTTP.
 |---|---|
 | `UserController` | `/api/users` — CRUD for users |
 | `UserRoleController` | `/api/user-roles` — role assignment |
-| `CreateUserRequest` | Request DTO for user creation |
+| `CreateUserRequest` | Request DTO for user creation (includes institutional email as `id`) |
 | `UpdateUserRequest` | Request DTO for user update (partial) |
 | `CreateUserRoleRequest` | Request DTO for single role assignment |
 | `CreateUserRolesRequest` | Request DTO for batch role assignment |
@@ -201,9 +201,8 @@ classDiagram
 
     class UserService {
         <<interface>>
-        +createUser(username, email, password, roles) User
+        +createUser(user) User
         +getUserById(id) Optional~User~
-        +getUserByUsername(username) Optional~User~
         +getAllUsers() List~User~
         +updateUser(id, user) User
         +deleteUser(id) void
@@ -235,7 +234,6 @@ classDiagram
 
     class UserRepository {
         <<interface>>
-        +findByUsername(username) Optional~UserJpa~
         +save(user) UserJpa
         +findById(id) Optional~UserJpa~
         +findAll() List~UserJpa~
@@ -247,9 +245,9 @@ classDiagram
 
     class UserServiceOp {
         -UserRepository repository
+        -PasswordEncoder passwordEncoder
         +createUser(...)
         +getUserById(...)
-        +getUserByUsername(...)
         +getAllUsers()
         +updateUser(id, user)
         +deleteUser(id)
@@ -270,7 +268,6 @@ classDiagram
         +createUser(...)
         +getUserById(id)
         +getAllUsers()
-        +getUserByUsername(username)
         +updateUser(id, request)
         +deleteUser(id)
     }
@@ -646,7 +643,7 @@ The authentication module provides JWT-based authentication and authorization fo
 | Interface | Methods |
 |---|---|
 | `AuthenticationService` | `login`, `refresh`, `logout`, `validateAccessToken` |
-| `TokenService` | `generateAccessToken`, `generateRefreshToken`, `validateAccessToken`, `extractUserId`, `extractUsername`, `extractRoles` |
+| `TokenService` | `generateAccessToken`, `generateRefreshToken`, `validateAccessToken`, `extractUserId`, `extractName`, `extractRoles` |
 
 #### Data Layer
 
@@ -670,7 +667,7 @@ The authentication module provides JWT-based authentication and authorization fo
 | `JwtAuthenticationFilter` | Servlet filter extracting and validating Bearer tokens |
 | `JwtAuthenticationEntryPoint` | Returns JSON `401 Unauthorized` for unauthenticated requests |
 | `JwtAccessDeniedHandler` | Returns JSON `403 Forbidden` for insufficient roles |
-| `LoginRequest` | Request DTO for user credentials |
+| `LoginRequest` | Request DTO for user credentials (email and password) |
 | `LoginResponse` | Response DTO with access token, refresh token, token type, expiresIn |
 | `RefreshTokenRequest` | Request DTO for token refresh |
 | `LogoutRequest` | Request DTO for logout |
@@ -700,7 +697,7 @@ classDiagram
 
     class AuthenticationService {
         <<interface>>
-        +login(username, password) AuthenticationResult
+        +login(email, password) AuthenticationResult
         +refresh(refreshToken) AuthenticationResult
         +logout(refreshToken) void
         +validateAccessToken(accessToken) boolean
@@ -708,11 +705,11 @@ classDiagram
 
     class TokenService {
         <<interface>>
-        +generateAccessToken(userId, username, roles) String
+        +generateAccessToken(userId, name, roles) String
         +generateRefreshToken(userId) String
         +validateAccessToken(token) boolean
         +extractUserId(token) String
-        +extractUsername(token) String
+        +extractName(token) String
         +extractRoles(token) List~Role~
     }
 
@@ -1001,7 +998,7 @@ The workspace catalog provides read-only access to the available workspace image
 ### JPA Repository Custom Queries
 
 - `InstanceRepository.findByUserId(String userId)` uses a JPQL `JOIN InstanceUserJpa` query to find all instances belonging to a given user, avoiding a separate round-trip.
-- `UserRepository.findByUsername(String username)` enables username-based lookup for authentication scenarios.
+- Authentication looks up users by their institutional email address via `UserRepository.findById()`.
 
 ### Canonical vs. Implementation Type Discrepancies
 
@@ -1009,7 +1006,7 @@ The `user-api-types` shared diagram defines canonical type contracts that differ
 
 | Aspect | `user-api-types` (Canonical) | Module Implementation |
 |---|---|---|
-| `User` identifier accessor | `userId()` | `id()` |
+| `User` identifier accessor | `userId()` | `id()` — stores institutional email address |
 | `User` external code field | `studentCode()` (String) | `externalCode()` (Optional\<String\>) |
 | `User` timestamp accessor | `createdAt()` | `createdDate()` |
 | `User` password accessor | `password()` | `getPassword()` |

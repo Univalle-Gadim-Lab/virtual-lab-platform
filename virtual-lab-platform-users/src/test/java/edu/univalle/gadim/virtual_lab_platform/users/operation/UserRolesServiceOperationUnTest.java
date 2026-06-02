@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 @DisplayName("UserRolesServiceOperation")
 class UserRolesServiceOperationUnTest {
 
-  private static final String USER_ID = "user-001";
+  private static final String USER_ID = "ana.martinez@correounivalle.edu.co";
   private static final String GENERATED_ROLE_ID = "role-id-001";
 
   private UniqueIdGenerator idGenerator;

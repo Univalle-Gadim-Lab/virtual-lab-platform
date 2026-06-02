@@ -31,7 +31,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @ExtendWith(MockitoExtension.class)
 class UserControllerRoleInTest {
 
-  private static final String USER_ID = "user-001";
+  private static final String USER_ID = "ana.martinez@correounivalle.edu.co";
   private static final String ACCESS_TOKEN = "valid.access.token";
 
   @Mock private TokenService tokenService;
@@ -63,7 +63,8 @@ class UserControllerRoleInTest {
   void shouldAllowCreateUserWithAdminToken() throws Exception {
     mockValidToken(USER_ID, List.of(Role.ADMIN));
 
-    final var request = new CreateUserRequest("Ana", "Martinez", null, "pass123", UserStatus.ACTIVE);
+    final var request =
+        new CreateUserRequest(USER_ID, "Ana", "Martinez", null, "pass123", UserStatus.ACTIVE);
     when(usersWsOps.createUser(ArgumentMatchers.any(CreateUserRequest.class)))
         .thenReturn(buildUserResponse());
 
@@ -71,7 +72,7 @@ class UserControllerRoleInTest {
             post("/api/users")
                 .header("Authorization", "Bearer " + ACCESS_TOKEN)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"name\":\"Ana\",\"lastName\":\"Martinez\","
+                .content("{\"id\":\"" + USER_ID + "\",\"name\":\"Ana\",\"lastName\":\"Martinez\","
                     + "\"password\":\"pass123\",\"status\":\"ACTIVE\"}"))
         .andExpect(status().isOk());
   }

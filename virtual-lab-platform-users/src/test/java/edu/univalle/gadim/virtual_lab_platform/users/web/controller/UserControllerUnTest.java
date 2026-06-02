@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 @DisplayName("UserController")
 class UserControllerUnTest {
 
-  private static final String USER_ID = "user-001";
+  private static final String USER_ID = "ana.martinez@correounivalle.edu.co";
 
   private UsersWsOps usersWsOps;
   private UserController controller;
@@ -49,15 +49,13 @@ class UserControllerUnTest {
     @Test
     @DisplayName("should return 200 with created user")
     void shouldReturn200WithCreatedUser() {
-      // Given
-      final var request = new CreateUserRequest("Ana", "Martinez", null, "pass123", UserStatus.ACTIVE);
+      final var request =
+          new CreateUserRequest(USER_ID, "Ana", "Martinez", null, "pass123", UserStatus.ACTIVE);
       final var response = buildUserResponse();
       when(usersWsOps.createUser(request)).thenReturn(response);
 
-      // When
       final var result = controller.createUser(request);
 
-      // Then
       assertThat(result.getStatusCode().value()).isEqualTo(200);
       assertThat(result.getBody()).isEqualTo(response);
     }
@@ -70,14 +68,11 @@ class UserControllerUnTest {
     @Test
     @DisplayName("should return 200 when user found")
     void shouldReturn200WhenFound() {
-      // Given
       final var response = buildUserResponse();
       when(usersWsOps.getUserById(USER_ID)).thenReturn(response);
 
-      // When
       final var result = controller.getUser(USER_ID);
 
-      // Then
       assertThat(result.getStatusCode().value()).isEqualTo(200);
       assertThat(result.getBody()).isEqualTo(response);
     }
@@ -85,13 +80,11 @@ class UserControllerUnTest {
     @Test
     @DisplayName("should return 404 when user not found")
     void shouldReturn404WhenNotFound() {
-      // Given
-      when(usersWsOps.getUserById("nonexistent")).thenThrow(new IllegalArgumentException("not found"));
+      when(usersWsOps.getUserById("nonexistent@correounivalle.edu.co"))
+          .thenThrow(new IllegalArgumentException("not found"));
 
-      // When
-      final var result = controller.getUser("nonexistent");
+      final var result = controller.getUser("nonexistent@correounivalle.edu.co");
 
-      // Then
       assertThat(result.getStatusCode().value()).isEqualTo(404);
     }
   }
@@ -103,49 +96,13 @@ class UserControllerUnTest {
     @Test
     @DisplayName("should return 200 with list of users")
     void shouldReturn200WithListOfUsers() {
-      // Given
       final var response = buildUserResponse();
       when(usersWsOps.getAllUsers()).thenReturn(List.of(response));
 
-      // When
       final var result = controller.getAllUsers();
 
-      // Then
       assertThat(result.getStatusCode().value()).isEqualTo(200);
       assertThat(result.getBody()).hasSize(1);
-    }
-  }
-
-  @Nested
-  @DisplayName("getUserByUsername")
-  class GetUserByUsername {
-
-    @Test
-    @DisplayName("should return 200 when user found")
-    void shouldReturn200WhenFound() {
-      // Given
-      final var response = buildUserResponse();
-      when(usersWsOps.getUserByUsername("Ana")).thenReturn(response);
-
-      // When
-      final var result = controller.getUserByUsername("Ana");
-
-      // Then
-      assertThat(result.getStatusCode().value()).isEqualTo(200);
-      assertThat(result.getBody()).isEqualTo(response);
-    }
-
-    @Test
-    @DisplayName("should return 404 when user not found")
-    void shouldReturn404WhenNotFound() {
-      // Given
-      when(usersWsOps.getUserByUsername("nonexistent")).thenThrow(new IllegalArgumentException("not found"));
-
-      // When
-      final var result = controller.getUserByUsername("nonexistent");
-
-      // Then
-      assertThat(result.getStatusCode().value()).isEqualTo(404);
     }
   }
 
@@ -156,15 +113,12 @@ class UserControllerUnTest {
     @Test
     @DisplayName("should return 200 with updated user")
     void shouldReturn200WithUpdatedUser() {
-      // Given
       final var request = new UpdateUserRequest("Maria", null, null, null, null);
       final var response = buildUserResponse();
       when(usersWsOps.updateUser(USER_ID, request)).thenReturn(response);
 
-      // When
       final var result = controller.updateUser(USER_ID, request);
 
-      // Then
       assertThat(result.getStatusCode().value()).isEqualTo(200);
       assertThat(result.getBody()).isEqualTo(response);
     }
@@ -172,14 +126,12 @@ class UserControllerUnTest {
     @Test
     @DisplayName("should return 404 when user not found")
     void shouldReturn404WhenNotFound() {
-      // Given
       final var request = new UpdateUserRequest("Maria", null, null, null, null);
-      when(usersWsOps.updateUser("nonexistent", request)).thenThrow(new IllegalArgumentException("not found"));
+      when(usersWsOps.updateUser("nonexistent@correounivalle.edu.co", request))
+          .thenThrow(new IllegalArgumentException("not found"));
 
-      // When
-      final var result = controller.updateUser("nonexistent", request);
+      final var result = controller.updateUser("nonexistent@correounivalle.edu.co", request);
 
-      // Then
       assertThat(result.getStatusCode().value()).isEqualTo(404);
     }
   }
@@ -191,13 +143,10 @@ class UserControllerUnTest {
     @Test
     @DisplayName("should return 204 on successful deletion")
     void shouldReturn204OnSuccess() {
-      // Given
       doNothing().when(usersWsOps).deleteUser(USER_ID);
 
-      // When
       final var result = controller.deleteUser(USER_ID);
 
-      // Then
       assertThat(result.getStatusCode().value()).isEqualTo(204);
       verify(usersWsOps).deleteUser(USER_ID);
     }
@@ -205,26 +154,20 @@ class UserControllerUnTest {
     @Test
     @DisplayName("should return 404 when user not found")
     void shouldReturn404WhenNotFound() {
-      // Given
-      doThrow(new IllegalArgumentException("not found")).when(usersWsOps).deleteUser("nonexistent");
+      doThrow(new IllegalArgumentException("not found")).when(usersWsOps).deleteUser("nonexistent@correounivalle.edu.co");
 
-      // When
-      final var result = controller.deleteUser("nonexistent");
+      final var result = controller.deleteUser("nonexistent@correounivalle.edu.co");
 
-      // Then
       assertThat(result.getStatusCode().value()).isEqualTo(404);
     }
 
     @Test
     @DisplayName("should return 409 when user is not INACTIVE")
     void shouldReturn409WhenNotInactive() {
-      // Given
       doThrow(new IllegalStateException("not inactive")).when(usersWsOps).deleteUser(USER_ID);
 
-      // When
       final var result = controller.deleteUser(USER_ID);
 
-      // Then
       assertThat(result.getStatusCode().value()).isEqualTo(409);
     }
   }

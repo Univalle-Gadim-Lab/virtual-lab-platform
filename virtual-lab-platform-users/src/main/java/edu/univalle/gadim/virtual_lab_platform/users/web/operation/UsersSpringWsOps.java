@@ -51,7 +51,7 @@ public class UsersSpringWsOps implements UsersWsOps {
     @Nonnull
     public UserResponse createUser(@Nonnull CreateUserRequest request) {
         final var user = new UserCreateRecord(
-                "temp",
+                request.id(),
                 request.name(),
                 request.lastName(),
                 Optional.ofNullable(request.externalCode()),
@@ -77,14 +77,6 @@ public class UsersSpringWsOps implements UsersWsOps {
         return userService.getAllUsers().stream()
                 .map(this::toUserResponse)
                 .toList();
-    }
-
-    @Override
-    @Nonnull
-    public UserResponse getUserByUsername(@Nonnull String username) {
-        return userService.getUserByUsername(username)
-                .map(this::toUserResponse)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
     }
 
     @Override

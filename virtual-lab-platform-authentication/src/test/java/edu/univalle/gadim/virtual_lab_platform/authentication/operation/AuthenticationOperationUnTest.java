@@ -34,8 +34,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @DisplayName("AuthenticationOperation")
 class AuthenticationOperationUnTest {
 
-  private static final String USER_ID = "user-001";
-  private static final String USERNAME = "ana.martinez";
+  private static final String EMAIL = "ana.martinez@correounivalle.edu.co";
+  private static final String NAME = "Ana";
   private static final String PASSWORD = "s3cur3p4ss";
   private static final String ENCODED_PASSWORD = "$2a$encoded";
   private static final String ACCESS_TOKEN = "access.jwt.token";
@@ -70,8 +70,8 @@ class AuthenticationOperationUnTest {
 
   private UserJpa buildActiveUser() {
     return UserJpa.builder()
-        .id(USER_ID)
-        .name(USERNAME)
+        .id(EMAIL)
+        .name(NAME)
         .lastName("Martinez")
         .password(ENCODED_PASSWORD)
         .status(UserStatus.ACTIVE)
@@ -82,7 +82,7 @@ class AuthenticationOperationUnTest {
   private UserRoleJpa buildUserRole() {
     return UserRoleJpa.builder()
         .id("ur-001")
-        .userId(USER_ID)
+        .userId(EMAIL)
         .role(Role.STUDENT)
         .build();
   }
@@ -97,15 +97,15 @@ class AuthenticationOperationUnTest {
       final var user = buildActiveUser();
       final var userRole = buildUserRole();
 
-      when(userRepository.findByName(USERNAME)).thenReturn(Optional.of(user));
+      when(userRepository.findById(EMAIL)).thenReturn(Optional.of(user));
       when(passwordEncoder.matches(PASSWORD, ENCODED_PASSWORD)).thenReturn(true);
-      when(userRoleRepository.findByUserId(USER_ID)).thenReturn(List.of(userRole));
-      when(tokenService.generateAccessToken(USER_ID, USERNAME, List.of(Role.STUDENT)))
+      when(userRoleRepository.findByUserId(EMAIL)).thenReturn(List.of(userRole));
+      when(tokenService.generateAccessToken(EMAIL, NAME, List.of(Role.STUDENT)))
           .thenReturn(ACCESS_TOKEN);
-      when(tokenService.generateRefreshToken(USER_ID)).thenReturn(REFRESH_TOKEN_VALUE);
+      when(tokenService.generateRefreshToken(EMAIL)).thenReturn(REFRESH_TOKEN_VALUE);
       when(idGenerator.generate()).thenReturn(RT_ID);
 
-      final var result = authenticationOperation.login(USERNAME, PASSWORD);
+      final var result = authenticationOperation.login(EMAIL, PASSWORD);
 
       assertThat(result)
           .returns(ACCESS_TOKEN, AuthenticationResult::accessToken)
@@ -117,9 +117,9 @@ class AuthenticationOperationUnTest {
     @Test
     @DisplayName("should throw when user not found")
     void shouldThrowWhenUserNotFound() {
-      when(userRepository.findByName(USERNAME)).thenReturn(Optional.empty());
+      when(userRepository.findById(EMAIL)).thenReturn(Optional.empty());
 
-      assertThatThrownBy(() -> authenticationOperation.login(USERNAME, PASSWORD))
+      assertThatThrownBy(() -> authenticationOperation.login(EMAIL, PASSWORD))
           .isInstanceOf(IllegalArgumentException.class)
           .hasMessageContaining("User not found");
     }
@@ -129,10 +129,10 @@ class AuthenticationOperationUnTest {
     void shouldThrowWhenPasswordInvalid() {
       final var user = buildActiveUser();
 
-      when(userRepository.findByName(USERNAME)).thenReturn(Optional.of(user));
+      when(userRepository.findById(EMAIL)).thenReturn(Optional.of(user));
       when(passwordEncoder.matches(PASSWORD, ENCODED_PASSWORD)).thenReturn(false);
 
-      assertThatThrownBy(() -> authenticationOperation.login(USERNAME, PASSWORD))
+      assertThatThrownBy(() -> authenticationOperation.login(EMAIL, PASSWORD))
           .isInstanceOf(IllegalArgumentException.class)
           .hasMessageContaining("Invalid credentials");
     }
@@ -143,10 +143,10 @@ class AuthenticationOperationUnTest {
       final var user = buildActiveUser();
       user.setStatus(UserStatus.INACTIVE);
 
-      when(userRepository.findByName(USERNAME)).thenReturn(Optional.of(user));
+      when(userRepository.findById(EMAIL)).thenReturn(Optional.of(user));
       when(passwordEncoder.matches(PASSWORD, ENCODED_PASSWORD)).thenReturn(true);
 
-      assertThatThrownBy(() -> authenticationOperation.login(USERNAME, PASSWORD))
+      assertThatThrownBy(() -> authenticationOperation.login(EMAIL, PASSWORD))
           .isInstanceOf(IllegalStateException.class)
           .hasMessageContaining("not active");
     }
@@ -161,7 +161,7 @@ class AuthenticationOperationUnTest {
     void shouldReturnNewAccessToken() {
       final var refreshToken = RefreshTokenJpa.builder()
           .id(RT_ID)
-          .userId(USER_ID)
+          .userId(EMAIL)
           .token(REFRESH_TOKEN_VALUE)
           .expiresAt(LocalDateTime.now().plusDays(7))
           .revoked(false)
@@ -172,9 +172,9 @@ class AuthenticationOperationUnTest {
 
       when(refreshTokenRepository.findByToken(REFRESH_TOKEN_VALUE))
           .thenReturn(Optional.of(refreshToken));
-      when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
-      when(userRoleRepository.findByUserId(USER_ID)).thenReturn(List.of(userRole));
-      when(tokenService.generateAccessToken(USER_ID, USERNAME, List.of(Role.STUDENT)))
+      when(userRepository.findById(EMAIL)).thenReturn(Optional.of(user));
+      when(userRoleRepository.findByUserId(EMAIL)).thenReturn(List.of(userRole));
+      when(tokenService.generateAccessToken(EMAIL, NAME, List.of(Role.STUDENT)))
           .thenReturn(ACCESS_TOKEN);
 
       final var result = authenticationOperation.refresh(REFRESH_TOKEN_VALUE);
@@ -197,7 +197,7 @@ class AuthenticationOperationUnTest {
     void shouldThrowWhenTokenRevoked() {
       final var refreshToken = RefreshTokenJpa.builder()
           .id(RT_ID)
-          .userId(USER_ID)
+          .userId(EMAIL)
           .token(REFRESH_TOKEN_VALUE)
           .expiresAt(LocalDateTime.now().plusDays(7))
           .revoked(true)
@@ -217,7 +217,7 @@ class AuthenticationOperationUnTest {
     void shouldThrowWhenTokenExpired() {
       final var refreshToken = RefreshTokenJpa.builder()
           .id(RT_ID)
-          .userId(USER_ID)
+          .userId(EMAIL)
           .token(REFRESH_TOKEN_VALUE)
           .expiresAt(LocalDateTime.now().minusDays(1))
           .revoked(false)
@@ -242,7 +242,7 @@ class AuthenticationOperationUnTest {
     void shouldRevokeRefreshToken() {
       final var refreshToken = RefreshTokenJpa.builder()
           .id(RT_ID)
-          .userId(USER_ID)
+          .userId(EMAIL)
           .token(REFRESH_TOKEN_VALUE)
           .expiresAt(LocalDateTime.now().plusDays(7))
           .revoked(false)

@@ -25,7 +25,7 @@ import org.mockito.MockitoAnnotations;
 @DisplayName("WorkspaceProvisionerOperation")
 class WorkspaceProvisionerOperationUnTest {
 
-  private static final String USER_ID = "user-001";
+  private static final String USER_ID = "ana.martinez@correounivalle.edu.co";
   private static final String CONTAINER_ID = "container-abc123";
 
   @Mock private DockerClient dockerClient;

@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 @DisplayName("UserRoleController")
 class UserRoleControllerUnTest {
 
-  private static final String USER_ID = "user-001";
+  private static final String USER_ID = "ana.martinez@correounivalle.edu.co";
   private static final String ROLE_ID = "role-001";
 
   private UsersWsOps usersWsOps;

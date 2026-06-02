@@ -6,8 +6,8 @@ import javax.annotation.ParametersAreNonnullByDefault;
 /**
  * Request DTO for user login.
  *
- * @param username the username to authenticate
+ * @param email the institutional email address to authenticate
  * @param password the plaintext password to verify
  */
 @ParametersAreNonnullByDefault
-public record LoginRequest(@Nonnull String username, @Nonnull String password) {}
+public record LoginRequest(@Nonnull String email, @Nonnull String password) {}

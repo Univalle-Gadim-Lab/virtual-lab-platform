@@ -15,22 +15,23 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
  * REST controller for user management operations.
  *
- * <p>This controller provides endpoints for creating, retrieving, and listing users.
- * All operations are delegated to {@link UsersWsOps}, keeping this class as a thin
- * HTTP adapter that handles request routing and response status mapping.
+ * <p>This controller provides endpoints for creating, retrieving, updating,
+ * and deleting users. All operations are delegated to {@link UsersWsOps},
+ * keeping this class as a thin HTTP adapter that handles request routing
+ * and response status mapping.
  *
  * <h2>Endpoints</h2>
  * <ul>
  *   <li>{@code POST /api/users} — create a new user</li>
- *   <li>{@code GET /api/users/{id}} — retrieve a user by ID</li>
+ *   <li>{@code GET /api/users/{id}} — retrieve a user by ID (institutional email)</li>
  *   <li>{@code GET /api/users} — list all users</li>
- *   <li>{@code GET /api/users/by-username} — retrieve a user by username</li>
+ *   <li>{@code PUT /api/users/{id}} — update a user</li>
+ *   <li>{@code DELETE /api/users/{id}} — soft-delete a user</li>
  * </ul>
  *
  * @see UsersWsOps
@@ -64,9 +65,9 @@ public class UserController {
     }
 
     /**
-     * Retrieves a user by their unique identifier.
+     * Retrieves a user by their unique identifier (institutional email).
      *
-     * @param id the user ID extracted from the path
+     * @param id the user ID (institutional email) extracted from the path
      * @return a {@code 200 OK} response with the user data, or {@code 404 Not Found}
      *     if no user exists with the given ID
      */
@@ -92,26 +93,9 @@ public class UserController {
     }
 
     /**
-     * Retrieves a user by their username.
-     *
-     * @param username the username query parameter to search for
-     * @return a {@code 200 OK} response with the user data, or {@code 404 Not Found}
-     *     if no user exists with the given username
-     */
-    @GetMapping("/by-username")
-    @Nonnull
-    public ResponseEntity<UserResponse> getUserByUsername(@RequestParam String username) {
-        try {
-            return ResponseEntity.ok(usersWsOps.getUserByUsername(username));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    /**
      * Updates an existing user's mutable fields.
      *
-     * @param id the user ID extracted from the path
+     * @param id the user ID (institutional email) extracted from the path
      * @param request the update user request containing fields to update
      * @return a {@code 200 OK} response with the updated user data, or {@code 404 Not Found}
      *     if no user exists with the given ID
@@ -133,7 +117,7 @@ public class UserController {
      * <p>The user must currently be in {@code INACTIVE} status. Returns
      * {@code 409 Conflict} if the precondition is not met.
      *
-     * @param id the user ID extracted from the path
+     * @param id the user ID (institutional email) extracted from the path
      * @return a {@code 204 No Content} response on success, {@code 404 Not Found}
      *     if no user exists, or {@code 409 Conflict} if the user is not INACTIVE
      */

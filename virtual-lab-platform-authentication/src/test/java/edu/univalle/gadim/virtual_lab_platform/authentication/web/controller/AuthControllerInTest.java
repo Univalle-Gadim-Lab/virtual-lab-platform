@@ -34,8 +34,8 @@ import org.springframework.test.web.servlet.MockMvc;
 @ExtendWith(MockitoExtension.class)
 class AuthControllerInTest {
 
-  private static final String USER_ID = "user-001";
-  private static final String USERNAME = "ana.martinez";
+  private static final String USER_ID = "ana.martinez@correounivalle.edu.co";
+  private static final String EMAIL = "ana.martinez@correounivalle.edu.co";
   private static final String PASSWORD = "s3cur3p4ss";
   private static final String ACCESS_TOKEN = "valid.access.token";
   private static final String INVALID_TOKEN = "invalid.token.value";
@@ -64,7 +64,7 @@ class AuthControllerInTest {
             post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
-                    "{\"username\":\"" + USERNAME + "\",\"password\":\"" + PASSWORD + "\"}"))
+                    "{\"email\":\"" + EMAIL + "\",\"password\":\"" + PASSWORD + "\"}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.access_token").value(ACCESS_TOKEN))
         .andExpect(jsonPath("$.refresh_token").value(REFRESH_TOKEN_VALUE));
@@ -98,7 +98,7 @@ class AuthControllerInTest {
                 .header("Authorization", "Bearer invalid.token")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
-                    "{\"username\":\"" + USERNAME + "\",\"password\":\"" + PASSWORD + "\"}"))
+                    "{\"email\":\"" + EMAIL + "\",\"password\":\"" + PASSWORD + "\"}"))
         .andExpect(status().isOk());
 
     verify(tokenService, org.mockito.Mockito.never())
@@ -160,7 +160,7 @@ class AuthControllerInTest {
             post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
-                    "{\"username\":\"" + USERNAME + "\",\"password\":\"" + PASSWORD + "\"}"))
+                    "{\"email\":\"" + EMAIL + "\",\"password\":\"" + PASSWORD + "\"}"))
         .andExpect(status().isOk());
 
     verify(tokenService, org.mockito.Mockito.never())

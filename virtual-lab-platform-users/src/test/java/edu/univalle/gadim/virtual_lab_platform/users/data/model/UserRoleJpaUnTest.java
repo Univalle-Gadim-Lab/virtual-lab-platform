@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 class UserRoleJpaUnTest {
 
   private static final String ID = "user-role-001";
-  private static final String USER_ID = "user-001";
+  private static final String USER_ID = "ana.martinez@correounivalle.edu.co";
   private static final Role ROLE = Role.STUDENT;
 
   @Nested

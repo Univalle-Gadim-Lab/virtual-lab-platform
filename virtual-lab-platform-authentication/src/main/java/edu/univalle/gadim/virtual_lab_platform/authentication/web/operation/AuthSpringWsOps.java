@@ -56,7 +56,7 @@ public class AuthSpringWsOps implements AuthWsOps {
   @Nonnull
   public LoginResponse login(@Nonnull LoginRequest request) {
     final var result =
-        authenticationService.login(request.username(), request.password());
+        authenticationService.login(request.email(), request.password());
     return new LoginResponse(
         result.accessToken(),
         result.refreshToken(),

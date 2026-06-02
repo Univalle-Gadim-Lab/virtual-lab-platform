@@ -18,8 +18,8 @@ class JwtTokenOperationUnTest {
   private static final String SECRET = "test-secret-key-for-jwt-signing-256-bits-minimum!";
   private static final long ACCESS_EXPIRATION = 900000L;
   private static final long REFRESH_EXPIRATION = 604800000L;
-  private static final String USER_ID = "user-001";
-  private static final String USERNAME = "ana.martinez";
+  private static final String USER_ID = "ana.martinez@correounivalle.edu.co";
+  private static final String NAME = "Ana";
   private static final List<Role> ROLES = List.of(Role.STUDENT, Role.TEACHER);
 
   private JwtTokenOperation tokenService;
@@ -36,7 +36,7 @@ class JwtTokenOperationUnTest {
     @Test
     @DisplayName("should generate a valid JWT")
     void shouldGenerateValidJwt() {
-      final var token = tokenService.generateAccessToken(USER_ID, USERNAME, ROLES);
+      final var token = tokenService.generateAccessToken(USER_ID, NAME, ROLES);
 
       assertThat(token).isNotBlank();
       assertThat(token.split("\\.")).hasSize(3);
@@ -45,10 +45,10 @@ class JwtTokenOperationUnTest {
     @Test
     @DisplayName("should contain correct claims")
     void shouldContainCorrectClaims() {
-      final var token = tokenService.generateAccessToken(USER_ID, USERNAME, ROLES);
+      final var token = tokenService.generateAccessToken(USER_ID, NAME, ROLES);
 
       assertThat(tokenService.extractUserId(token)).isEqualTo(USER_ID);
-      assertThat(tokenService.extractUsername(token)).isEqualTo(USERNAME);
+      assertThat(tokenService.extractName(token)).isEqualTo(NAME);
       assertThat(tokenService.extractRoles(token)).containsExactlyElementsOf(ROLES);
     }
   }
@@ -82,7 +82,7 @@ class JwtTokenOperationUnTest {
     @Test
     @DisplayName("should return true for valid access token")
     void shouldReturnTrueForValidAccessToken() {
-      final var token = tokenService.generateAccessToken(USER_ID, USERNAME, ROLES);
+      final var token = tokenService.generateAccessToken(USER_ID, NAME, ROLES);
 
       assertThat(tokenService.validateAccessToken(token)).isTrue();
     }
@@ -109,22 +109,22 @@ class JwtTokenOperationUnTest {
     @Test
     @DisplayName("should extract user ID from token")
     void shouldExtractUserId() {
-      final var token = tokenService.generateAccessToken(USER_ID, USERNAME, ROLES);
+      final var token = tokenService.generateAccessToken(USER_ID, NAME, ROLES);
 
       assertThat(tokenService.extractUserId(token)).isEqualTo(USER_ID);
     }
   }
 
   @Nested
-  @DisplayName("extractUsername")
-  class ExtractUsername {
+@DisplayName("extractName")
+  class ExtractName {
 
     @Test
-    @DisplayName("should extract username from token")
-    void shouldExtractUsername() {
-      final var token = tokenService.generateAccessToken(USER_ID, USERNAME, ROLES);
+    @DisplayName("should extract name from token")
+    void shouldExtractName() {
+      final var token = tokenService.generateAccessToken(USER_ID, NAME, ROLES);
 
-      assertThat(tokenService.extractUsername(token)).isEqualTo(USERNAME);
+      assertThat(tokenService.extractName(token)).isEqualTo(NAME);
     }
   }
 
@@ -135,7 +135,7 @@ class JwtTokenOperationUnTest {
     @Test
     @DisplayName("should extract roles from token")
     void shouldExtractRoles() {
-      final var token = tokenService.generateAccessToken(USER_ID, USERNAME, ROLES);
+      final var token = tokenService.generateAccessToken(USER_ID, NAME, ROLES);
 
       assertThat(tokenService.extractRoles(token)).containsExactlyElementsOf(ROLES);
     }

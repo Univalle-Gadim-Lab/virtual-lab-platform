@@ -29,7 +29,7 @@ class AuthControllerUnTest {
 
   private static final String ACCESS_TOKEN = "access.jwt.token";
   private static final String REFRESH_TOKEN_VALUE = "refresh.jwt.token";
-  private static final String USER_ID = "user-001";
+  private static final String USER_ID = "ana.martinez@correounivalle.edu.co";
 
   private AuthWsOps authWsOps;
   private AuthController controller;
@@ -51,7 +51,7 @@ class AuthControllerUnTest {
     @Test
     @DisplayName("should return 200 with tokens")
     void shouldReturn200WithTokens() {
-      final var request = new LoginRequest("ana.martinez", "s3cur3p4ss");
+      final var request = new LoginRequest("ana.martinez@correounivalle.edu.co", "s3cur3p4ss");
       final var response = buildLoginResponse();
       when(authWsOps.login(request)).thenReturn(response);
 

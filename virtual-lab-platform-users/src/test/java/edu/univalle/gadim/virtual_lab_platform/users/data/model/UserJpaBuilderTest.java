@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 @DisplayName("UserJpa Builder")
 class UserJpaBuilderTest {
 
-  private static final String ID = "user-001";
+  private static final String ID = "ana.martinez@correounivalle.edu.co";
   private static final String NAME = "Ana";
   private static final String LAST_NAME = "Martinez";
   private static final String EXTERNAL_CODE = "2024101001";
@@ -192,7 +192,7 @@ class UserJpaBuilderTest {
 
       UserJpa user2 =
           UserJpa.builder()
-              .id("user-002")
+              .id("carlos.lopez@correounivalle.edu.co")
               .name(NAME)
               .lastName(LAST_NAME)
               .password(PASSWORD)

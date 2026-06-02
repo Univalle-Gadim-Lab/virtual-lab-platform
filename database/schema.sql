@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS users
 (
-    id            VARCHAR(100) NOT NULL PRIMARY KEY,
+    id            VARCHAR(255) NOT NULL PRIMARY KEY,
     name          VARCHAR(200) NOT NULL,
     last_name     VARCHAR(200) NOT NULL,
     external_code VARCHAR(100),
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS users
 CREATE TABLE IF NOT EXISTS user_roles
 (
     id      VARCHAR(100) NOT NULL PRIMARY KEY,
-    user_id VARCHAR(100) NOT NULL,
+    user_id VARCHAR(255) NOT NULL,
     role    VARCHAR(20)  NOT NULL,
     UNIQUE (user_id, role),
     FOREIGN KEY (user_id) REFERENCES users (id)
@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS instance_users
 (
     id          VARCHAR(100) NOT NULL PRIMARY KEY,
     instance_id VARCHAR(100) NOT NULL,
-    user_id     VARCHAR(100) NOT NULL,
+    user_id     VARCHAR(255) NOT NULL,
     FOREIGN KEY (instance_id) REFERENCES instances (id),
     FOREIGN KEY (user_id) REFERENCES users (id)
 );
@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS instance_users
 CREATE TABLE IF NOT EXISTS refresh_tokens
 (
     id          VARCHAR(100) NOT NULL PRIMARY KEY,
-    user_id     VARCHAR(100) NOT NULL,
+    user_id     VARCHAR(255) NOT NULL,
     token       TEXT         NOT NULL,
     expires_at  TIMESTAMP    NOT NULL,
     revoked     BOOLEAN      NOT NULL DEFAULT FALSE,

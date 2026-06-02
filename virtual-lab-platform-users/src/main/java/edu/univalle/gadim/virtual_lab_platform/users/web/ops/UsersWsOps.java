@@ -20,9 +20,8 @@ import javax.annotation.Nonnull;
  * <h2>Endpoints</h2>
  * <ul>
  *   <li>{@code POST /api/users} — create a new user</li>
- *   <li>{@code GET /api/users/{id}} — retrieve a user by ID</li>
+ *   <li>{@code GET /api/users/{id}} — retrieve a user by ID (institutional email)</li>
  *   <li>{@code GET /api/users} — list all users</li>
- *   <li>{@code GET /api/users/by-username} — retrieve a user by username</li>
  *   <li>{@code POST /api/user-roles} — assign a single role to a user</li>
  *   <li>{@code POST /api/user-roles/batch} — assign multiple roles to a user</li>
  *   <li>{@code GET /api/user-roles} — list all roles for a user</li>
@@ -33,17 +32,17 @@ public interface UsersWsOps {
     /**
      * Creates a new user with the provided information.
      *
-     * @param request the create user request containing name, last name, optional external code,
-     *     password, and status
-     * @return the created user response with generated ID and creation date
+     * @param request the create user request containing institutional email (id),
+     *     name, last name, optional external code, password, and status
+     * @return the created user response with creation date
      */
     @Nonnull
     UserResponse createUser(@Nonnull CreateUserRequest request);
 
     /**
-     * Retrieves a user by their unique identifier.
+     * Retrieves a user by their unique identifier (institutional email).
      *
-     * @param id the unique user identifier
+     * @param id the unique user identifier (institutional email)
      * @return the user response matching the given ID
      * @throws IllegalArgumentException if no user is found with the given ID
      */
@@ -57,16 +56,6 @@ public interface UsersWsOps {
      */
     @Nonnull
     List<UserResponse> getAllUsers();
-
-    /**
-     * Retrieves a user by their username.
-     *
-     * @param username the username to search for
-     * @return the user response matching the given username
-     * @throws IllegalArgumentException if no user is found with the given username
-     */
-    @Nonnull
-    UserResponse getUserByUsername(@Nonnull String username);
 
     /**
      * Assigns a single role to the specified user.

@@ -2,14 +2,14 @@
 
 ## Overview
 
-The Virtual Lab Platform uses a relational database with six tables organized around two primary entities—**users** and **instances**—and four supporting tables that capture roles, metrics, the many-to-many association between users and instances, and refresh tokens for JWT authentication. All primary keys are `VARCHAR(100)` strings generated at application level via the `UniqueIdGenerator` strategy. Every foreign key references the owning entity's primary key without ON DELETE cascades, meaning deletions must be handled explicitly by the application layer. Enumerated domains (`status`, `role`) are stored as `VARCHAR` with the Java enum constant names, persisted via JPA's `@Enumerated(EnumType.STRING)`.
+The Virtual Lab Platform uses a relational database with six tables organized around two primary entities—**users** and **instances**—and four supporting tables that capture roles, metrics, the many-to-many association between users and instances, and refresh tokens for JWT authentication. All primary keys are `VARCHAR` strings. The `users.id` column stores the user's institutional email address as the unique identifier (VARCHAR(255)), while other primary keys are generated at application level via the `UniqueIdGenerator` strategy. Every foreign key references the owning entity's primary key without ON DELETE cascades, meaning deletions must be handled explicitly by the application layer. Enumerated domains (`status`, `role`) are stored as `VARCHAR` with the Java enum constant names, persisted via JPA's `@Enumerated(EnumType.STRING)`.
 
 ## Entity Relationship Diagram
 
 ```mermaid
 erDiagram
     users {
-        VARCHAR_100 id PK
+        VARCHAR_255 id PK "institutional email"
         VARCHAR_200 name
         VARCHAR_200 last_name
         VARCHAR_100 external_code
@@ -20,7 +20,7 @@ erDiagram
 
     user_roles {
         VARCHAR_100 id PK
-        VARCHAR_100 user_id FK
+        VARCHAR_255 user_id FK
         VARCHAR_20 role
     }
 
@@ -59,12 +59,12 @@ erDiagram
     instance_users {
         VARCHAR_100 id PK
         VARCHAR_100 instance_id FK
-        VARCHAR_100 user_id FK
+        VARCHAR_255 user_id FK
     }
 
     refresh_tokens {
         VARCHAR_100 id PK
-        VARCHAR_100 user_id FK
+        VARCHAR_255 user_id FK
         TEXT token
         TIMESTAMP expires_at
         BOOLEAN revoked
@@ -86,8 +86,8 @@ Stores platform user accounts with authentication metadata and lifecycle state.
 
 | Column | Type | Nullable | Constraints | Default | JPA Mapping |
 |---|---|---|---|---|---|
-| `id` | `VARCHAR(100)` | NOT NULL | PRIMARY KEY | — | `UserJpa.id` → `User.id()` |
-| `name` | `VARCHAR(200)` | NOT NULL | — | — | `UserJpa.name` → `User.name()` |
+| `id` | `VARCHAR(255)` | NOT NULL | PRIMARY KEY | — | `UserJpa.id` → `User.id()` — institutional email address |
+| `name` | `VARCHAR(200)` | NOT NULL | — | — | `UserJpa.name` → `User.name()` — user's first name |
 | `last_name` | `VARCHAR(200)` | NOT NULL | — | — | `UserJpa.lastName` → `User.lastName()` |
 | `external_code` | `VARCHAR(100)` | NULL | — | — | `UserJpa.externalCode` → `User.externalCode()` (wrapped in `Optional`) |
 | `password` | `VARCHAR(255)` | NOT NULL | — | — | `UserJpa.password` → `User.password()` |
@@ -105,7 +105,7 @@ Maps users to their assigned roles, enforcing uniqueness on the `(user_id, role)
 | Column | Type | Nullable | Constraints | Default | JPA Mapping |
 |---|---|---|---|---|---|
 | `id` | `VARCHAR(100)` | NOT NULL | PRIMARY KEY | — | `UserRoleJpa.id` → `UserRole.id()` |
-| `user_id` | `VARCHAR(100)` | NOT NULL | FK → `users(id)`, UNIQUE with `role` | — | `UserRoleJpa.userId` → `UserRole.userId()` |
+| `user_id` | `VARCHAR(255)` | NOT NULL | FK → `users(id)`, UNIQUE with `role` | — | `UserRoleJpa.userId` → `UserRole.userId()` |
 | `role` | `VARCHAR(20)` | NOT NULL | UNIQUE with `user_id` | — | `UserRoleJpa.role` → `UserRole.role()` (`@Enumerated(STRING)`: `ADMIN`, `STUDENT`, `TEACHER`) |
 
 - **Module:** `virtual-lab-platform-users`
@@ -168,7 +168,7 @@ Join table establishing the many-to-many association between users and instances
 |---|---|---|---|---|---|
 | `id` | `VARCHAR(100)` | NOT NULL | PRIMARY KEY | — | `InstanceUserJpa.id` → `InstanceUser.id()` |
 | `instance_id` | `VARCHAR(100)` | NOT NULL | FK → `instances(id)` | — | `InstanceUserJpa.instanceId` → `InstanceUser.instanceId()` |
-| `user_id` | `VARCHAR(100)` | NOT NULL | FK → `users(id)` | — | `InstanceUserJpa.userId` → `InstanceUser.userId()` |
+| `user_id` | `VARCHAR(255)` | NOT NULL | FK → `users(id)` | — | `InstanceUserJpa.userId` → `InstanceUser.userId()` |
 
 - **Module:** `virtual-lab-platform-instances`
 - **JPA Entity:** `InstanceUserJpa` (`edu.univalle.gadim.virtual_lab_platform.instances.data.model`)
@@ -181,7 +181,7 @@ Stores JWT refresh tokens for authentication, enabling secure token revocation o
 | Column | Type | Nullable | Constraints | Default | JPA Mapping |
 |---|---|---|---|---|---|
 | `id` | `VARCHAR(100)` | NOT NULL | PRIMARY KEY | — | `RefreshTokenJpa.id` → `RefreshToken.id()` |
-| `user_id` | `VARCHAR(100)` | NOT NULL | FK → `users(id)`, UNIQUE with `token` | — | `RefreshTokenJpa.userId` → `RefreshToken.userId()` |
+| `user_id` | `VARCHAR(255)` | NOT NULL | FK → `users(id)`, UNIQUE with `token` | — | `RefreshTokenJpa.userId` → `RefreshToken.userId()` |
 | `token` | `TEXT` | NOT NULL | UNIQUE with `user_id` | — | `RefreshTokenJpa.token` → `RefreshToken.token()` |
 | `expires_at` | `TIMESTAMP` | NOT NULL | — | — | `RefreshTokenJpa.expiresAt` → `RefreshToken.expiresAt()` |
 | `revoked` | `BOOLEAN` | NOT NULL | — | `FALSE` | `RefreshTokenJpa.revoked` → `RefreshToken.revoked()` |
@@ -207,7 +207,7 @@ Enumerated columns are persisted as `VARCHAR` strings matching the Java enum con
 
 | Table | Column | Type |
 |---|---|---|
-| `users` | `id` | `VARCHAR(100)` |
+| `users` | `id` | `VARCHAR(255)` — institutional email |
 | `user_roles` | `id` | `VARCHAR(100)` |
 | `instances` | `id` | `VARCHAR(100)` |
 | `instance_metrics` | `id` | `VARCHAR(100)` |
@@ -233,7 +233,8 @@ Enumerated columns are persisted as `VARCHAR` strings matching the Java enum con
 
 ## Design Notes
 
-- **Application-generated IDs:** All primary keys are `VARCHAR(100)` strings generated by the `UniqueIdGenerator` strategy (resolved at assembly time to `ObjectIdGenerator`), not by database auto-increment.
+- **Email as user ID:** The `users.id` column stores the user's institutional email address (`VARCHAR(255)`). This ensures global uniqueness, eliminates the need for a separate email column, and provides a meaningful identifier for authentication. Other primary keys (`VARCHAR(100)`) are generated by `UniqueIdGenerator`.
+- **Application-generated IDs:** All other primary keys (roles, instances, metrics, associations, tokens) are `VARCHAR(100)` strings generated by the `UniqueIdGenerator` strategy (resolved at assembly time to `ObjectIdGenerator`), not by database auto-increment.
 - **Soft deletes via lifecycle timestamps:** The `instances` table tracks deletion through `deleted_at` rather than physically removing rows. The `InstanceStatus.DELETED` enum value complements this pattern.
 - **No ON DELETE cascades:** Foreign key constraints do not specify `ON DELETE CASCADE`. The application layer is responsible for cleaning up related rows (e.g., `user_roles`, `instance_users`, `instance_metrics`) when a parent entity is removed.
 - **Nullable metric columns:** All metric value columns (`current_cpu_usage`, `current_memory_usage`, `current_disk_usage`, `current_time_usage`) and the instance lifecycle timestamp columns (`expires_at`, `started_at`, `stopped_at`, `deleted_at`, `last_accessed_at`) allow `NULL`, reflecting that these values are populated over the course of an instance's lifecycle.

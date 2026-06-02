@@ -33,8 +33,8 @@ import org.junit.jupiter.api.Test;
 @DisplayName("AuthSpringWsOps")
 class AuthSpringWsOpsUnTest {
 
-  private static final String USER_ID = "user-001";
-  private static final String USERNAME = "ana.martinez";
+  private static final String EMAIL = "ana.martinez@correounivalle.edu.co";
+  private static final String NAME = "Ana";
   private static final String PASSWORD = "s3cur3p4ss";
   private static final String ACCESS_TOKEN = "access.jwt.token";
   private static final String REFRESH_TOKEN_VALUE = "refresh.jwt.token";
@@ -59,8 +59,8 @@ class AuthSpringWsOpsUnTest {
 
   private UserJpa buildUser() {
     return UserJpa.builder()
-        .id(USER_ID)
-        .name(USERNAME)
+        .id(EMAIL)
+        .name(NAME)
         .lastName("Martinez")
         .password("encoded")
         .status(edu.univalle.gadim.virtual_lab_platform.users.api.type.UserStatus.ACTIVE)
@@ -75,10 +75,10 @@ class AuthSpringWsOpsUnTest {
     @Test
     @DisplayName("should delegate and map to LoginResponse")
     void shouldDelegateAndMap() {
-      final var request = new LoginRequest(USERNAME, PASSWORD);
+      final var request = new LoginRequest(EMAIL, PASSWORD);
       final var authResult = buildAuthResult();
 
-      when(authenticationService.login(USERNAME, PASSWORD)).thenReturn(authResult);
+      when(authenticationService.login(EMAIL, PASSWORD)).thenReturn(authResult);
 
       final var result = authSpringWsOps.login(request);
 
@@ -133,18 +133,18 @@ class AuthSpringWsOpsUnTest {
       final var user = buildUser();
       final var userRole = UserRoleJpa.builder()
           .id("ur-001")
-          .userId(USER_ID)
+          .userId(EMAIL)
           .role(Role.STUDENT)
           .build();
 
-      when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
-      when(userRoleRepository.findByUserId(USER_ID)).thenReturn(List.of(userRole));
+      when(userRepository.findById(EMAIL)).thenReturn(Optional.of(user));
+      when(userRoleRepository.findByUserId(EMAIL)).thenReturn(List.of(userRole));
 
-      final var result = authSpringWsOps.me(USER_ID);
+      final var result = authSpringWsOps.me(EMAIL);
 
       assertThat(result)
-          .returns(USER_ID, AuthenticatedUserResponse::id)
-          .returns(USERNAME, AuthenticatedUserResponse::name)
+          .returns(EMAIL, AuthenticatedUserResponse::id)
+          .returns(NAME, AuthenticatedUserResponse::name)
           .returns("Martinez", AuthenticatedUserResponse::lastName);
       assertThat(result.roles()).containsExactly(Role.STUDENT);
     }
@@ -152,9 +152,9 @@ class AuthSpringWsOpsUnTest {
     @Test
     @DisplayName("should throw when user not found")
     void shouldThrowWhenUserNotFound() {
-      when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
+      when(userRepository.findById(EMAIL)).thenReturn(Optional.empty());
 
-      assertThatThrownBy(() -> authSpringWsOps.me(USER_ID))
+      assertThatThrownBy(() -> authSpringWsOps.me(EMAIL))
           .isInstanceOf(IllegalArgumentException.class)
           .hasMessageContaining("User not found");
     }

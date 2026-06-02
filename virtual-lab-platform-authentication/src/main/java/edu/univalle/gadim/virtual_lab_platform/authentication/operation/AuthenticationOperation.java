@@ -64,11 +64,11 @@ public class AuthenticationOperation implements AuthenticationService {
 
   @Override
   @Nonnull
-  public AuthenticationResult login(String username, String password) {
+  public AuthenticationResult login(String email, String password) {
     final var user =
         userRepository
-            .findByName(username)
-            .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+            .findById(email)
+            .orElseThrow(() -> new IllegalArgumentException("User not found: " + email));
 
     if (!passwordEncoder.matches(password, user.password())) {
       throw new IllegalArgumentException("Invalid credentials");

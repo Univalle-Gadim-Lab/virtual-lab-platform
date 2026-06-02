@@ -28,7 +28,7 @@ import org.springframework.test.web.servlet.MockMvc;
 class CatalogControllerRoleInTest {
 
   private static final String ACCESS_TOKEN = "valid.access.token";
-  private static final String USER_ID = "user-001";
+  private static final String USER_ID = "ana.martinez@correounivalle.edu.co";
 
   @Mock private TokenService tokenService;
   @Mock private CatalogWsOps catalogWsOps;

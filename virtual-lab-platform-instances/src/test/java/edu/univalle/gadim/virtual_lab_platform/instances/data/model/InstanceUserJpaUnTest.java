@@ -14,7 +14,7 @@ class InstanceUserJpaUnTest {
 
   private static final String ID = "iu-001";
   private static final String INSTANCE_ID = "inst-001";
-  private static final String USER_ID = "user-001";
+  private static final String USER_ID = "ana.martinez@correounivalle.edu.co";
 
   @Nested
   @DisplayName("no-args constructor")

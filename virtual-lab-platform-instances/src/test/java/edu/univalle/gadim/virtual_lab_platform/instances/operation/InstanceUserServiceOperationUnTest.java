@@ -76,7 +76,7 @@ class InstanceUserServiceOperationUnTest {
     @DisplayName("should return list of user associations for instance")
     void shouldReturnListOfAssociations() {
       // Given
-      final var user1 = buildInstanceUser("iu-001", INSTANCE_ID, "user-001");
+      final var user1 = buildInstanceUser("iu-001", INSTANCE_ID, "ana.martinez@correounivalle.edu.co");
       final var user2 = buildInstanceUser("iu-002", INSTANCE_ID, "user-002");
       when(instanceUserRepository.findByInstanceId(INSTANCE_ID)).thenReturn(List.of(user1, user2));
 

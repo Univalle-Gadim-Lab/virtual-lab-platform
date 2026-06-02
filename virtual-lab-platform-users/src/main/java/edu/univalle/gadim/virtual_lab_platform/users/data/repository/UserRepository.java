@@ -15,11 +15,4 @@ import java.util.Optional;
  */
 @Repository
 public interface UserRepository extends JpaRepository<UserJpa, String> {
-    /**
-     * Finds a user by their name (username).
-     *
-     * @param name the username to search for
-     * @return the user if found, or {@code Optional.empty()} if not found
-     */
-    Optional<UserJpa> findByName(String name);
 }

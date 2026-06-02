@@ -32,7 +32,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @ExtendWith(MockitoExtension.class)
 class AuthControllerRoleInTest {
 
-  private static final String USER_ID = "user-001";
+  private static final String USER_ID = "ana.martinez@correounivalle.edu.co";
   private static final String ACCESS_TOKEN = "valid.access.token";
   private static final String REFRESH_TOKEN_VALUE = "valid.refresh.token";
 
@@ -144,7 +144,7 @@ class AuthControllerRoleInTest {
     mockMvc.perform(
             post("/api/auth/login")
                 .contentType("application/json")
-                .content("{\"username\":\"user\",\"password\":\"pass\"}"))
+                .content("{\"email\":\"user\",\"password\":\"pass\"}"))
         .andExpect(status().isOk());
 
     verify(tokenService, org.mockito.Mockito.never())

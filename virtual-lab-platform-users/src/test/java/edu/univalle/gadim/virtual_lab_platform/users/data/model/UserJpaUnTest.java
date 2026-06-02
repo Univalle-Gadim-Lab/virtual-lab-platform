@@ -13,8 +13,8 @@ import org.junit.jupiter.api.Test;
 @DisplayName("UserJpa")
 class UserJpaUnTest {
 
-    private static final String ID = "user-001";
-    private static final String NAME = "Ana";
+private static final String ID = "ana.martinez@correounivalle.edu.co";
+  private static final String NAME = "Ana";
     private static final String LAST_NAME = "Martinez";
     private static final String EXTERNAL_CODE = "2024101001";
     private static final String PASSWORD = "s3cur3p4ss";

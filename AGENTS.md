@@ -151,3 +151,9 @@ Architecture and design documentation lives under `architecture/`:
 - `architecture/DATABASE.md` — Physical database schema, ERD diagram, DDL-to-JPA mapping reference
 - `architecture/openapi/openapi.yaml` — OpenAPI specification for the Web API
 - `architecture/virtual-lab-authentication.puml` — PlantUML class diagram for the authentication module
+
+### Virtual Lab UI (External Project)
+
+The frontend project (`virtual-lab-ui`) lives in a separate repository. Its architecture documentation covers both frontend (React/TypeScript) and backend (Java/Spring Boot) system design:
+
+- `/Users/guedaf/Proyectos/virtual-lab-ui/architecture/ARCHITECTURE.md` — Full-stack system architecture: frontend feature organization, backend module design, component relationships

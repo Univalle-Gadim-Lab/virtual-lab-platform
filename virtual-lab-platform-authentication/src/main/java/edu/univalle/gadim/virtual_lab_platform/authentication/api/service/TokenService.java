@@ -16,12 +16,12 @@ public interface TokenService {
   /**
    * Generates a short-lived access token carrying the user's identity and roles.
    *
-   * @param userId   the user's unique identifier (stored in the {@code sub} claim)
-   * @param username the user's username
+   * @param userId   the user's unique identifier, institutional email (stored in the {@code sub} claim)
+   * @param name     the user's full name (stored in the {@code name} claim)
    * @param roles    the user's authorization roles
    * @return the signed JWT string
    */
-  String generateAccessToken(String userId, String username, List<Role> roles);
+  String generateAccessToken(String userId, String name, List<Role> roles);
 
   /**
    * Generates a long-lived refresh token for the specified user.
@@ -49,13 +49,13 @@ public interface TokenService {
   String extractUserId(String token);
 
   /**
-   * Extracts the username from the given access token.
+   * Extracts the user's full name from the given access token.
    *
    * @param token the JWT string
-   * @return the username
+   * @return the user's full name
    * @throws io.jsonwebtoken.JwtException if the token is malformed or signature is invalid
    */
-  String extractUsername(String token);
+  String extractName(String token);
 
   /**
    * Extracts the roles claim from the given access token.

@@ -29,7 +29,7 @@ import org.springframework.stereotype.Service;
 @ParametersAreNonnullByDefault
 public class JwtTokenOperation implements TokenService {
 
-  private static final String CLAIM_USERNAME = "username";
+  private static final String CLAIM_NAME = "name";
   private static final String CLAIM_ROLES = "roles";
   private static final String CLAIM_TYPE = "type";
 
@@ -57,14 +57,14 @@ public class JwtTokenOperation implements TokenService {
   @Override
   @Nonnull
   public String generateAccessToken(
-      String userId, String username, List<Role> roles) {
+      String userId, String name, List<Role> roles) {
     final var now = new Date();
     final var expiration = new Date(now.getTime() + accessTokenExpirationMs);
     final var rolesList = roles.stream().map(Role::name).toList();
 
     return Jwts.builder()
         .subject(userId)
-        .claim(CLAIM_USERNAME, username)
+        .claim(CLAIM_NAME, name)
         .claim(CLAIM_ROLES, rolesList)
         .claim(CLAIM_TYPE, TokenType.ACCESS.name())
         .issuedAt(now)
@@ -107,8 +107,8 @@ public class JwtTokenOperation implements TokenService {
 
   @Override
   @Nonnull
-  public String extractUsername(String token) {
-    return parseClaims(token).get(CLAIM_USERNAME, String.class);
+  public String extractName(String token) {
+    return parseClaims(token).get(CLAIM_NAME, String.class);
   }
 
   @Override

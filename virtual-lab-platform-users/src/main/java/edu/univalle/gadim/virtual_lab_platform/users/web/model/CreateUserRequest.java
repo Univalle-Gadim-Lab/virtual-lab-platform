@@ -9,10 +9,12 @@ import javax.annotation.ParametersAreNonnullByDefault;
  * Request DTO for creating a new user.
  *
  * <p>This record contains the necessary information to create a user,
- * including personal details, optional external code, password, and status.
+ * including institutional email (used as unique identifier), personal details,
+ * optional external code, password, and status.
  */
 @ParametersAreNonnullByDefault
 public record CreateUserRequest(
+    @Nonnull String id,
     @Nonnull String name,
     @Nonnull String lastName,
     @Nullable String externalCode,
