@@ -16,6 +16,7 @@ dependencies {
     implementation(libs.spring.web)
     implementation(libs.spring.boot.autoconfigure)
     implementation(libs.docker.client)
+    implementation(libs.docker.client.httpclient5)
 
 
     compileOnly(libs.lombok)

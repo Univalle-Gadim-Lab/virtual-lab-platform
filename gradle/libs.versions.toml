@@ -27,6 +27,7 @@ assertj = { module = "org.assertj:assertj-core", version.ref = "assertj" }
 bson = { module = "org.mongodb:bson", version.ref = "bson" }
 commonsLang3 = { module = "org.apache.commons:commons-lang3", version.ref = "commons-lang3" }
 docker-client = { module = "com.github.docker-java:docker-java", version.ref = "docerClient"}
+docker-client-httpclient5 = { module = "com.github.docker-java:docker-java-transport-httpclient5", version.ref = "docerClient"}
 either = { module = "com.spencerwi:Either.java", version.ref = "either" }
 findbugs = { module = "com.google.code.findbugs:jsr305", version.ref = "findbugs"}
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
