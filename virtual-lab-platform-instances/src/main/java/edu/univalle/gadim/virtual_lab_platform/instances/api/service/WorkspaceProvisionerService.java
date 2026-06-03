@@ -66,4 +66,13 @@ public interface WorkspaceProvisionerService {
    * @param containerId the Docker container ID to start
    */
   void startWorkspace(String containerId);
+
+  /**
+   * Resolves the internal bridge network IP address of a running container.
+   *
+   * @param containerId the Docker container ID
+   * @return the container's internal IP address
+   */
+  @Nonnull
+  String getContainerIp(String containerId);
 }

@@ -32,6 +32,8 @@ public class InstanceServiceOperation implements InstanceService {
 
   private static final Logger logger = LoggerFactory.getLogger(InstanceServiceOperation.class);
   private static final String INSTANCE_NOT_FOUND = "Instance not found: ";
+  private static final int DEFAULT_VNC_PORT = 6901;
+  private static final int DEFAULT_EXPOSED_PORT = 8080;
 
   private final InstanceRepository instanceRepository;
   private final InstanceUserRepository instanceUserRepository;
@@ -100,8 +102,10 @@ public class InstanceServiceOperation implements InstanceService {
             gpuEnabled,
             exposedPort);
 
+    String internalIp = workspaceProvisionerService.getContainerIp(containerId);
+
     LocalDateTime now = LocalDateTime.now();
-    LocalDateTime expiresAt = now.plusDays(7); // Default 7 days expiration
+    LocalDateTime expiresAt = now.plusDays(7);
 
     InstanceJpa instance =
         InstanceJpa.builder()
@@ -117,7 +121,8 @@ public class InstanceServiceOperation implements InstanceService {
             .storageMb(storageMb)
             .gpuEnabled(gpuEnabled)
             .exposedPort(exposedPort)
-            .internalIp("127.0.0.1") // Will be updated when container is running
+            .vncPort(DEFAULT_VNC_PORT)
+            .internalIp(internalIp)
             .createdAt(now)
             .expiresAt(expiresAt)
             .startedAt(now)

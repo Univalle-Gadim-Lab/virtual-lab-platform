@@ -17,6 +17,8 @@ dependencies {
     implementation(libs.spring.boot.autoconfigure)
     implementation(libs.docker.client)
     implementation(libs.docker.client.httpclient5)
+    implementation("org.springframework:spring-websocket")
+    implementation("org.springframework.boot:spring-boot-starter-webmvc")
 
 
     compileOnly(libs.lombok)

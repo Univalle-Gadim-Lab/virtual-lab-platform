@@ -33,6 +33,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   private static final String AUTHORIZATION_HEADER = "Authorization";
   private static final String BEARER_PREFIX = "Bearer ";
+  private static final String TOKEN_PARAM = "token";
 
   private final TokenService tokenService;
 
@@ -52,16 +53,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       @Nonnull FilterChain filterChain)
       throws ServletException, IOException {
 
-    final var authHeader = request.getHeader(AUTHORIZATION_HEADER);
+    final var token = extractToken(request);
 
-    if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
-      filterChain.doFilter(request, response);
-      return;
-    }
-
-    final var token = authHeader.substring(BEARER_PREFIX.length());
-
-    if (!tokenService.validateAccessToken(token)) {
+    if (token == null || !tokenService.validateAccessToken(token)) {
       filterChain.doFilter(request, response);
       return;
     }
@@ -80,6 +74,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     SecurityContextHolder.getContext().setAuthentication(authentication);
     filterChain.doFilter(request, response);
+  }
+
+  private String extractToken(HttpServletRequest request) {
+    final var authHeader = request.getHeader(AUTHORIZATION_HEADER);
+    if (authHeader != null && authHeader.startsWith(BEARER_PREFIX)) {
+      return authHeader.substring(BEARER_PREFIX.length());
+    }
+    return request.getParameter(TOKEN_PARAM);
   }
 
   @Override

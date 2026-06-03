@@ -12,6 +12,7 @@ dependencies {
     implementation(libs.spring.boot.starter.security)
     implementation(libs.spring.boot.starter.webmvc)
     implementation(libs.spring.boot.starter.data.jpa)
+    implementation("org.springframework.boot:spring-boot-starter-websocket")
     runtimeOnly(libs.postgresql)
 
     testImplementation(libs.junit)

@@ -1,32 +1,34 @@
 FROM ubuntu:24.04
 
-# Prevent interactive prompts during apt installations
 ENV DEBIAN_FRONTEND=noninteractive
 ENV DISPLAY=:0
 ENV RESOLUTION=1920x1080x24
 
-# Install desktop environment, VNC, noVNC, KiCad, and Supervisor
 RUN apt-get update && apt-get install -y --no-install-recommends \
     lxde-core \
     lxterminal \
     xvfb \
-    x11vnc \
-    novnc \
-    websockify \
     kicad \
     kicad-packages3d \
     supervisor \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
-# Create an unprivileged user for the workspace
+ARG KASMVNC_VERSION=1.20.0
+
+RUN wget -q "https://github.com/kasmtech/KasmVNC/releases/download/v${KASMVNC_VERSION}/kasmvncserver_ubuntu_2404_${KASMVNC_VERSION}_amd64.deb" \
+    -O /tmp/kasmvnc.deb \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends /tmp/kasmvnc.deb \
+    && rm -f /tmp/kasmvnc.deb \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN useradd -m -s /bin/bash labuser
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 USER labuser
 WORKDIR /home/labuser
 
-# Expose the noVNC web port
-EXPOSE 8080
+EXPOSE 6901
 
-# Start Supervisor to manage the X11 and VNC processes
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

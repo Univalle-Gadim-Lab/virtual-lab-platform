@@ -92,7 +92,9 @@ public class SecurityConfig {
             HttpMethod.PATCH.name(),
             HttpMethod.OPTIONS.name()));
     configuration.setAllowedHeaders(
-        List.of("Authorization", "Content-Type", "Accept", "X-Requested-With"));
+        List.of("Authorization", "Content-Type", "Accept", "X-Requested-With",
+            "Upgrade", "Connection", "Sec-WebSocket-Key", "Sec-WebSocket-Version",
+            "Sec-WebSocket-Extensions", "Sec-WebSocket-Protocol"));
     configuration.setAllowCredentials(true);
     configuration.setMaxAge(3600L);
 

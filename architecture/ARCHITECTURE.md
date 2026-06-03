@@ -312,7 +312,7 @@ The instances module governs the full lifecycle of containerized workspaces—cr
 
 | Class / Interface | Package | Responsibility |
 |---|---|---|
-| `Instance` | `api.type` | Core domain interface for a virtual workspace; exposes 18 accessors covering identity, resource specs, networking, and lifecycle timestamps |
+| `Instance` | `api.type` | Core domain interface for a virtual workspace; exposes 19 accessors covering identity, resource specs, networking, VNC, and lifecycle timestamps |
 | `InstanceStatus` | `api.type` | Enumeration: `CREATED`, `STARTING`, `RUNNING`, `STOPPED`, `EXPIRED`, `DELETED` |
 | `InstanceUser` | `api.type` | Join entity interface linking a user to an instance |
 | `InstanceMetrics` | `api.type` | Domain interface for resource utilization snapshots (CPU, memory, disk, time) |
@@ -323,7 +323,7 @@ The instances module governs the full lifecycle of containerized workspaces—cr
 
 - **Identity:** `id`, `name`, `description` (Optional)
 - **Container image:** `imageName`, `imageVersion`, `imageRegistry`
-- **Resource specs:** `cpuCores` (int), `memoryMb` (int), `storageMb` (int), `gpuEnabled` (boolean), `exposedPort` (int)
+- **Resource specs:** `cpuCores` (int), `memoryMb` (int), `storageMb` (int), `gpuEnabled` (boolean), `exposedPort` (int), `vncPort` (int)
 - **Networking:** `externalIp`, `internalIp`
 - **Lifecycle:** `createdAt`, `expiresAt`, `startedAt`, `stoppedAt` (Optional), `deletedAt` (Optional), `lastAccessedAt` (Optional)
 - **Status:** `status` → `InstanceStatus`
@@ -335,14 +335,14 @@ The instances module governs the full lifecycle of containerized workspaces—cr
 | `InstanceService` | `createInstance`, `startInstance`, `stopInstance`, `getInstanceById`, `getInstancesByUserId`, `deleteInstance`, `checkOwnership` |
 | `InstanceMetricsService` | `getMetricsByInstanceId`, `recordMetrics` |
 | `InstanceUserService` | `assignUserToInstance`, `getUsersByInstanceId`, `removeUserFromInstance` |
-| `WorkspaceProvisionerService` | `createWorkspace(userId, isPersistent)`, `createWorkspace(userId, isPersistent, imageName, imageVersion, cpuCores, memoryMb, storageMb, gpuEnabled, exposedPort)`, `stopWorkSpace`, `startWorkspace` |
+| `WorkspaceProvisionerService` | `createWorkspace(userId, isPersistent)`, `createWorkspace(userId, isPersistent, imageName, imageVersion, cpuCores, memoryMb, storageMb, gpuEnabled, exposedPort)`, `stopWorkSpace`, `startWorkspace`, `getContainerIp` |
 | `CatalogService` | `getAvailableImages`, `getCatalog` |
 
 #### Data Layer
 
 | Class / Interface | Package | Key Detail |
 |---|---|---|
-| `InstanceJpa` | `data.model` | `implements Instance`; mapped to `instances` table; 20 fields |
+| `InstanceJpa` | `data.model` | `implements Instance`; mapped to `instances` table; 21 fields |
 | `InstanceMetricsJpa` | `data.model` | `implements InstanceMetrics`; mapped to `instance_metrics` table |
 | `InstanceUserJpa` | `data.model` | `implements InstanceUser`; mapped to `instance_users` table |
 | `InstanceRepository` | `data.repository` | Extends `JpaRepository<InstanceJpa, String>`; includes `findByUserId` via JPQL join, `countByImageNameAndStatusNot` |
@@ -377,6 +377,9 @@ The `WorkspaceProvisionerOperation` is the adapter that bridges the domain servi
 | `InstanceMetricsSpringWsOps` | Web operation implementation for metrics |
 | `InstanceUsersSpringWsOps` | Web operation implementation for associations |
 | `CatalogSpringWsOps` | Web operation implementation for catalog |
+| `VncProxyController` | `/api/instances/{instanceId}/vnc/**` — HTTP reverse proxy for KasmVNC web client assets |
+| `VncWebSocketProxyHandler` | WebSocket proxy forwarding browser → container KasmVNC connections |
+| `VncWebSocketConfig` | Registration of VNC WebSocket handler at `/api/instances/*/vnc/websockify` |
 | `CreateInstanceRequest` | Request record for instance creation |
 | `InstanceResponse` | Response record with `id`, `name`, `description` (nullable), `imageName`, `imageVersion`, `cpuCores`, `memoryMb`, `storageMb`, `gpuEnabled`, `status`, lifecycle timestamps; `static from(Instance)` factory |
 | `InstanceMetricsResponse` | Response record with `static from(InstanceMetrics)` factory |
@@ -1042,6 +1045,10 @@ The `UniqueIdGenerator` interface in commons has two implementations (`UuidGener
 ### Docker Integration
 
 `WorkspaceProvisionerOperation` directly uses the `docker-java` client library to create and stop containers. This is the only service that interacts with external infrastructure. The provisioner configures resource limits (CPU, memory, disk) dynamically based on parameters supplied during instance creation. The overloaded `createWorkspace` method accepts image name, version, CPU cores, memory MB, storage MB, GPU flag, and exposed port. A backward-compatible overload with default values (2 CPU cores, 4 GB RAM, 10 GB disk, `lab-kicad:latest`) is also provided.
+
+Containers expose two ports: an application port (default 8080) and a KasmVNC port (default 6901) for browser-based remote desktop access. KasmVNC provides a full Linux desktop (LXDE) with built-in WebSocket support and an HTML5 web client. The `VncWebSocketProxyHandler` and `VncProxyController` enable the frontend to access the container's KasmVNC server through the backend, maintaining authentication and avoiding direct container exposure.
+
+After container creation, the internal bridge IP address is resolved via `docker inspect` and stored in `internalIp`, enabling the VNC proxy to connect to running containers by their Docker network address.
 
 ### Workspace Catalog
 

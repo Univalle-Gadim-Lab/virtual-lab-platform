@@ -161,6 +161,13 @@ public interface Instance {
     Optional<LocalDateTime> lastAccessedAt();
 
     /**
+     * Returns the VNC port for remote desktop access.
+     *
+     * @return The VNC port
+     */
+    int vncPort();
+
+    /**
      * Returns the current status of the instance.
      *
      * @return The instance status

@@ -2,6 +2,7 @@ package edu.univalle.gadim.virtual_lab_platform.instances.operation;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.HostConfig;
 import edu.univalle.gadim.virtual_lab_platform.instances.api.service.WorkspaceProvisionerService;
@@ -17,7 +18,8 @@ import org.springframework.stereotype.Service;
  *
  * <p>Bridges the domain service layer to the Docker daemon using the {@code docker-java} client
  * library. Creates containers with configurable resource limits (CPU, memory, disk) and manages
- * their lifecycle.
+ * their lifecycle. Each container exposes an application port and a KasmVNC port (6901) for
+ * browser-based remote desktop access.
  *
  * @see WorkspaceProvisionerService
  */
@@ -31,6 +33,8 @@ public class WorkspaceProvisionerOperation implements WorkspaceProvisionerServic
   private static final int DEFAULT_CPU_CORES = 2;
   private static final int DEFAULT_MEMORY_MB = 4096;
   private static final int DEFAULT_STORAGE_MB = 10240;
+  private static final int DEFAULT_EXPOSED_PORT = 8080;
+  private static final int DEFAULT_VNC_PORT = 6901;
   private static final String DEFAULT_IMAGE_NAME = "lab-kicad";
   private static final String DEFAULT_IMAGE_VERSION = "latest";
 
@@ -52,7 +56,8 @@ public class WorkspaceProvisionerOperation implements WorkspaceProvisionerServic
         DEFAULT_MEMORY_MB,
         DEFAULT_STORAGE_MB,
         false,
-        8080);
+        DEFAULT_EXPOSED_PORT,
+        DEFAULT_VNC_PORT);
   }
 
   @Override
@@ -67,6 +72,30 @@ public class WorkspaceProvisionerOperation implements WorkspaceProvisionerServic
       int storageMb,
       boolean gpuEnabled,
       int exposedPort) {
+    return createWorkspace(
+        userId,
+        isPersistent,
+        imageName,
+        imageVersion,
+        cpuCores,
+        memoryMb,
+        storageMb,
+        gpuEnabled,
+        exposedPort,
+        DEFAULT_VNC_PORT);
+  }
+
+  private String createWorkspace(
+      String userId,
+      boolean isPersistent,
+      String imageName,
+      String imageVersion,
+      int cpuCores,
+      int memoryMb,
+      int storageMb,
+      boolean gpuEnabled,
+      int exposedPort,
+      int vncPort) {
 
     final var imageReference = imageName + ":" + imageVersion;
     final var cpuQuota = (long) cpuCores * CPU_PERIOD;
@@ -92,9 +121,8 @@ public class WorkspaceProvisionerOperation implements WorkspaceProvisionerServic
     try (var createCmd = dockerClient.createContainerCmd(imageReference)) {
       container =
           createCmd
-              .withName("workspace-" + userId)
               .withHostConfig(hostConfig)
-              .withExposedPorts(ExposedPort.tcp(exposedPort))
+              .withExposedPorts(ExposedPort.tcp(exposedPort), ExposedPort.tcp(vncPort))
               .exec();
     }
 
@@ -111,5 +139,21 @@ public class WorkspaceProvisionerOperation implements WorkspaceProvisionerServic
   @Override
   public void startWorkspace(String containerId) {
     dockerClient.startContainerCmd(containerId).exec();
+  }
+
+  @Override
+  @Nonnull
+  public @NonNull String getContainerIp(String containerId) {
+    InspectContainerResponse inspection = dockerClient.inspectContainerCmd(containerId).exec();
+    var networkSettings = inspection.getNetworkSettings();
+    if (networkSettings != null && networkSettings.getNetworks() != null) {
+      var bridgeNetwork = networkSettings.getNetworks().values().stream()
+          .findFirst()
+          .orElse(null);
+      if (bridgeNetwork != null && bridgeNetwork.getIpAddress() != null) {
+        return bridgeNetwork.getIpAddress();
+      }
+    }
+    return "127.0.0.1";
   }
 }

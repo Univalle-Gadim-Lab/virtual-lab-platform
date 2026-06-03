@@ -82,6 +82,9 @@ public class InstanceJpa implements Instance {
   @Column(name = "internal_ip")
   private String internalIp;
 
+  @Column(name = "vnc_port")
+  private Integer vncPort;
+
   @Column(name = "created_at")
   private LocalDateTime createdAt;
 
@@ -192,6 +195,11 @@ public class InstanceJpa implements Instance {
   @Override
   public int exposedPort() {
     return this.exposedPort;
+  }
+
+  @Override
+  public int vncPort() {
+    return this.vncPort;
   }
 
   @Override
