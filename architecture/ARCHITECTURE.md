@@ -409,6 +409,7 @@ classDiagram
         +storageMb() int
         +gpuEnabled() boolean
         +exposedPort() int
+        +vncPort() int
         +internalIp() String
         +createdAt() LocalDateTime
         +expiresAt() LocalDateTime
@@ -475,6 +476,7 @@ classDiagram
         -int storageMb
         -boolean gpuEnabled
         -int exposedPort
+        -int vncPort
         -String internalIp
         -LocalDateTime createdAt
         -LocalDateTime expiresAt
@@ -552,6 +554,7 @@ classDiagram
         +createWorkspace(userId, isPersistent)
         +stopWorkSpace(containerId)
         +startWorkspace(containerId)
+        +getContainerIp(containerId) String
     }
 
     class CreateInstanceRequest {
@@ -577,6 +580,7 @@ classDiagram
         +Integer memoryMb
         +Integer storageMb
         +Boolean gpuEnabled
+        +Integer vncPort
         +InstanceStatus status
         +LocalDateTime createdAt
         +LocalDateTime expiresAt
@@ -622,6 +626,19 @@ classDiagram
 
     class InstanceConfig
 
+    class VncProxyController {
+        -InstanceService instanceService
+        +proxyVncRequest(instanceId)
+    }
+
+    class VncWebSocketProxyHandler {
+        -InstanceService instanceService
+        +afterConnectionEstablished(session)
+        +handleBinaryMessage(session, message)
+    }
+
+    class VncWebSocketConfig
+
     InstanceJpa ..|> Instance
     InstanceMetricsJpa ..|> InstanceMetrics
     InstanceUserJpa ..|> InstanceUser
@@ -640,6 +657,8 @@ classDiagram
     InstanceResponse ..> Instance
     InstanceMetricsResponse ..> InstanceMetrics
     Instance --> InstanceStatus
+    VncProxyController --> InstanceService
+    VncWebSocketProxyHandler --> InstanceService
 ```
 
 ### Authentication Module
@@ -681,7 +700,7 @@ The authentication module provides JWT-based authentication and authorization fo
 | `AuthController` | `/api/auth` — login, refresh, logout, current user |
 | `AuthWsOps` | Web operation interface for authentication |
 | `AuthSpringWsOps` | Web operation implementation bridging controllers to services |
-| `JwtAuthenticationFilter` | Servlet filter extracting and validating Bearer tokens |
+| `JwtAuthenticationFilter` | Servlet filter extracting and validating Bearer tokens from `Authorization` header or `?token=` query parameter (for iframe/WebSocket auth) |
 | `JwtAuthenticationEntryPoint` | Returns JSON `401 Unauthorized` for unauthenticated requests |
 | `JwtAccessDeniedHandler` | Returns JSON `403 Forbidden` for insufficient roles |
 | `LoginRequest` | Request record for user credentials (`email`, `password`) |
@@ -857,6 +876,7 @@ Each module provides Spring `@Configuration` classes that register beans needed 
 | `AuthenticationConfig` | authentication | Marker `@Configuration` for component scanning within the authentication module |
 | `InstanceConfig` | instances | Provides `DockerClient` bean; enables `WorkspaceImageProperties` binding |
 | `InstancesWsConfig` | instances | Marker `@Configuration` for web service operations within the instances module |
+| `VncWebSocketConfig` | instances | Registers VNC WebSocket handler at `/api/instances/*/vnc/websockify` for browser-to-container proxy |
 
 ### Web Layer Architecture
 
@@ -881,10 +901,11 @@ This pattern ensures that:
 
 `SecurityConfig` in the boot module configures the following security policy:
 
-- **CORS:** Allows cross-origin requests from local development servers (`localhost:4200`, `localhost:3000`, `localhost:5173`) with credentials.
+- **CORS:** Allows cross-origin requests from local development servers (`localhost:4200`, `localhost:3000`, `localhost:5173`) with credentials and WebSocket upgrade headers.
 - **Public endpoints:** `/api/auth/login`, `/api/auth/refresh`, and `/api/health` are accessible without authentication.
 - **Admin-only endpoints:** `/api/users/**` and `/api/user-roles/**` require the `ADMIN` role.
 - **All other endpoints:** Require a valid Bearer JWT token.
+- **Token sources:** Tokens are accepted from the `Authorization: Bearer <token>` header or `?token=<jwt>` query parameter, enabling authentication for iframes and WebSocket upgrade requests.
 - **Error responses:** `JwtAuthenticationEntryPoint` returns JSON `401`; `JwtAccessDeniedHandler` returns JSON `403`.
 
 ### Module Integration Diagram
@@ -922,6 +943,8 @@ classDiagram
         class Instance
         class InstanceService
         class InstanceServiceOp
+        class VncProxyController
+        class VncWebSocketProxyHandler
     }
 
     package authentication {
@@ -942,6 +965,8 @@ classDiagram
     UserDto ..> User
 
     InstanceServiceOp ..|> InstanceService
+    VncProxyController --> InstanceService
+    VncWebSocketProxyHandler --> InstanceService
 
     AuthenticationOperation ..|> AuthenticationService
     JwtTokenOperation ..|> TokenService
@@ -1056,7 +1081,7 @@ The workspace catalog provides read-only access to the available workspace image
 
 ### Security Considerations
 
-- `SecurityConfig` enables JWT-based authentication with stateless sessions. The `JwtAuthenticationFilter` validates Bearer tokens on each request and populates the `SecurityContextHolder` with the authenticated principal.
+- `SecurityConfig` enables JWT-based authentication with stateless sessions. The `JwtAuthenticationFilter` validates Bearer tokens on each request and populates the `SecurityContextHolder` with the authenticated principal. Tokens may be provided via the `Authorization` header (standard REST clients) or the `?token=` query parameter (iframes and WebSocket upgrade requests for the VNC proxy).
 - Login (`POST /api/auth/login`), refresh (`POST /api/auth/refresh`), and health check (`GET /api/health`) endpoints are publicly accessible; all other endpoints require a valid Bearer token.
 - `/api/users/**` and `/api/user-roles/**` are restricted to users with the `ADMIN` role.
 - `JwtAuthenticationEntryPoint` returns structured JSON `401` responses for unauthenticated requests; `JwtAccessDeniedHandler` returns JSON `403` responses for insufficient role permissions.
