@@ -85,6 +85,9 @@ public class InstanceJpa implements Instance {
   @Column(name = "vnc_port")
   private Integer vncPort;
 
+  @Column(name = "vnc_enabled")
+  private Boolean vncEnabled;
+
   @Column(name = "created_at")
   private LocalDateTime createdAt;
 
@@ -200,6 +203,11 @@ public class InstanceJpa implements Instance {
   @Override
   public int vncPort() {
     return this.vncPort;
+  }
+
+  @Override
+  public boolean vncEnabled() {
+    return this.vncEnabled;
   }
 
   @Override

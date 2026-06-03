@@ -26,6 +26,8 @@ class InstanceJpaUnTest {
   private static final Integer STORAGE_MB = 20480;
   private static final Boolean GPU_ENABLED = true;
   private static final Integer EXPOSED_PORT = 8080;
+  private static final Integer VNC_PORT = 6901;
+  private static final Boolean VNC_ENABLED = true;
   private static final String INTERNAL_IP = "10.0.0.5";
   private static final LocalDateTime CREATED_AT = LocalDateTime.of(2025, 1, 15, 10, 30, 0);
   private static final LocalDateTime EXPIRES_AT = LocalDateTime.of(2025, 2, 15, 10, 30, 0);
@@ -56,6 +58,8 @@ class InstanceJpaUnTest {
       assertThat(instance.getStorageMb()).isNull();
       assertThat(instance.getGpuEnabled()).isNull();
       assertThat(instance.getExposedPort()).isNull();
+      assertThat(instance.getVncPort()).isNull();
+      assertThat(instance.getVncEnabled()).isNull();
       assertThat(instance.getInternalIp()).isNull();
       assertThat(instance.getCreatedAt()).isNull();
       assertThat(instance.getExpiresAt()).isNull();
@@ -89,6 +93,8 @@ class InstanceJpaUnTest {
               GPU_ENABLED,
               EXPOSED_PORT,
               INTERNAL_IP,
+              VNC_PORT,
+              VNC_ENABLED,
               CREATED_AT,
               EXPIRES_AT,
               STARTED_AT,
@@ -110,6 +116,8 @@ class InstanceJpaUnTest {
           .returns(STORAGE_MB, InstanceJpa::getStorageMb)
           .returns(GPU_ENABLED, InstanceJpa::getGpuEnabled)
           .returns(EXPOSED_PORT, InstanceJpa::getExposedPort)
+          .returns(VNC_PORT, InstanceJpa::getVncPort)
+          .returns(VNC_ENABLED, InstanceJpa::getVncEnabled)
           .returns(INTERNAL_IP, InstanceJpa::getInternalIp)
           .returns(CREATED_AT, InstanceJpa::getCreatedAt)
           .returns(EXPIRES_AT, InstanceJpa::getExpiresAt)
@@ -231,6 +239,15 @@ class InstanceJpaUnTest {
       instance.setExposedPort(EXPOSED_PORT);
 
       assertThat(instance.getExposedPort()).isEqualTo(EXPOSED_PORT);
+    }
+
+    @Test
+    @DisplayName("should update vncEnabled")
+    void shouldUpdateVncEnabled() {
+      final var instance = new InstanceJpa();
+      instance.setVncEnabled(VNC_ENABLED);
+
+      assertThat(instance.getVncEnabled()).isEqualTo(VNC_ENABLED);
     }
 
     @Test

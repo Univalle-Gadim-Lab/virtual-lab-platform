@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS instances
     gpu_enabled      BOOLEAN      NOT NULL,
     exposed_port     INTEGER,
     vnc_port         INTEGER,
+    vnc_enabled      BOOLEAN      NOT NULL DEFAULT TRUE,
     internal_ip      VARCHAR(45),
     created_at       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     expires_at       TIMESTAMP,

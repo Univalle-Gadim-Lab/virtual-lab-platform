@@ -168,6 +168,13 @@ public interface Instance {
     int vncPort();
 
     /**
+     * Returns whether VNC remote desktop access is enabled.
+     *
+     * @return true if VNC is enabled, false otherwise
+     */
+    boolean vncEnabled();
+
+    /**
      * Returns the current status of the instance.
      *
      * @return The instance status

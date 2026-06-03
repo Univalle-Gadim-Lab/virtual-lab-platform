@@ -18,6 +18,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 
 /**
  * Service implementation for managing virtual lab instances.
@@ -39,6 +41,7 @@ public class InstanceServiceOperation implements InstanceService {
   private final InstanceUserRepository instanceUserRepository;
   private final WorkspaceProvisionerService workspaceProvisionerService;
   private final UniqueIdGenerator uniqueIdGenerator;
+  private final RestTemplate restTemplate;
 
   public InstanceServiceOperation(
       InstanceRepository instanceRepository,
@@ -49,6 +52,7 @@ public class InstanceServiceOperation implements InstanceService {
     this.instanceUserRepository = instanceUserRepository;
     this.workspaceProvisionerService = workspaceProvisionerService;
     this.uniqueIdGenerator = uniqueIdGenerator;
+    this.restTemplate = new RestTemplate();
   }
 
   /**
@@ -122,6 +126,7 @@ public class InstanceServiceOperation implements InstanceService {
             .gpuEnabled(gpuEnabled)
             .exposedPort(exposedPort)
             .vncPort(DEFAULT_VNC_PORT)
+            .vncEnabled(true)
             .internalIp(internalIp)
             .createdAt(now)
             .expiresAt(expiresAt)
@@ -252,6 +257,37 @@ public class InstanceServiceOperation implements InstanceService {
   public boolean checkOwnership(String instanceId, String userId) {
     return instanceUserRepository.findByInstanceId(instanceId).stream()
         .anyMatch(a -> a.getUserId().equals(userId));
+  }
+
+  @Override
+  @Nonnull
+  @Transactional(readOnly = true)
+  public Instance getRemoteSessionInfo(String instanceId, String userId) {
+    if (!checkOwnership(instanceId, userId)) {
+      throw new SecurityException("User does not own instance: " + instanceId);
+    }
+    return requireInstanceById(instanceId);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public boolean checkVncHealth(String instanceId, String userId) {
+    if (!checkOwnership(instanceId, userId)) {
+      throw new SecurityException("User does not own instance: " + instanceId);
+    }
+    final var instance = requireInstanceById(instanceId);
+    if (instance.getStatus() != InstanceStatus.RUNNING) {
+      return false;
+    }
+    try {
+      final var healthUrl =
+          "http://" + instance.getInternalIp() + ":" + instance.getVncPort() + "/";
+      restTemplate.getForObject(healthUrl, String.class);
+      return true;
+    } catch (RestClientException e) {
+      logger.warn("VNC health check failed for instance {}: {}", instanceId, e.getMessage());
+      return false;
+    }
   }
 
   private InstanceJpa requireInstanceById(String instanceId) {

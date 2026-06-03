@@ -94,4 +94,27 @@ public interface InstanceService {
      * @return true if the user is associated with the instance, false otherwise
      */
     boolean checkOwnership(@Nonnull String instanceId, @Nonnull String userId);
+
+    /**
+     * Retrieves remote session information for an instance after verifying ownership.
+     *
+     * @param instanceId The instance ID
+     * @param userId The user ID for ownership verification
+     * @return The instance
+     * @throws IllegalArgumentException if instance not found
+     * @throws SecurityException if user does not own the instance
+     */
+    @Nonnull
+    Instance getRemoteSessionInfo(@Nonnull String instanceId, @Nonnull String userId);
+
+    /**
+     * Checks whether the VNC server inside the instance container is reachable.
+     *
+     * @param instanceId The instance ID
+     * @param userId The user ID for ownership verification
+     * @return true if the VNC server responds, false otherwise
+     * @throws IllegalArgumentException if instance not found
+     * @throws SecurityException if user does not own the instance
+     */
+    boolean checkVncHealth(@Nonnull String instanceId, @Nonnull String userId);
 }
