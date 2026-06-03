@@ -3,6 +3,7 @@ package edu.univalle.gadim.virtual_lab_platform.instances.operation;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.InspectContainerResponse;
+import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.HostConfig;
 import edu.univalle.gadim.virtual_lab_platform.instances.api.service.WorkspaceProvisionerService;
@@ -115,6 +116,25 @@ public class WorkspaceProvisionerOperation implements WorkspaceProvisionerServic
     if (isPersistent) {
       hostConfig.withBinds(
           com.github.dockerjava.api.model.Bind.parse("vol_" + userId + ":/home/labuser/projects"));
+    }
+
+    boolean imageExistsLocally = false;
+    try {
+      dockerClient.inspectImageCmd(imageReference).exec();
+      imageExistsLocally = true;
+    } catch (NotFoundException ignored) {
+    }
+
+    if (!imageExistsLocally) {
+      try {
+        dockerClient.pullImageCmd(imageName)
+            .withTag(imageVersion)
+            .start()
+            .awaitCompletion();
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new RuntimeException("Image pull was interrupted: " + imageReference, e);
+      }
     }
 
     CreateContainerResponse container;
