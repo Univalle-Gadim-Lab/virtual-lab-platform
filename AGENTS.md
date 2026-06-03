@@ -164,11 +164,11 @@ Architecture and design documentation lives under `architecture/`:
 - `architecture/ARCHITECTURE.md` — Class-level system architecture, module diagrams, component relationships
 - `architecture/DATABASE.md` — Physical database schema, ERD diagram, DDL-to-JPA mapping reference
 - `architecture/openapi/openapi.yaml` — OpenAPI specification for the Web API
-- `architecture/virtual-lab-authentication.puml` — PlantUML class diagram for the authentication module
-- `architecture/virtual-lab-instances-module.puml` — PlantUML class diagram for the instances module
-- `architecture/virtual-lab-users-module.puml` — PlantUML class diagram for the users module
+- `architecture/virtual-lab-authentication.mermaid` — Mermaid class diagram for the authentication module
+- `architecture/virtual-lab-instances-module.mermaid` — Mermaid class diagram for the instances module
+- `architecture/virtual-lab-users-module.mermaid` — Mermaid class diagram for the users module
 - `architecture/vnc-integration-analysis.md` — VNC/KasmVNC integration analysis and design rationale
-- `architecture/virtual-lab-module-integration.puml` — PlantUML diagram showing cross-module integration
+- `architecture/virtual-lab-module-integration.mermaid` — Mermaid diagram showing cross-module integration
 
 ### Virtual Lab UI (External Project)
 
@@ -185,10 +185,10 @@ The following table lists all architecture and API documentation resources. Cons
 | `architecture/ARCHITECTURE.md` | System architecture, module breakdown, class diagrams, web layer patterns | Before implementing new features, refactoring, or adding new modules; to understand the WsOps pattern or module boundaries |
 | `architecture/DATABASE.md` | Physical database schema, column types, constraints, foreign keys, enum values | Before modifying JPA entities, adding columns, changing relationships, or writing repository queries; to check nullable/unique constraints |
 | `architecture/openapi/openapi.yaml` | HTTP API contracts, request/response schemas, endpoint definitions | Before implementing or consuming REST endpoints; to verify endpoint paths, HTTP methods, request/response shapes, and status codes |
-| `architecture/virtual-lab-authentication.puml` | Authentication module class diagram (API types, services, operations, web layer, security) | When working on authentication features, JWT token handling, or security filter configuration |
-| `architecture/virtual-lab-users-module.puml` | Users module class diagram (User, UserRole, services, controllers) | When modifying user management, role assignment, or user-related API endpoints |
-| `architecture/virtual-lab-instances-module.puml` | Instances module class diagram (Instance, metrics, catalog, Docker integration) | When modifying instance lifecycle, metrics collection, workspace catalog, or container provisioning |
-| `architecture/virtual-lab-module-integration.puml` | Cross-module dependency and integration diagram | Before adding cross-module dependencies; to understand how boot assembles the application from all modules |
+| `architecture/virtual-lab-authentication.mermaid` | Authentication module class diagram (API types, services, operations, web layer, security) | When working on authentication features, JWT token handling, or security filter configuration |
+| `architecture/virtual-lab-users-module.mermaid` | Users module class diagram (User, UserRole, services, controllers) | When modifying user management, role assignment, or user-related API endpoints |
+| `architecture/virtual-lab-instances-module.mermaid` | Instances module class diagram (Instance, metrics, catalog, Docker integration) | When modifying instance lifecycle, metrics collection, workspace catalog, or container provisioning |
+| `architecture/virtual-lab-module-integration.mermaid` | Cross-module dependency and integration diagram | Before adding cross-module dependencies; to understand how boot assembles the application from all modules |
 | `architecture/vnc-integration-analysis.md` | VNC/KasmVNC integration analysis: architecture, proxy flow, session lifecycle | When modifying VNC proxy, remote desktop access, or container VNC configuration |
 
 ### Key Architectural Decisions to Keep in Mind

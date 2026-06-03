@@ -1,0 +1,201 @@
+%% Virtual Lab Platform — Users Module
+%% Class diagram aligned with architecture/ARCHITECTURE.md
+%% Source of truth: ARCHITECTURE.md (Users Module section)
+classDiagram
+    direction TB
+
+    class User {
+        <<interface>>
+        +id() String
+        +name() String
+        +lastName() String
+        +externalCode() Optional~String~
+        +password() String
+        +status() UserStatus
+        +createdDate() LocalDateTime
+    }
+
+    class UserRole {
+        <<interface>>
+        +id() String
+        +userId() String
+        +role() Role
+    }
+
+    class Role {
+        <<enumeration>>
+        ADMIN
+        STUDENT
+        TEACHER
+    }
+
+    class UserStatus {
+        <<enumeration>>
+        ACTIVE
+        INACTIVE
+        DELETED
+    }
+
+    class UserService {
+        <<interface>>
+        +createUser(user) User
+        +getUserById(id) Optional~User~
+        +getAllUsers() List~User~
+        +updateUser(id, user) User
+        +deleteUser(id) void
+    }
+
+    class UserRoleService {
+        <<interface>>
+        +createUserRole(userId, role) UserRole
+        +createUserRoles(userId, roles) List~UserRole~
+        +getRoleByUserId(userId) List~UserRole~
+        +deleteUserRole(id) void
+    }
+
+    class UserJpa {
+        -String id
+        -String name
+        -String lastName
+        -String externalCode
+        -String password
+        -UserStatus status
+        -LocalDateTime createdDate
+    }
+
+    class UserRoleJpa {
+        -String id
+        -String userId
+        -Role role
+    }
+
+    class UserRepository {
+        <<interface>>
+        +save(user) UserJpa
+        +findById(id) Optional~UserJpa~
+        +findAll() List~UserJpa~
+    }
+
+    class UserRoleRepository {
+        <<interface>>
+        +findByUserId(userId) List~UserRoleJpa~
+    }
+
+    class UserServiceOp {
+        -UserRepository repository
+        -PasswordEncoder passwordEncoder
+        +createUser(request) User
+        +getUserById(id) Optional~User~
+        +getAllUsers() List~User~
+        +updateUser(id, request) User
+        +deleteUser(id) void
+    }
+
+    class UserRolesServiceOperation {
+        -UniqueIdGenerator uniqueIdGenerator
+        -UserRepository userRepository
+        -UserRoleRepository userRoleRepository
+        +createUserRole(userId, role) UserRole
+        +createUserRoles(userId, roles) List~UserRole~
+        +getRoleByUserId(userId) List~UserRole~
+        +deleteUserRole(id) void
+    }
+
+    class UsersWsOps {
+        <<interface>>
+        +createUser(request) UserResponse
+        +getUserById(id) UserResponse
+        +getAllUsers() List~UserResponse~
+        +updateUser(id, request) UserResponse
+        +deleteUser(id) void
+        +createUserRole(request) UserRoleResponse
+        +createUserRoles(request) List~UserRoleResponse~
+        +getRolesByUserId(userId) List~UserRoleResponse~
+        +deleteUserRole(id) void
+    }
+
+    class UsersSpringWsOps {
+        -UserService userService
+        -UserRoleService userRoleService
+    }
+
+    class UserController {
+        -UsersWsOps usersWsOps
+        +createUser(request)
+        +getUserById(id)
+        +getAllUsers()
+        +updateUser(id, request)
+        +deleteUser(id)
+    }
+
+    class UserRoleController {
+        -UsersWsOps usersWsOps
+        +createUserRole(request)
+        +createUserRoles(request)
+        +getRolesByUserId(userId)
+        +deleteUserRole(id)
+    }
+
+    class CreateUserRequest {
+        +String id
+        +String name
+        +String lastName
+        +String externalCode
+        +String password
+    }
+
+    class UpdateUserRequest {
+        +String name
+        +String lastName
+        +String externalCode
+        +String password
+        +UserStatus status
+    }
+
+    class CreateUserRoleRequest {
+        +String userId
+        +Role role
+    }
+
+    class CreateUserRolesRequest {
+        +String userId
+        +List~Role~ roles
+    }
+
+    class UserResponse {
+        +String id
+        +String name
+        +String lastName
+        +String externalCode
+        +UserStatus status
+        +LocalDateTime createdDate
+    }
+
+    class UserRoleResponse {
+        +String id
+        +String userId
+        +Role role
+    }
+
+    class UserSecurityConfig {
+        +passwordEncoder() PasswordEncoder
+    }
+
+    class ModuleConfig
+
+    UserJpa ..|> User
+    UserRoleJpa ..|> UserRole
+    UserServiceOp ..|> UserService
+    UserRolesServiceOperation ..|> UserRoleService
+    UsersSpringWsOps ..|> UsersWsOps
+    UserServiceOp --> UserRepository
+    UserRolesServiceOperation --> UserRepository
+    UserRolesServiceOperation --> UserRoleRepository
+    UserServiceOp --> PasswordEncoder
+    UserController --> UsersWsOps
+    UserRoleController --> UsersWsOps
+    UserResponse ..> User
+    UserRoleResponse ..> UserRole
+    UserRole --> User
+    UserRole --> Role
+    User --> UserStatus

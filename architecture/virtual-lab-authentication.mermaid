@@ -1,0 +1,171 @@
+%% Virtual Lab Platform — Authentication Module
+%% Class diagram aligned with architecture/ARCHITECTURE.md
+%% Source of truth: ARCHITECTURE.md (Authentication Module section)
+classDiagram
+    direction TB
+
+    class RefreshToken {
+        <<interface>>
+        +id() String
+        +userId() String
+        +token() String
+        +expiresAt() LocalDateTime
+        +revoked() boolean
+        +createdAt() LocalDateTime
+    }
+
+    class TokenType {
+        <<enumeration>>
+        ACCESS
+        REFRESH
+    }
+
+    class AuthenticationResult {
+        <<record>>
+        +String accessToken
+        +String refreshToken
+        +TokenType tokenType
+        +long expiresIn
+    }
+
+    class AuthenticationService {
+        <<interface>>
+        +login(email, password) AuthenticationResult
+        +refresh(refreshToken) AuthenticationResult
+        +logout(refreshToken) void
+        +validateAccessToken(accessToken) boolean
+    }
+
+    class TokenService {
+        <<interface>>
+        +generateAccessToken(userId, name, roles) String
+        +generateRefreshToken(userId) String
+        +validateAccessToken(token) boolean
+        +extractUserId(token) String
+        +extractName(token) String
+        +extractRoles(token) List~Role~
+    }
+
+    class RefreshTokenJpa {
+        -String id
+        -String userId
+        -String token
+        -LocalDateTime expiresAt
+        -boolean revoked
+        -LocalDateTime createdAt
+    }
+
+    class RefreshTokenRepository {
+        <<interface>>
+        +findByToken(token) Optional~RefreshTokenJpa~
+        +findByUserId(userId) List~RefreshTokenJpa~
+        +save(refreshToken) RefreshTokenJpa
+    }
+
+    class AuthenticationOperation {
+        -UserRepository userRepository
+        -UserRoleRepository userRoleRepository
+        -PasswordEncoder passwordEncoder
+        -RefreshTokenRepository refreshTokenRepository
+        -UniqueIdGenerator idGenerator
+        -TokenService tokenService
+        +login(email, password) AuthenticationResult
+        +refresh(refreshToken) AuthenticationResult
+        +logout(refreshToken) void
+        +validateAccessToken(accessToken) boolean
+    }
+
+    class JwtTokenOperation {
+        -SecretKey signingKey
+        -long accessTokenExpirationMs
+        -long refreshTokenExpirationMs
+        +generateAccessToken(userId, name, roles) String
+        +generateRefreshToken(userId) String
+        +validateAccessToken(token) boolean
+        +extractUserId(token) String
+        +extractName(token) String
+        +extractRoles(token) List~Role~
+    }
+
+    class AuthWsOps {
+        <<interface>>
+        +login(request) LoginResponse
+        +refresh(request) LoginResponse
+        +logout(request) void
+        +me(userId) AuthenticatedUserResponse
+    }
+
+    class AuthSpringWsOps {
+        -AuthenticationService authenticationService
+        -UserRepository userRepository
+        -UserRoleRepository userRoleRepository
+        +login(request) LoginResponse
+        +refresh(request) LoginResponse
+        +logout(request) void
+        +me(userId) AuthenticatedUserResponse
+    }
+
+    class AuthController {
+        -AuthWsOps authWsOps
+        +login(request)
+        +refresh(request)
+        +logout(request)
+        +me()
+    }
+
+    class JwtAuthenticationFilter {
+        -TokenService tokenService
+        +doFilterInternal(request, response, filterChain)
+    }
+
+    class JwtAuthenticationEntryPoint {
+        +commence(request, response, authException)
+    }
+
+    class JwtAccessDeniedHandler {
+        +handle(request, response, accessDeniedException)
+    }
+
+    class AuthenticationConfig
+
+    class LoginRequest {
+        +String email
+        +String password
+    }
+
+    class LoginResponse {
+        +String accessToken
+        +String refreshToken
+        +String tokenType
+        +long expiresIn
+    }
+
+    class RefreshTokenRequest {
+        +String refreshToken
+    }
+
+    class LogoutRequest {
+        +String refreshToken
+    }
+
+    class AuthenticatedUserResponse {
+        +String id
+        +String name
+        +String lastName
+        +Set~Role~ roles
+    }
+
+    RefreshTokenJpa ..|> RefreshToken
+    AuthenticationOperation ..|> AuthenticationService
+    JwtTokenOperation ..|> TokenService
+    AuthSpringWsOps ..|> AuthWsOps
+    AuthenticationOperation --> RefreshTokenRepository
+    AuthenticationOperation --> TokenService
+    AuthenticationOperation --> UserRepository
+    AuthenticationOperation --> UserRoleRepository
+    AuthenticationOperation --> PasswordEncoder
+    AuthSpringWsOps --> AuthenticationService
+    AuthSpringWsOps --> UserRepository
+    AuthSpringWsOps --> UserRoleRepository
+    AuthController --> AuthWsOps
+    JwtAuthenticationFilter --> TokenService

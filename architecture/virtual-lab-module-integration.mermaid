@@ -1,0 +1,116 @@
+%% Virtual Lab Platform — Module Integration
+%% Cross-module dependency and integration diagram
+%% Source of truth: ARCHITECTURE.md (Module Integration Diagram section)
+classDiagram
+    direction TB
+
+    namespace virtualLabPlatformBoot {
+        class VirtualLabPlatformApplication {
+            <<SpringBootApplication>>
+            +main(args) void$
+        }
+    }
+
+    namespace commons {
+        class UniqueIdGenerator {
+            <<interface>>
+            +generate() String
+        }
+        class ObjectIdGenerator {
+            +generate() String
+        }
+    }
+
+    namespace users {
+        class User {
+            <<interface>>
+        }
+        class UserService {
+            <<interface>>
+        }
+        class UserJpa
+        class UserRepository {
+            <<interface>>
+        }
+        class UserServiceOp
+        class UserController
+        class UserResponse
+        class UserSecurityConfig
+    }
+
+    namespace security {
+        class SecurityConfig {
+            -JwtAuthenticationFilter jwtAuthenticationFilter
+            -AuthenticationEntryPoint authenticationEntryPoint
+            -AccessDeniedHandler accessDeniedHandler
+            +filterChain(http) SecurityFilterChain
+            +corsConfigurationSource() CorsConfigurationSource
+        }
+        class JwtAuthenticationEntryPoint
+        class JwtAccessDeniedHandler
+    }
+
+    namespace instances {
+        class Instance {
+            <<interface>>
+        }
+        class InstanceService {
+            <<interface>>
+        }
+        class InstanceServiceOperation
+        class WorkspaceProvisionerService {
+            <<interface>>
+        }
+        class WorkspaceProvisionerOperation
+        class VncProxyController
+        class VncWebSocketProxyHandler
+    }
+
+    namespace authentication {
+        class RefreshToken {
+            <<interface>>
+        }
+        class AuthenticationService {
+            <<interface>>
+        }
+        class TokenService {
+            <<interface>>
+        }
+        class AuthenticationOperation
+        class JwtTokenOperation
+        class AuthController
+        class JwtAuthenticationFilter
+        class AuthenticationConfig
+    }
+
+    ObjectIdGenerator ..|> UniqueIdGenerator
+
+    UserJpa ..|> User
+    UserServiceOp ..|> UserService
+    UserServiceOp --> UserRepository
+    UserController --> UserService
+    UserResponse ..> User
+    UserServiceOp --> UniqueIdGenerator
+
+    InstanceServiceOperation ..|> InstanceService
+    WorkspaceProvisionerOperation ..|> WorkspaceProvisionerService
+    InstanceServiceOperation --> WorkspaceProvisionerOperation
+    InstanceServiceOperation --> UniqueIdGenerator
+    VncProxyController --> InstanceService
+    VncWebSocketProxyHandler --> InstanceService
+
+    AuthenticationOperation ..|> AuthenticationService
+    JwtTokenOperation ..|> TokenService
+    AuthenticationOperation --> UserRepository
+    AuthenticationOperation --> UserRoleRepository
+    AuthenticationOperation --> UniqueIdGenerator
+    AuthController --> AuthenticationService
+    JwtAuthenticationFilter --> TokenService
+
+    VirtualLabPlatformApplication --> UserService
+    VirtualLabPlatformApplication --> InstanceService
+    VirtualLabPlatformApplication --> AuthenticationService
+    VirtualLabPlatformApplication --> SecurityConfig
+    VirtualLabPlatformApplication --> UniqueIdGenerator
+    SecurityConfig --> JwtAuthenticationFilter
+    SecurityConfig --> AuthenticationService
