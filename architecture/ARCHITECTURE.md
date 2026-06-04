@@ -916,13 +916,13 @@ The following diagram shows how all modules are assembled at runtime, with depen
 classDiagram
     direction TB
 
-    package virtualLabPlatformBoot {
+    namespace virtualLabPlatformBoot {
         class VirtualLabPlatformApplication {
             +main(args)
         }
     }
 
-    package users {
+    namespace users {
         class User
         class UserService
         class UserJpa
@@ -933,13 +933,13 @@ classDiagram
         class ModuleConfig
     }
 
-    package security {
+    namespace security {
         class SecurityConfig
         class JwtAuthenticationEntryPoint
         class JwtAccessDeniedHandler
     }
 
-    package instances {
+    namespace instances {
         class Instance
         class InstanceService
         class InstanceServiceOp
@@ -947,7 +947,7 @@ classDiagram
         class VncWebSocketProxyHandler
     }
 
-    package authentication {
+    namespace authentication {
         class RefreshToken
         class AuthenticationService
         class TokenService
@@ -980,6 +980,26 @@ classDiagram
     SecurityConfig --> JwtAuthenticationFilter
     SecurityConfig --> UserService
 ```
+
+## Module Diagrams
+
+The Users, Instances, and Authentication modules are each documented across two
+complementary diagrams that separate the data model from the operational
+architecture. Use them together to reason about a module end-to-end.
+
+| Diagram | Purpose | When to Use |
+|---|---|---|
+| `architecture/virtual-lab-users-module-types.mermaid` | Domain interfaces, enums, JPA entities, request/response DTOs, and the private web-layer adapter records, with realization, domain association, and DTO field-typing relationships | When modeling data structures, request/response payloads, or domain type hierarchies for the users module |
+| `architecture/virtual-lab-users-module-services.mermaid` | Service interfaces, service implementations, web-operation facades, controllers, repositories, and configuration, with realization and dependency-injection relationships | When modeling operational flow, request handling, or service-layer dependencies for the users module |
+| `architecture/virtual-lab-instances-module-types.mermaid` | Domain interfaces, enums, JPA entities, value objects (`WorkspaceImage`, `CatalogEntry`), and request/response DTOs including remote session models, with realization and domain association relationships | When modeling data structures, lifecycle states, or remote-desktop session payloads for the instances module |
+| `architecture/virtual-lab-instances-module-services.mermaid` | Service interfaces (including `WorkspaceProvisionerService`), operations, web-operation facades, controllers, the VNC WebSocket proxy, repositories, and configuration, with realization and dependency-injection relationships | When modeling operational flow, Docker provisioning, VNC proxying, or service-layer dependencies for the instances module |
+| `architecture/virtual-lab-authentication-module-types.mermaid` | `RefreshToken` interface, `TokenType` enum, `RefreshTokenJpa` entity, `AuthenticationResult` record, and request/response DTOs, with realization relationships | When modeling token and session payloads, request/response shapes, or domain types for the authentication module |
+| `architecture/virtual-lab-authentication-module-services.mermaid` | `AuthenticationService` and `TokenService` contracts, their operations, the `AuthWsOps` facade, the controller, JWT security filter, entry point, and access-denied handler, repository, and configuration, with realization and dependency-injection relationships | When modeling login/refresh/logout flows, JWT validation, the security filter chain, or service-layer dependencies for the authentication module |
+
+The original combined `architecture/virtual-lab-users-module.mermaid`,
+`architecture/virtual-lab-instances-module.mermaid`, and
+`architecture/virtual-lab-authentication.mermaid` diagrams remain as legacy
+references.
 
 ## Relationship Summary
 

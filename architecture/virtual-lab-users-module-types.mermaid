@@ -1,0 +1,150 @@
+%% Virtual Lab Platform — Users Module Types
+%% Data structures, domain interfaces, enums, JPA entities, and DTOs
+%% Source of truth: virtual-lab-platform-users/src/main/java/.../users
+%% Companion diagram: virtual-lab-users-module-services.mermaid
+classDiagram
+    direction TB
+
+    namespace api.type {
+        class User {
+            <<interface>>
+            +id() String
+            +name() String
+            +lastName() String
+            +externalCode() Optional~String~
+            +password() String
+            +status() UserStatus
+            +createdDate() LocalDateTime
+        }
+
+        class UserRole {
+            <<interface>>
+            +id() String
+            +userId() String
+            +role() Role
+        }
+
+        class Role {
+            <<enumeration>>
+            ADMIN
+            STUDENT
+            TEACHER
+        }
+
+        class UserStatus {
+            <<enumeration>>
+            ACTIVE
+            INACTIVE
+            DELETED
+        }
+    }
+
+    namespace data.model {
+        class UserJpa {
+            <<entity>>
+            -String id
+            -String name
+            -String lastName
+            -String externalCode
+            -String password
+            -UserStatus status
+            -LocalDateTime createdDate
+        }
+
+        class UserRoleJpa {
+            <<entity>>
+            -String id
+            -String userId
+            -Role role
+        }
+    }
+
+    namespace web.model {
+        class CreateUserRequest {
+            <<record>>
+            +String id
+            +String name
+            +String lastName
+            +String externalCode
+            +String password
+            +UserStatus status
+        }
+
+        class UpdateUserRequest {
+            <<record>>
+            +String name
+            +String lastName
+            +String externalCode
+            +String password
+            +UserStatus status
+        }
+
+        class CreateUserRoleRequest {
+            <<record>>
+            +String userId
+            +Role role
+        }
+
+        class CreateUserRolesRequest {
+            <<record>>
+            +String userId
+            +List~Role~ roles
+        }
+
+        class UserResponse {
+            <<record>>
+            +String id
+            +String name
+            +String lastName
+            +String externalCode
+            +UserStatus status
+            +LocalDateTime createdDate
+        }
+
+        class UserRoleResponse {
+            <<record>>
+            +String id
+            +String userId
+            +Role role
+        }
+    }
+
+    namespace web.operation {
+        class UserCreateRecord {
+            <<private record>>
+            +String id
+            +String name
+            +String lastName
+            +Optional~String~ externalCode
+            +String password
+            +UserStatus status
+            +LocalDateTime createdDate
+        }
+
+        class UserUpdateRecord {
+            <<private record>>
+            +String id
+            +String name
+            +String lastName
+            +Optional~String~ externalCode
+            +String password
+            +UserStatus status
+            +LocalDateTime createdDate
+        }
+    }
+
+    UserJpa ..|> User
+    UserRoleJpa ..|> UserRole
+    UserCreateRecord ..|> User
+    UserUpdateRecord ..|> User
+
+    UserRole --> User
+    UserRole --> Role
+    User --> UserStatus
+
+    CreateUserRequest --> UserStatus
+    UpdateUserRequest --> UserStatus
+    CreateUserRoleRequest --> Role
+    CreateUserRolesRequest --> Role
+    UserResponse --> UserStatus
+    UserRoleResponse --> Role

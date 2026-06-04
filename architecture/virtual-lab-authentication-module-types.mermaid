@@ -1,0 +1,93 @@
+%% Virtual Lab Platform — Authentication Module Types
+%% Domain interfaces, enums, JPA entities, token models, and request/response DTOs
+%% Source of truth: virtual-lab-platform-authentication/src/main/java/.../authentication
+%% Companion diagram: virtual-lab-authentication-module-services.mermaid
+classDiagram
+    direction TB
+
+    namespace api.type {
+        class RefreshToken {
+            <<interface>>
+            +id() String
+            +userId() String
+            +token() String
+            +expiresAt() LocalDateTime
+            +revoked() boolean
+            +createdAt() LocalDateTime
+        }
+
+        class TokenType {
+            <<enumeration>>
+            ACCESS
+            REFRESH
+        }
+    }
+
+    namespace data.model {
+        class RefreshTokenJpa {
+            <<entity>>
+            -String id
+            -String userId
+            -String token
+            -LocalDateTime expiresAt
+            -boolean revoked
+            -LocalDateTime createdAt
+        }
+    }
+
+    namespace api.service {
+        class AuthenticationResult {
+            <<record>>
+            +String accessToken
+            +String refreshToken
+            +String tokenType
+            +long expiresIn
+        }
+    }
+
+    namespace web.model {
+        class LoginRequest {
+            <<record>>
+            +String email
+            +String password
+        }
+
+        class LoginResponse {
+            <<record>>
+            +String accessToken
+            +String refreshToken
+            +String tokenType
+            +long expiresIn
+        }
+
+        class RefreshTokenRequest {
+            <<record>>
+            +String refreshToken
+        }
+
+        class LogoutRequest {
+            <<record>>
+            +String refreshToken
+        }
+
+        class AuthenticatedUserResponse {
+            <<record>>
+            +String id
+            +String name
+            +String lastName
+            +Set~Role~ roles
+        }
+    }
+
+    namespace external {
+        class Role {
+            <<enumeration>>
+            ADMIN
+            STUDENT
+            TEACHER
+        }
+    }
+
+    RefreshTokenJpa ..|> RefreshToken
+
+    AuthenticatedUserResponse --> Role

@@ -1,0 +1,146 @@
+%% Virtual Lab Platform — Users Module Services
+%% Service contracts, operations, web facades, controllers, repositories, and configuration
+%% Source of truth: virtual-lab-platform-users/src/main/java/.../users
+%% Companion diagram: virtual-lab-users-module-types.mermaid
+classDiagram
+    direction TB
+
+    namespace api.service {
+        class UserService {
+            <<interface>>
+            +createUser(user) User
+            +getUserById(id) Optional~User~
+            +getAllUsers() List~User~
+            +updateUser(id, user) User
+            +deleteUser(id) void
+        }
+
+        class UserRoleService {
+            <<interface>>
+            +createUserRole(userId, role) UserRole
+            +createUserRoles(userId, roles) List~UserRole~
+            +getRoleByUserId(userId) List~UserRole~
+            +deleteUserRole(id) void
+        }
+    }
+
+    namespace operation {
+        class UserServiceOperation {
+            -UserRepository userRepository
+            -PasswordEncoder passwordEncoder
+            +createUser(user) User
+            +getUserById(id) Optional~User~
+            +getAllUsers() List~User~
+            +updateUser(id, user) User
+            +deleteUser(id) void
+        }
+
+        class UserRolesServiceOperation {
+            -UniqueIdGenerator idGenerator
+            -UserRepository userRepository
+            -UserRoleRepository userRoleRepository
+            +createUserRole(userId, role) UserRole
+            +createUserRoles(userId, roles) List~UserRole~
+            +getRoleByUserId(userId) List~UserRole~
+            +deleteUserRole(id) void
+        }
+    }
+
+    namespace web.ops {
+        class UsersWsOps {
+            <<interface>>
+            +createUser(request) UserResponse
+            +getUserById(id) UserResponse
+            +getAllUsers() List~UserResponse~
+            +updateUser(id, request) UserResponse
+            +deleteUser(id) void
+            +createUserRole(request) UserRoleResponse
+            +createUserRoles(request) List~UserRoleResponse~
+            +getRolesByUserId(userId) List~UserRoleResponse~
+            +deleteUserRole(id) void
+        }
+    }
+
+    namespace web.operation {
+        class UsersSpringWsOps {
+            -UserService userService
+            -UserRoleService userRoleService
+            +createUser(request) UserResponse
+            +getUserById(id) UserResponse
+            +getAllUsers() List~UserResponse~
+            +updateUser(id, request) UserResponse
+            +deleteUser(id) void
+            +createUserRole(request) UserRoleResponse
+            +createUserRoles(request) List~UserRoleResponse~
+            +getRolesByUserId(userId) List~UserRoleResponse~
+            +deleteUserRole(id) void
+        }
+    }
+
+    namespace web.controller {
+        class UserController {
+            -UsersWsOps usersWsOps
+            +createUser(request) ResponseEntity~UserResponse~
+            +getUser(id) ResponseEntity~UserResponse~
+            +getAllUsers() ResponseEntity~List~UserResponse~~
+            +updateUser(id, request) ResponseEntity~UserResponse~
+            +deleteUser(id) ResponseEntity~Void~
+        }
+
+        class UserRoleController {
+            -UsersWsOps usersWsOps
+            +createUserRole(request) ResponseEntity~UserRoleResponse~
+            +createUserRoles(request) ResponseEntity~List~UserRoleResponse~~
+            +getRolesByUserId(userId) ResponseEntity~List~UserRoleResponse~~
+            +deleteUserRole(id) ResponseEntity~Void~
+        }
+    }
+
+    namespace data.repository {
+        class UserRepository {
+            <<interface>>
+            +save(user) UserJpa
+            +findById(id) Optional~UserJpa~
+            +findAll() List~UserJpa~
+        }
+
+        class UserRoleRepository {
+            <<interface>>
+            +findByUserId(userId) List~UserRoleJpa~
+        }
+    }
+
+    namespace config {
+        class UserSecurityConfig {
+            +passwordEncoder() PasswordEncoder$
+        }
+    }
+
+    namespace external {
+        class UniqueIdGenerator {
+            <<interface>>
+            +generate() String
+        }
+
+        class PasswordEncoder {
+            <<interface>>
+        }
+    }
+
+    UserServiceOperation ..|> UserService
+    UserRolesServiceOperation ..|> UserRoleService
+    UsersSpringWsOps ..|> UsersWsOps
+
+    UserServiceOperation --> UserRepository
+    UserServiceOperation --> PasswordEncoder
+    UserRolesServiceOperation --> UniqueIdGenerator
+    UserRolesServiceOperation --> UserRepository
+    UserRolesServiceOperation --> UserRoleRepository
+
+    UsersSpringWsOps --> UserService
+    UsersSpringWsOps --> UserRoleService
+
+    UserController --> UsersWsOps
+    UserRoleController --> UsersWsOps
+
+    UserSecurityConfig ..> PasswordEncoder : provides

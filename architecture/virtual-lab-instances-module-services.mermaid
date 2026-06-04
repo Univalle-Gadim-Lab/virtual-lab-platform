@@ -1,0 +1,346 @@
+%% Virtual Lab Platform — Instances Module Services
+%% Service contracts, operations, web facades, controllers, repositories, VNC proxy, and configuration
+%% Source of truth: virtual-lab-platform-instances/src/main/java/.../instances
+%% Companion diagram: virtual-lab-instances-module-types.mermaid
+classDiagram
+    direction TB
+
+    namespace api.service {
+        class InstanceService {
+            <<interface>>
+            +createInstance(userId, name, description, imageName, imageVersion, imageRegistry, cpuCores, memoryMb, storageMb, gpuEnabled, exposedPort) Instance
+            +getInstanceById(instanceId) Optional~Instance~
+            +getInstancesByUserId(userId) List~Instance~
+            +startInstance(instanceId) Instance
+            +stopInstance(instanceId) Instance
+            +deleteInstance(instanceId) void
+            +checkOwnership(instanceId, userId) boolean
+            +getRemoteSessionInfo(instanceId, userId) Instance
+            +checkVncHealth(instanceId, userId) boolean
+        }
+
+        class InstanceMetricsService {
+            <<interface>>
+            +getMetricsByInstanceId(instanceId) List~InstanceMetrics~
+            +recordMetrics(instanceId, cpuUsage, memoryUsage, diskUsage, timeUsage) InstanceMetrics
+        }
+
+        class InstanceUserService {
+            <<interface>>
+            +assignUserToInstance(userId, instanceId) InstanceUser
+            +getUsersByInstanceId(instanceId) List~InstanceUser~
+            +getInstancesByUserId(userId) List~InstanceUser~
+            +removeUserFromInstance(userId, instanceId) void
+        }
+
+        class WorkspaceProvisionerService {
+            <<interface>>
+            +createWorkspace(userId, isPersistent) String
+            +createWorkspace(userId, isPersistent, imageName, imageVersion, cpuCores, memoryMb, storageMb, gpuEnabled, exposedPort) String
+            +stopWorkSpace(containerId) void
+            +startWorkspace(containerId) void
+            +getContainerIp(containerId) String
+        }
+
+        class CatalogService {
+            <<interface>>
+            +getAvailableImages() List~WorkspaceImage~
+            +getCatalog() List~CatalogEntry~
+        }
+    }
+
+    namespace operation {
+        class InstanceServiceOperation {
+            -InstanceRepository instanceRepository
+            -InstanceUserRepository instanceUserRepository
+            -WorkspaceProvisionerService workspaceProvisionerService
+            -UniqueIdGenerator uniqueIdGenerator
+            -RestTemplate restTemplate
+            +createInstance(...) Instance
+            +getInstanceById(id) Optional~Instance~
+            +getInstancesByUserId(userId) List~Instance~
+            +startInstance(id) Instance
+            +stopInstance(id) Instance
+            +deleteInstance(id) void
+            +checkOwnership(instanceId, userId) boolean
+            +getRemoteSessionInfo(instanceId, userId) Instance
+            +checkVncHealth(instanceId, userId) boolean
+        }
+
+        class InstanceMetricsServiceOperation {
+            -InstanceMetricsRepository instanceMetricsRepository
+            -InstanceRepository instanceRepository
+            -UniqueIdGenerator uniqueIdGenerator
+            +getMetricsByInstanceId(instanceId) List~InstanceMetrics~
+            +recordMetrics(instanceId, cpu, mem, disk, time) InstanceMetrics
+        }
+
+        class InstanceUserServiceOperation {
+            -InstanceUserRepository instanceUserRepository
+            -UniqueIdGenerator uniqueIdGenerator
+            +assignUserToInstance(userId, instanceId) InstanceUser
+            +getUsersByInstanceId(instanceId) List~InstanceUser~
+            +getInstancesByUserId(userId) List~InstanceUser~
+            +removeUserFromInstance(userId, instanceId) void
+        }
+
+        class WorkspaceProvisionerOperation {
+            -DockerClient dockerClient
+            +createWorkspace(userId, isPersistent) String
+            +createWorkspace(userId, isPersistent, imageName, imageVersion, cpuCores, memoryMb, storageMb, gpuEnabled, exposedPort) String
+            +stopWorkSpace(containerId) void
+            +startWorkspace(containerId) void
+            +getContainerIp(containerId) String
+        }
+
+        class CatalogServiceOperation {
+            -WorkspaceImageProperties workspaceImageProperties
+            -InstanceRepository instanceRepository
+            +getAvailableImages() List~WorkspaceImage~
+            +getCatalog() List~CatalogEntry~
+        }
+    }
+
+    namespace web.ops {
+        class InstancesWsOps {
+            <<interface>>
+            +createInstance(request) InstanceResponse
+            +getInstanceById(id) InstanceResponse
+            +getInstancesByUser() List~InstanceResponse~
+            +startInstance(id) InstanceResponse
+            +stopInstance(id) InstanceResponse
+            +deleteInstance(id) void
+        }
+
+        class InstanceMetricsWsOps {
+            <<interface>>
+            +getMetricsByInstanceId(instanceId) List~InstanceMetricsResponse~
+            +recordMetrics(instanceId, request) InstanceMetricsResponse
+        }
+
+        class InstanceUsersWsOps {
+            <<interface>>
+            +assignUserToInstance(request) InstanceUserResponse
+            +getUsersByInstanceId(instanceId) List~InstanceUserResponse~
+            +getInstancesByUserId(userId) List~InstanceUserResponse~
+            +removeUserFromInstance(userId, instanceId) void
+        }
+
+        class CatalogWsOps {
+            <<interface>>
+            +getAvailableImages() List~WorkspaceImageResponse~
+            +getCatalog() List~CatalogEntryResponse~
+        }
+
+        class RemoteSessionWsOps {
+            <<interface>>
+            +getRemoteSession(instanceId) RemoteSessionResponse
+            +terminateRemoteSession(instanceId) void
+            +getRemoteSessionStatus(instanceId) RemoteSessionStatusResponse
+        }
+    }
+
+    namespace web.operation {
+        class InstancesSpringWsOps {
+            -InstanceService instanceService
+            +createInstance(request) InstanceResponse
+            +getInstanceById(id) InstanceResponse
+            +getInstancesByUser() List~InstanceResponse~
+            +startInstance(id) InstanceResponse
+            +stopInstance(id) InstanceResponse
+            +deleteInstance(id) void
+        }
+
+        class InstanceMetricsSpringWsOps {
+            -InstanceMetricsService instanceMetricsService
+            +getMetricsByInstanceId(instanceId) List~InstanceMetricsResponse~
+            +recordMetrics(instanceId, request) InstanceMetricsResponse
+        }
+
+        class InstanceUsersSpringWsOps {
+            -InstanceUserService instanceUserService
+            +assignUserToInstance(request) InstanceUserResponse
+            +getUsersByInstanceId(instanceId) List~InstanceUserResponse~
+            +getInstancesByUserId(userId) List~InstanceUserResponse~
+            +removeUserFromInstance(userId, instanceId) void
+        }
+
+        class CatalogSpringWsOps {
+            -CatalogService catalogService
+            +getAvailableImages() List~WorkspaceImageResponse~
+            +getCatalog() List~CatalogEntryResponse~
+        }
+
+        class RemoteSessionSpringWsOps {
+            -InstanceService instanceService
+            +getRemoteSession(instanceId) RemoteSessionResponse
+            +terminateRemoteSession(instanceId) void
+            +getRemoteSessionStatus(instanceId) RemoteSessionStatusResponse
+        }
+    }
+
+    namespace web.controller {
+        class InstanceController {
+            -InstancesWsOps instancesWsOps
+            +createInstance(request) ResponseEntity~InstanceResponse~
+            +getInstance(id) ResponseEntity~InstanceResponse~
+            +getInstancesByUser() ResponseEntity~List~InstanceResponse~~
+            +startInstance(id) ResponseEntity~InstanceResponse~
+            +stopInstance(id) ResponseEntity~InstanceResponse~
+            +deleteInstance(id) ResponseEntity~Void~
+        }
+
+        class InstanceMetricsController {
+            -InstanceMetricsWsOps instanceMetricsWsOps
+            +getMetricsByInstanceId(instanceId) ResponseEntity~List~InstanceMetricsResponse~~
+            +recordMetrics(instanceId, request) ResponseEntity~InstanceMetricsResponse~
+        }
+
+        class InstanceUsersController {
+            -InstanceUsersWsOps instanceUsersWsOps
+            +assignUserToInstance(request) ResponseEntity~InstanceUserResponse~
+            +getInstanceUserAssociations(instanceId, userId) ResponseEntity~List~InstanceUserResponse~~
+            +removeUserFromInstance(userId, instanceId) ResponseEntity~Void~
+        }
+
+        class CatalogController {
+            -CatalogWsOps catalogWsOps
+            +getAvailableImages() ResponseEntity~List~WorkspaceImageResponse~~
+            +getCatalog() ResponseEntity~List~CatalogEntryResponse~~
+        }
+
+        class RemoteSessionController {
+            -RemoteSessionWsOps remoteSessionWsOps
+            +getRemoteSession(instanceId) ResponseEntity~RemoteSessionResponse~
+            +terminateRemoteSession(instanceId) ResponseEntity~Void~
+            +getRemoteSessionStatus(instanceId) ResponseEntity~RemoteSessionStatusResponse~
+        }
+
+        class VncProxyController {
+            -InstanceService instanceService
+            -RestTemplate restTemplate
+            +proxyVncRequest(instanceId) ResponseEntity~Resource~
+        }
+    }
+
+    namespace vnc {
+        class VncWebSocketProxyHandler {
+            -InstanceService instanceService
+            +afterConnectionEstablished(session) void
+            +handleBinaryMessage(session, message) void
+            +handleTextMessage(session, message) void
+            +afterConnectionClosed(session, status) void
+            +handleTransportError(session, exception) void
+        }
+    }
+
+    namespace data.repository {
+        class InstanceRepository {
+            <<interface>>
+            +findById(id) Optional~InstanceJpa~
+            +findAll() List~InstanceJpa~
+            +findByUserId(userId) List~InstanceJpa~
+            +countByImageNameAndStatusNot(imageName, excludedStatus) long
+            +save(instance) InstanceJpa
+        }
+
+        class InstanceMetricsRepository {
+            <<interface>>
+            +findByInstanceId(instanceId) List~InstanceMetricsJpa~
+            +save(metrics) InstanceMetricsJpa
+        }
+
+        class InstanceUserRepository {
+            <<interface>>
+            +findByUserId(userId) List~InstanceUserJpa~
+            +findByInstanceId(instanceId) List~InstanceUserJpa~
+            +save(association) InstanceUserJpa
+            +delete(association) void
+        }
+    }
+
+    namespace config {
+        class InstanceConfig {
+            +dockerClient() DockerClient$
+        }
+
+        class InstancesWsConfig
+
+        class VncWebSocketConfig {
+            -InstanceService instanceService
+            +vncWebSocketProxyHandler() VncWebSocketProxyHandler$
+            +registerWebSocketHandlers(registry) void
+        }
+
+        class WorkspaceImageProperties {
+            <<ConfigurationProperties>>
+            -List~WorkspaceImage~ images
+            +getImages() List~WorkspaceImage~
+            +setImages(images) void
+        }
+    }
+
+    namespace external {
+        class UniqueIdGenerator {
+            <<interface>>
+            +generate() String
+        }
+
+        class DockerClient {
+            <<external library>>
+        }
+
+        class RestTemplate
+    }
+
+    InstanceServiceOperation ..|> InstanceService
+    InstanceMetricsServiceOperation ..|> InstanceMetricsService
+    InstanceUserServiceOperation ..|> InstanceUserService
+    WorkspaceProvisionerOperation ..|> WorkspaceProvisionerService
+    CatalogServiceOperation ..|> CatalogService
+
+    InstancesSpringWsOps ..|> InstancesWsOps
+    InstanceMetricsSpringWsOps ..|> InstanceMetricsWsOps
+    InstanceUsersSpringWsOps ..|> InstanceUsersWsOps
+    CatalogSpringWsOps ..|> CatalogWsOps
+    RemoteSessionSpringWsOps ..|> RemoteSessionWsOps
+
+    InstanceServiceOperation --> InstanceRepository
+    InstanceServiceOperation --> InstanceUserRepository
+    InstanceServiceOperation --> WorkspaceProvisionerService
+    InstanceServiceOperation --> UniqueIdGenerator
+    InstanceServiceOperation --> RestTemplate
+
+    InstanceMetricsServiceOperation --> InstanceMetricsRepository
+    InstanceMetricsServiceOperation --> InstanceRepository
+    InstanceMetricsServiceOperation --> UniqueIdGenerator
+
+    InstanceUserServiceOperation --> InstanceUserRepository
+    InstanceUserServiceOperation --> UniqueIdGenerator
+
+    WorkspaceProvisionerOperation --> DockerClient
+
+    CatalogServiceOperation --> WorkspaceImageProperties
+    CatalogServiceOperation --> InstanceRepository
+
+    InstancesSpringWsOps --> InstanceService
+    InstanceMetricsSpringWsOps --> InstanceMetricsService
+    InstanceUsersSpringWsOps --> InstanceUserService
+    CatalogSpringWsOps --> CatalogService
+    RemoteSessionSpringWsOps --> InstanceService
+
+    InstanceController --> InstancesWsOps
+    InstanceMetricsController --> InstanceMetricsWsOps
+    InstanceUsersController --> InstanceUsersWsOps
+    CatalogController --> CatalogWsOps
+    RemoteSessionController --> RemoteSessionWsOps
+    VncProxyController --> InstanceService
+    VncProxyController --> RestTemplate
+
+    VncWebSocketProxyHandler --> InstanceService
+
+    InstanceConfig ..> DockerClient : provides
+    InstanceConfig ..> WorkspaceImageProperties : enables
+
+    VncWebSocketConfig --> InstanceService
+    VncWebSocketConfig ..> VncWebSocketProxyHandler : provides

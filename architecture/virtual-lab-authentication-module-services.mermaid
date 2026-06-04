@@ -1,0 +1,160 @@
+%% Virtual Lab Platform — Authentication Module Services
+%% Service contracts, operations, web facades, controllers, security filters, repositories, and configuration
+%% Source of truth: virtual-lab-platform-authentication/src/main/java/.../authentication
+%% Companion diagram: virtual-lab-authentication-module-types.mermaid
+classDiagram
+    direction TB
+
+    namespace api.service {
+        class AuthenticationService {
+            <<interface>>
+            +login(email, password) AuthenticationResult
+            +refresh(refreshToken) AuthenticationResult
+            +logout(refreshToken) void
+            +validateAccessToken(accessToken) boolean
+        }
+
+        class TokenService {
+            <<interface>>
+            +generateAccessToken(userId, name, roles) String
+            +generateRefreshToken(userId) String
+            +validateAccessToken(token) boolean
+            +extractUserId(token) String
+            +extractName(token) String
+            +extractRoles(token) List~Role~
+        }
+    }
+
+    namespace operation {
+        class AuthenticationOperation {
+            -UserRepository userRepository
+            -UserRoleRepository userRoleRepository
+            -PasswordEncoder passwordEncoder
+            -RefreshTokenRepository refreshTokenRepository
+            -UniqueIdGenerator idGenerator
+            -TokenService tokenService
+            +login(email, password) AuthenticationResult
+            +refresh(refreshToken) AuthenticationResult
+            +logout(refreshToken) void
+            +validateAccessToken(accessToken) boolean
+        }
+
+        class JwtTokenOperation {
+            -SecretKey signingKey
+            -long accessTokenExpirationMs
+            -long refreshTokenExpirationMs
+            +generateAccessToken(userId, name, roles) String
+            +generateRefreshToken(userId) String
+            +validateAccessToken(token) boolean
+            +extractUserId(token) String
+            +extractName(token) String
+            +extractRoles(token) List~Role~
+        }
+    }
+
+    namespace web.ops {
+        class AuthWsOps {
+            <<interface>>
+            +login(request) LoginResponse
+            +refresh(request) LoginResponse
+            +logout(request) void
+            +me(userId) AuthenticatedUserResponse
+        }
+    }
+
+    namespace web.operation {
+        class AuthSpringWsOps {
+            -AuthenticationService authenticationService
+            -UserRepository userRepository
+            -UserRoleRepository userRoleRepository
+            +login(request) LoginResponse
+            +refresh(request) LoginResponse
+            +logout(request) void
+            +me(userId) AuthenticatedUserResponse
+        }
+    }
+
+    namespace web.controller {
+        class AuthController {
+            -AuthWsOps authWsOps
+            +login(request) ResponseEntity~LoginResponse~
+            +refresh(request) ResponseEntity~LoginResponse~
+            +logout(request) ResponseEntity~Void~
+            +me() ResponseEntity~AuthenticatedUserResponse~
+        }
+    }
+
+    namespace web.security {
+        class JwtAuthenticationFilter {
+            -TokenService tokenService
+            +doFilterInternal(request, response, filterChain) void
+            +shouldNotFilter(request) boolean
+        }
+
+        class JwtAuthenticationEntryPoint {
+            +commence(request, response, authException) void
+        }
+
+        class JwtAccessDeniedHandler {
+            +handle(request, response, accessDeniedException) void
+        }
+    }
+
+    namespace data.repository {
+        class RefreshTokenRepository {
+            <<interface>>
+            +findByToken(token) Optional~RefreshTokenJpa~
+            +findByUserId(userId) List~RefreshTokenJpa~
+            +save(refreshToken) RefreshTokenJpa
+        }
+    }
+
+    namespace config {
+        class AuthenticationConfig
+    }
+
+    namespace external {
+        class UserRepository {
+            <<interface>>
+        }
+
+        class UserRoleRepository {
+            <<interface>>
+            +findByUserId(userId) List~UserRoleJpa~
+        }
+
+        class PasswordEncoder {
+            <<interface>>
+            +matches(rawPassword, encodedPassword) boolean
+            +encode(rawPassword) String
+        }
+
+        class UniqueIdGenerator {
+            <<interface>>
+            +generate() String
+        }
+
+        class SecretKey {
+            <<external crypto>>
+        }
+    }
+
+    AuthenticationOperation ..|> AuthenticationService
+    JwtTokenOperation ..|> TokenService
+    AuthSpringWsOps ..|> AuthWsOps
+
+    AuthenticationOperation --> UserRepository
+    AuthenticationOperation --> UserRoleRepository
+    AuthenticationOperation --> PasswordEncoder
+    AuthenticationOperation --> RefreshTokenRepository
+    AuthenticationOperation --> UniqueIdGenerator
+    AuthenticationOperation --> TokenService
+
+    JwtTokenOperation --> SecretKey
+
+    AuthSpringWsOps --> AuthenticationService
+    AuthSpringWsOps --> UserRepository
+    AuthSpringWsOps --> UserRoleRepository
+
+    AuthController --> AuthWsOps
+    JwtAuthenticationFilter --> TokenService

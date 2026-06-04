@@ -1,0 +1,241 @@
+%% Virtual Lab Platform — Instances Module Types
+%% Domain interfaces, enums, JPA entities, value objects, and DTOs
+%% Source of truth: virtual-lab-platform-instances/src/main/java/.../instances
+%% Companion diagram: virtual-lab-instances-module-services.mermaid
+classDiagram
+    direction TB
+
+    namespace api.type {
+        class Instance {
+            <<interface>>
+            +id() String
+            +name() String
+            +description() Optional~String~
+            +externalIp() String
+            +imageName() String
+            +imageVersion() String
+            +imageRegistry() String
+            +cpuCores() int
+            +memoryMb() int
+            +storageMb() int
+            +gpuEnabled() boolean
+            +exposedPort() int
+            +vncPort() int
+            +vncEnabled() boolean
+            +internalIp() String
+            +createdAt() LocalDateTime
+            +expiresAt() LocalDateTime
+            +startedAt() LocalDateTime
+            +stoppedAt() Optional~LocalDateTime~
+            +deletedAt() Optional~LocalDateTime~
+            +lastAccessedAt() Optional~LocalDateTime~
+            +status() InstanceStatus
+        }
+
+        class InstanceMetrics {
+            <<interface>>
+            +id() String
+            +instanceId() String
+            +currentCpuUsage() double
+            +currentMemoryUsage() double
+            +currentDiskUsage() double
+            +currentTimeUsage() double
+        }
+
+        class InstanceUser {
+            <<interface>>
+            +id() String
+            +instanceId() String
+            +userId() String
+        }
+
+        class InstanceStatus {
+            <<enumeration>>
+            CREATED
+            STARTING
+            RUNNING
+            STOPPED
+            EXPIRED
+            DELETED
+        }
+
+        class WorkspaceImage {
+            <<record>>
+            +String id
+            +String name
+            +String description
+            +String version
+            +String image
+            +String category
+            +int defaultCpuCores
+            +int defaultMemoryMb
+            +int defaultStorageMb
+            +withImage(newImage) WorkspaceImage
+        }
+
+        class CatalogEntry {
+            <<record>>
+            +WorkspaceImage image
+            +long runningInstanceCount
+        }
+    }
+
+    namespace data.model {
+        class InstanceJpa {
+            <<entity>>
+            -String id
+            -String name
+            -String description
+            -String externalIp
+            -String imageName
+            -String imageVersion
+            -String imageRegistry
+            -Integer cpuCores
+            -Integer memoryMb
+            -Integer storageMb
+            -Boolean gpuEnabled
+            -Integer exposedPort
+            -Integer vncPort
+            -Boolean vncEnabled
+            -String internalIp
+            -LocalDateTime createdAt
+            -LocalDateTime expiresAt
+            -LocalDateTime startedAt
+            -LocalDateTime stoppedAt
+            -LocalDateTime deletedAt
+            -LocalDateTime lastAccessedAt
+            -InstanceStatus status
+        }
+
+        class InstanceMetricsJpa {
+            <<entity>>
+            -String id
+            -String instanceId
+            -Double currentCpuUsage
+            -Double currentMemoryUsage
+            -Double currentDiskUsage
+            -Double currentTimeUsage
+        }
+
+        class InstanceUserJpa {
+            <<entity>>
+            -String id
+            -String instanceId
+            -String userId
+        }
+    }
+
+    namespace web.model {
+        class CreateInstanceRequest {
+            <<record>>
+            +String name
+            +String description
+            +String imageName
+            +String imageVersion
+            +String imageRegistry
+            +Integer cpuCores
+            +Integer memoryMb
+            +Integer storageMb
+            +Boolean gpuEnabled
+            +Integer exposedPort
+        }
+
+        class InstanceResponse {
+            <<record>>
+            +String id
+            +String name
+            +String description
+            +String imageName
+            +String imageVersion
+            +Integer cpuCores
+            +Integer memoryMb
+            +Integer storageMb
+            +Boolean gpuEnabled
+            +Integer vncPort
+            +Boolean vncEnabled
+            +InstanceStatus status
+            +LocalDateTime createdAt
+            +LocalDateTime expiresAt
+            +LocalDateTime startedAt
+            +LocalDateTime stoppedAt
+            +LocalDateTime deletedAt
+            +LocalDateTime lastAccessedAt
+            +from(instance) InstanceResponse$
+        }
+
+        class RecordMetricsRequest {
+            <<record>>
+            +Double cpuUsage
+            +Double memoryUsage
+            +Double diskUsage
+            +Double timeUsage
+            +isValid() boolean
+        }
+
+        class InstanceMetricsResponse {
+            <<record>>
+            +String id
+            +String instanceId
+            +Double currentCpuUsage
+            +Double currentMemoryUsage
+            +Double currentDiskUsage
+            +Double currentTimeUsage
+            +from(metrics) InstanceMetricsResponse$
+        }
+
+        class CreateInstanceUserRequest {
+            <<record>>
+            +String userId
+            +String instanceId
+        }
+
+        class InstanceUserResponse {
+            <<record>>
+            +String id
+            +String instanceId
+            +String userId
+            +from(instanceUser) InstanceUserResponse$
+        }
+
+        class WorkspaceImageResponse {
+            <<record>>
+            +String id
+            +String name
+            +String description
+            +String version
+            +String image
+            +String category
+        }
+
+        class CatalogEntryResponse {
+            <<record>>
+            +WorkspaceImageResponse image
+            +long runningInstanceCount
+        }
+
+        class RemoteSessionResponse {
+            <<record>>
+            +String instanceId
+            +String status
+            +boolean vncEnabled
+            +String vncUrl
+            +LocalDateTime expiresAt
+            +from(instance) RemoteSessionResponse$
+        }
+
+        class RemoteSessionStatusResponse {
+            <<record>>
+            +String status
+            +boolean vncReachable
+        }
+    }
+
+    InstanceJpa ..|> Instance
+    InstanceMetricsJpa ..|> InstanceMetrics
+    InstanceUserJpa ..|> InstanceUser
+
+    Instance --> InstanceStatus
+    CatalogEntry --> WorkspaceImage
+    CatalogEntryResponse --> WorkspaceImageResponse
+    InstanceResponse --> InstanceStatus
+    RemoteSessionResponse --> InstanceStatus
