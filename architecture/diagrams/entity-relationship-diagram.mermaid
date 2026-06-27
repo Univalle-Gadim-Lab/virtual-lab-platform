@@ -1,0 +1,77 @@
+---
+config:
+  theme: redux-color
+  layout: elk
+---
+erDiagram
+    users {
+        VARCHAR_255 id PK "institutional email"
+        VARCHAR_200 name
+        VARCHAR_200 last_name
+        VARCHAR_100 external_code
+        VARCHAR_255 password
+        VARCHAR_20 status
+        TIMESTAMP created_date
+    }
+
+    user_roles {
+        VARCHAR_100 id PK
+        VARCHAR_255 user_id FK
+        VARCHAR_20 role
+    }
+
+    instances {
+        VARCHAR_100 id PK
+        VARCHAR_200 name
+        VARCHAR_500 description
+        VARCHAR_45 external_ip
+        VARCHAR_200 image_name
+        VARCHAR_50 image_version
+        VARCHAR_200 image_registry
+        INTEGER cpu_cores
+        INTEGER memory_mb
+        INTEGER storage_mb
+        BOOLEAN gpu_enabled
+        INTEGER exposed_port
+        INTEGER vnc_port
+        BOOLEAN vnc_enabled
+        VARCHAR_255 vnc_password
+        VARCHAR_45 internal_ip
+        TIMESTAMP created_at
+        TIMESTAMP expires_at
+        TIMESTAMP started_at
+        TIMESTAMP stopped_at
+        TIMESTAMP deleted_at
+        TIMESTAMP last_accessed_at
+        VARCHAR_20 status
+    }
+
+    instance_metrics {
+        VARCHAR_100 id PK
+        VARCHAR_100 instance_id FK
+        DOUBLE_PRECISION current_cpu_usage
+        DOUBLE_PRECISION current_memory_usage
+        DOUBLE_PRECISION current_disk_usage
+        DOUBLE_PRECISION current_time_usage
+    }
+
+    instance_users {
+        VARCHAR_100 id PK
+        VARCHAR_100 instance_id FK
+        VARCHAR_255 user_id FK
+    }
+
+    refresh_tokens {
+        VARCHAR_100 id PK
+        VARCHAR_255 user_id FK
+        TEXT token
+        TIMESTAMP expires_at
+        BOOLEAN revoked
+        TIMESTAMP created_at
+    }
+
+    users ||--o{ user_roles : "has roles"
+    users ||--o{ instance_users : "assigned to instances"
+    users ||--o{ refresh_tokens : "has tokens"
+    instances ||--o{ instance_users : "has assigned users"
+    instances ||--o{ instance_metrics : "has metrics"

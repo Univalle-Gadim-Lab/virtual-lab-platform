@@ -1,0 +1,36 @@
+---
+config:
+  theme: default
+  layout: elk
+---
+classDiagram
+    direction TB
+
+    class VirtualLabPlatformApplication {
+        +main(args) void$
+    }
+
+    class SecurityConfig {
+        -JwtAuthenticationFilter jwtAuthenticationFilter
+        -AuthenticationEntryPoint authenticationEntryPoint
+        -AccessDeniedHandler accessDeniedHandler
+        +filterChain(http) SecurityFilterChain
+        +corsConfigurationSource() CorsConfigurationSource
+    }
+
+    class BootConfig {
+        +uniqueIdGenerator() UniqueIdGenerator
+    }
+
+    class HealthController {
+        +health() ResponseEntity~HealthResponse~
+    }
+
+    VirtualLabPlatformApplication --> UserService : depends on
+    VirtualLabPlatformApplication --> SecurityConfig : depends on
+    VirtualLabPlatformApplication --> InstanceService : depends on
+    VirtualLabPlatformApplication --> AuthenticationService : depends on
+    SecurityConfig --> UserService : depends on
+    SecurityConfig --> JwtAuthenticationFilter : uses
+    BootConfig --> ObjectIdGenerator : imports
+    BootConfig --> UniqueIdGenerator : provides

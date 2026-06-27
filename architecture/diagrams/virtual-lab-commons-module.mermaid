@@ -1,0 +1,19 @@
+---
+config:
+  theme: default
+  layout: elk
+---
+classDiagram
+    class UniqueIdGenerator {
+        <<interface>>
+        +generate() String
+    }
+    class UuidGenerator {
+        +generate() String
+    }
+    class ObjectIdGenerator {
+        +generate() String
+    }
+
+    UniqueIdGenerator <|.. UuidGenerator
+    UniqueIdGenerator <|.. ObjectIdGenerator

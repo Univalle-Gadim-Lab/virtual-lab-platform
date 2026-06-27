@@ -1,9 +1,14 @@
+---
+config:
+  theme: default
+  layout: dagre
+---
 %% Virtual Lab Platform — Instances Module Services
 %% Service contracts, operations, web facades, controllers, repositories, VNC proxy, and configuration
 %% Source of truth: virtual-lab-platform-instances/src/main/java/.../instances
 %% Companion diagram: virtual-lab-instances-module-types.mermaid
 classDiagram
-    direction TB
+    direction LR
 
     namespace api.service {
         class InstanceService {
@@ -36,7 +41,7 @@ classDiagram
         class WorkspaceProvisionerService {
             <<interface>>
             +createWorkspace(userId, isPersistent) String
-            +createWorkspace(userId, isPersistent, imageName, imageVersion, cpuCores, memoryMb, storageMb, gpuEnabled, exposedPort) String
+            +createWorkspace(userId, isPersistent, imageName, imageVersion, cpuCores, memoryMb, storageMb, gpuEnabled, exposedPort, vncPassword) String
             +stopWorkSpace(containerId) void
             +startWorkspace(containerId) void
             +getContainerIp(containerId) String
@@ -87,7 +92,7 @@ classDiagram
         class WorkspaceProvisionerOperation {
             -DockerClient dockerClient
             +createWorkspace(userId, isPersistent) String
-            +createWorkspace(userId, isPersistent, imageName, imageVersion, cpuCores, memoryMb, storageMb, gpuEnabled, exposedPort) String
+            +createWorkspace(userId, isPersistent, imageName, imageVersion, cpuCores, memoryMb, storageMb, gpuEnabled, exposedPort, vncPassword) String
             +stopWorkSpace(containerId) void
             +startWorkspace(containerId) void
             +getContainerIp(containerId) String

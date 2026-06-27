@@ -1,9 +1,14 @@
+---
+config:
+  theme: default
+  layout: elk
+---
 %% Virtual Lab Platform — Instances Module Types
 %% Domain interfaces, enums, JPA entities, value objects, and DTOs
 %% Source of truth: virtual-lab-platform-instances/src/main/java/.../instances
 %% Companion diagram: virtual-lab-instances-module-services.mermaid
 classDiagram
-    direction TB
+    direction LR
 
     namespace api.type {
         class Instance {
@@ -22,6 +27,7 @@ classDiagram
             +exposedPort() int
             +vncPort() int
             +vncEnabled() boolean
+            +vncPassword() String
             +internalIp() String
             +createdAt() LocalDateTime
             +expiresAt() LocalDateTime
@@ -97,6 +103,7 @@ classDiagram
             -Integer exposedPort
             -Integer vncPort
             -Boolean vncEnabled
+            -String vncPassword
             -String internalIp
             -LocalDateTime createdAt
             -LocalDateTime expiresAt
@@ -153,6 +160,7 @@ classDiagram
             +Boolean gpuEnabled
             +Integer vncPort
             +Boolean vncEnabled
+            +String vncPassword
             +InstanceStatus status
             +LocalDateTime createdAt
             +LocalDateTime expiresAt
