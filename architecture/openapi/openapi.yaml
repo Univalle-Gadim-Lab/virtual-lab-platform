@@ -28,6 +28,10 @@ tags:
     description: JWT-based authentication and token management
   - name: Catalog
     description: Workspace catalog and image discovery
+  - name: Remote Session
+    description: Remote desktop session metadata and lifecycle
+  - name: VNC
+    description: KasmVNC HTTP and WebSocket proxy for browser-based remote desktop access
   - name: Health
     description: Application health check
 
@@ -625,6 +629,226 @@ paths:
                 items:
                   $ref: '#/components/schemas/WorkspaceImageResponse'
 
+  /api/instances/{instanceId}/remote-session:
+    get:
+      tags: [Remote Session]
+      summary: Get remote desktop session for an instance
+      operationId: getRemoteSession
+      description: |
+        Returns metadata about the remote desktop session for the specified
+        instance, including its mapped status (PENDING / CONNECTING /
+        ACTIVE / DISCONNECTED / TERMINATED), the VNC URL (host:port with
+        per-instance password query parameter, only when the instance is
+        running and VNC is enabled), and the session expiration timestamp.
+
+        The caller must own the instance; otherwise the endpoint returns 403.
+      parameters:
+        - name: instanceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Remote session metadata retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RemoteSessionResponse'
+        '403':
+          description: Caller does not own the instance
+        '404':
+          description: Instance not found
+    delete:
+      tags: [Remote Session]
+      summary: Terminate the remote desktop session
+      operationId: terminateRemoteSession
+      description: |
+        Terminates the active remote desktop session for the specified
+        instance, stopping the underlying VNC server side channel.
+      parameters:
+        - name: instanceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Remote session terminated successfully
+        '404':
+          description: Instance not found
+
+  /api/instances/{instanceId}/remote-session/status:
+    get:
+      tags: [Remote Session]
+      summary: Check VNC server reachability for an instance
+      operationId: getRemoteSessionStatus
+      description: |
+        Reports whether the KasmVNC server inside the running workspace
+        container is reachable. Returns a small JSON payload with a
+        human-readable status and a boolean flag.
+
+        The caller must own the instance; otherwise the endpoint returns 403.
+      parameters:
+        - name: instanceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: VNC reachability status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RemoteSessionStatusResponse'
+        '403':
+          description: Caller does not own the instance
+        '404':
+          description: Instance not found
+
+  # WebSocket upgrade endpoint for the KasmVNC proxy. OpenAPI 3.0.x has
+  # no native WebSocket primitive; this operation documents the upgrade
+  # endpoint as an HTTP GET, but the handler implemented in
+  # `VncWebSocketProxyHandler` runs the WebSocket lifecycle (handshake,
+  # binary/text frame forwarding, close) rather than a plain HTTP exchange.
+  # See the operation `description` for the upgrade semantics, supported
+  # close codes, and authentication flow. Declared before
+  # `/vnc/{path}` so that the specific match takes precedence.
+  /api/instances/{instanceId}/vnc/websockify:
+    get:
+      tags: [VNC]
+      summary: WebSocket proxy to the instance's KasmVNC server
+      operationId: proxyVncWebSocket
+      description: |
+        Establishes a `WebSocket` connection between the browser and the
+        KasmVNC server running inside the target container on the
+        dynamically bound host VNC port. The endpoint upgrades the
+        incoming HTTP request via the standard `Upgrade: websocket`
+        protocol exchange and bidirectionally forwards binary and text
+        frames between the browser client and the container's KasmVNC
+        server.
+
+        Handlers implemented in `VncWebSocketProxyHandler` perform
+        JWT-based authentication and instance ownership verification
+        before establishing the upstream connection. The outbound
+        connection uses HTTP Basic Auth (`labuser` + the per-instance
+        VNC password) when reaching the container.
+
+        Authentication may be supplied via:
+        - the standard `Authorization: Bearer <jwt>` header, or
+        - the `?token=<jwt>` query parameter (mirrored by the HTTP proxy
+          endpoint into an HTTP-only `vnc_token` cookie), or
+        - the `vnc_token` HTTP-only cookie set by the HTTP proxy endpoint.
+
+        WebSocket close status codes used by the proxy:
+        - `1000 Normal Closure` — clean disconnect by either side.
+        - `4003 Forbidden` — caller does not own the instance.
+        - `409 Conflict` — instance is not in `RUNNING` status.
+        - `1011 Internal Error` — upstream KasmVNC server error.
+      parameters:
+        - name: instanceId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: token
+          in: query
+          required: false
+          description: |
+            Optional JWT, mirroring the same purpose as on the proxy HTTP
+            endpoint. When not supplied, the JWT must be carried by the
+            `Authorization` header or the `vnc_token` cookie set by the
+            HTTP proxy endpoint.
+          schema:
+            type: string
+      responses:
+        '101':
+          description: Switching Protocols — WebSocket handshake completed
+        '401':
+          description: Missing or invalid authentication token
+        '403':
+          description: Caller does not own the instance
+        '409':
+          description: Instance is not in RUNNING status
+
+  /api/instances/{instanceId}/vnc/{path}:
+    get:
+      tags: [VNC]
+      summary: Proxy an HTTP request to the instance's KasmVNC web server
+      operationId: proxyVncRequest
+      description: |
+        HTTP reverse proxy for KasmVNC web client assets served from the
+        target container. The backend forwards `{path}` to the container's
+        KasmVNC web server and streams the response (HTML, JavaScript, CSS)
+        back to the caller, preserving status code and content type.
+
+        For WebSocket upgrade requests, use the dedicated
+        `/api/instances/{instanceId}/vnc/websockify` operation instead.
+
+        Authentication may be supplied either as the standard
+        `Authorization: Bearer <jwt>` header or, for iframe-friendly usage,
+        via the `?token=<jwt>` query parameter. When `?token=` is present
+        the JWT is mirrored back into an HTTP-only `vnc_token` cookie scoped
+        to `/api/instances/{instanceId}/vnc` so subsequent XHRs and
+        WebSocket upgrades can authenticate without re-passing the query
+        parameter.
+
+        The caller must own the instance (returns 403 if not) and the
+        instance must be in `RUNNING` status (returns 409 otherwise).
+        Upstream errors from the container are surfaced as 502.
+      parameters:
+        - name: instanceId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: path
+          in: path
+          required: true
+          description: |
+            Catch-all suffix forwarded verbatim to the KasmVNC web server
+            (e.g. `""` for `/`, `index.html`, `client.js`, `kasmvnc.js`).
+          schema:
+            type: string
+        - name: token
+          in: query
+          required: false
+          description: |
+            Optional JWT used to authenticate iframe and WebSocket-typed
+            requests that cannot easily attach the `Authorization` header.
+            When supplied, the backend mirrors it into a `vnc_token`
+            HTTP-only cookie so subsequent requests within the VNC scope
+            authenticate transparently.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Proxied response from the KasmVNC web server
+          content:
+            text/html:
+              schema:
+                type: string
+              example: '<!doctype html><html>...</html>'
+            application/javascript:
+              schema:
+                type: string
+            text/css:
+              schema:
+                type: string
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '403':
+          description: Caller does not own the instance
+        '404':
+          description: Instance not found
+        '409':
+          description: Instance is not in RUNNING status
+        '502':
+          description: Upstream KasmVNC web server error
+
 components:
   securitySchemes:
     bearerAuth:
@@ -980,6 +1204,61 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Role'
+
+    RemoteSessionStatus:
+      type: string
+      description: Human-readable status of the remote desktop session
+      enum:
+        - ACTIVE
+        - CONNECTING
+        - DISCONNECTED
+        - PENDING
+        - TERMINATED
+
+    RemoteSessionResponse:
+      type: object
+      description: |
+        Response payload returned by `GET /api/instances/{instanceId}/remote-session`.
+        The `status` field maps the underlying `InstanceStatus` to the
+        client-facing remote-session lifecycle (see `RemoteSessionStatus`).
+        `vncUrl` is populated only when the instance is running and VNC is
+        enabled; it carries the host, VNC host port and per-instance
+        password query parameter that the KasmVNC web client expects.
+      properties:
+        instanceId:
+          type: string
+          description: Unique identifier of the owning instance
+        status:
+          $ref: '#/components/schemas/RemoteSessionStatus'
+        vncEnabled:
+          type: boolean
+          description: Whether VNC remote desktop is enabled for the instance
+        vncUrl:
+          type: string
+          nullable: true
+          description: |
+            Full KasmVNC client URL with embedded password query parameter
+            (e.g. `http://localhost:6901?password=…`). Null when VNC is not
+            enabled or when the instance is not in `RUNNING` status.
+        expiresAt:
+          type: string
+          format: date-time
+          description: Instance expiration timestamp copied from the domain model
+
+    RemoteSessionStatusResponse:
+      type: object
+      description: |
+        Response payload returned by
+        `GET /api/instances/{instanceId}/remote-session/status`. Reports
+        whether the KasmVNC server inside the workspace container is
+        reachable over the host-bridged VNC port.
+      properties:
+        status:
+          type: string
+          description: Human-readable status (e.g. "UP", "DOWN", "STARTING")
+        vncReachable:
+          type: boolean
+          description: True when the container's KasmVNC server responded to the reachability probe
 
     WorkspaceImageResponse:
       type: object

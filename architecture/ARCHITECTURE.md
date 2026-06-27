@@ -691,6 +691,29 @@ classDiagram
     VncWebSocketProxyHandler --> InstanceService
 ```
 
+#### Instances Module Endpoints
+
+The instances module exposes REST endpoints for instance lifecycle, metrics, catalog, and remote-session management, plus an HTTP/WebSocket pair for streaming browser-based remote desktop (KasmVNC) interaction to running containers. All routes require a JWT (Bearer header or `?token=` query parameter).
+
+| Method | Path | Handled by | Description |
+|---|---|---|---|
+| `GET` | `/api/instances` | `InstanceController` | List instances assigned to the authenticated user |
+| `POST` | `/api/instances` | `InstanceController` | Provision a new workspace container |
+| `GET` | `/api/instances/{id}` | `InstanceController` | Retrieve instance metadata |
+| `DELETE` | `/api/instances/{id}` | `InstanceController` | Soft-delete an instance (status → `DELETED`) |
+| `PUT` | `/api/instances/{id}` | `InstanceController` | Update editable instance fields |
+| `POST` | `/api/instances/{id}/start` | `InstanceController` | Start a `STOPPED` container |
+| `POST` | `/api/instances/{id}/stop` | `InstanceController` | Stop a `RUNNING` container |
+| `GET` | `/api/instances/{instanceId}/metrics` | `InstanceMetricsController` | Retrieve metrics snapshots |
+| `POST` | `/api/instances/{instanceId}/metrics` | `InstanceMetricsController` | Record a new metrics snapshot |
+| `GET` | `/api/instances/{instanceId}/remote-session` | `RemoteSessionController` | Retrieve remote session metadata (status, VNC URL, expiration) |
+| `DELETE` | `/api/instances/{instanceId}/remote-session` | `RemoteSessionController` | Terminate the remote desktop session |
+| `GET` | `/api/instances/{instanceId}/remote-session/status` | `RemoteSessionController` | Probe KasmVNC reachability inside the container |
+| `GET` | `/api/instances/{instanceId}/vnc/{path}` | `VncProxyController` → `VncProxyWsOps` | Reverse-proxy HTTP for KasmVNC web client assets (HTML, JS, CSS) |
+| `GET` (WebSocket upgrade) | `/api/instances/{instanceId}/vnc/websockify` | `VncWebSocketProxyHandler` | Bidirectional frame forwarder between browser and container KasmVNC |
+
+The full OpenAPI 3.0.x contract for these endpoints — including reference request/response schemas (`RemoteSessionResponse`, `RemoteSessionStatusResponse`, `RemoteSessionStatus` enum), error codes (`403`, `404`, `409`, `502`), and WebSocket close status codes (`1000`, `4003`, `409`, `1011`) — lives at `architecture/openapi/openapi.yaml` under the `Remote Session` and `VNC` tags. The `/vnc/websockify` operation is documented as an `HTTP GET` operation with a `description`-level explanation of the upgrade semantics, since OpenAPI 3.0.x has no native WebSocket primitive.
+
 ### Authentication Module
 
 The authentication module provides JWT-based authentication and authorization for the platform. It issues and validates access tokens, manages refresh token lifecycle (including revocation on logout), and secures API endpoints via a servlet filter. It depends on both the commons module (for ID generation) and the users module (for credential verification and role loading).
