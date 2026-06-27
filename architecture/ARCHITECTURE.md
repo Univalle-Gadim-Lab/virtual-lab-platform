@@ -312,7 +312,7 @@ The instances module governs the full lifecycle of containerized workspaces—cr
 
 | Class / Interface | Package | Responsibility |
 |---|---|---|
-| `Instance` | `api.type` | Core domain interface for a virtual workspace; exposes 19 accessors covering identity, resource specs, networking, VNC, and lifecycle timestamps |
+| `Instance` | `api.type` | Core domain interface for a virtual workspace; exposes 21 accessors covering identity, resource specs, networking, VNC, and lifecycle timestamps |
 | `InstanceStatus` | `api.type` | Enumeration: `CREATED`, `STARTING`, `RUNNING`, `STOPPED`, `EXPIRED`, `DELETED` |
 | `InstanceUser` | `api.type` | Join entity interface linking a user to an instance |
 | `InstanceMetrics` | `api.type` | Domain interface for resource utilization snapshots (CPU, memory, disk, time) |
@@ -323,7 +323,8 @@ The instances module governs the full lifecycle of containerized workspaces—cr
 
 - **Identity:** `id`, `name`, `description` (Optional)
 - **Container image:** `imageName`, `imageVersion`, `imageRegistry`
-- **Resource specs:** `cpuCores` (int), `memoryMb` (int), `storageMb` (int), `gpuEnabled` (boolean), `exposedPort` (int), `vncPort` (int)
+- **Resource specs:** `cpuCores` (int), `memoryMb` (int), `storageMb` (int), `gpuEnabled` (boolean), `exposedPort` (int)
+- **VNC:** `vncPort` (int), `vncEnabled` (boolean), `vncPassword` (String)
 - **Networking:** `externalIp`, `internalIp`
 - **Lifecycle:** `createdAt`, `expiresAt`, `startedAt`, `stoppedAt` (Optional), `deletedAt` (Optional), `lastAccessedAt` (Optional)
 - **Status:** `status` → `InstanceStatus`
@@ -335,14 +336,14 @@ The instances module governs the full lifecycle of containerized workspaces—cr
 | `InstanceService` | `createInstance`, `startInstance`, `stopInstance`, `getInstanceById`, `getInstancesByUserId`, `deleteInstance`, `checkOwnership` |
 | `InstanceMetricsService` | `getMetricsByInstanceId`, `recordMetrics` |
 | `InstanceUserService` | `assignUserToInstance`, `getUsersByInstanceId`, `removeUserFromInstance` |
-| `WorkspaceProvisionerService` | `createWorkspace(userId, isPersistent)`, `createWorkspace(userId, isPersistent, imageName, imageVersion, cpuCores, memoryMb, storageMb, gpuEnabled, exposedPort)`, `stopWorkSpace`, `startWorkspace`, `getContainerIp` |
+| `WorkspaceProvisionerService` | `createWorkspace(userId, isPersistent)`, `createWorkspace(userId, isPersistent, imageName, imageVersion, cpuCores, memoryMb, storageMb, gpuEnabled, exposedPort, vncPassword)`, `stopWorkSpace`, `startWorkspace`, `getContainerIp` |
 | `CatalogService` | `getAvailableImages`, `getCatalog` |
 
 #### Data Layer
 
 | Class / Interface | Package | Key Detail |
 |---|---|---|
-| `InstanceJpa` | `data.model` | `implements Instance`; mapped to `instances` table; 21 fields |
+| `InstanceJpa` | `data.model` | `implements Instance`; mapped to `instances` table; 22 fields |
 | `InstanceMetricsJpa` | `data.model` | `implements InstanceMetrics`; mapped to `instance_metrics` table |
 | `InstanceUserJpa` | `data.model` | `implements InstanceUser`; mapped to `instance_users` table |
 | `InstanceRepository` | `data.repository` | Extends `JpaRepository<InstanceJpa, String>`; includes `findByUserId` via JPQL join, `countByImageNameAndStatusNot` |
@@ -377,17 +378,24 @@ The `WorkspaceProvisionerOperation` is the adapter that bridges the domain servi
 | `InstanceMetricsSpringWsOps` | Web operation implementation for metrics |
 | `InstanceUsersSpringWsOps` | Web operation implementation for associations |
 | `CatalogSpringWsOps` | Web operation implementation for catalog |
+| `RemoteSessionWsOps` | Web operation interface for remote session management |
+| `VncProxyWsOps` | Web operation interface for VNC HTTP proxy |
+| `RemoteSessionSpringWsOps` | Web operation implementation for remote session |
+| `VncProxySpringWsOps` | Web operation implementation for VNC HTTP proxy |
 | `VncProxyController` | `/api/instances/{instanceId}/vnc/**` — HTTP reverse proxy for KasmVNC web client assets |
 | `VncWebSocketProxyHandler` | WebSocket proxy forwarding browser → container KasmVNC connections |
 | `VncWebSocketConfig` | Registration of VNC WebSocket handler at `/api/instances/*/vnc/websockify` |
 | `CreateInstanceRequest` | Request record for instance creation |
-| `InstanceResponse` | Response record with `id`, `name`, `description` (nullable), `imageName`, `imageVersion`, `cpuCores`, `memoryMb`, `storageMb`, `gpuEnabled`, `status`, lifecycle timestamps; `static from(Instance)` factory |
+| `InstanceResponse` | Response record with `id`, `name`, `description` (nullable), `imageName`, `imageVersion`, `cpuCores`, `memoryMb`, `storageMb`, `gpuEnabled`, `vncPort`, `vncEnabled`, `vncPassword`, `status`, lifecycle timestamps; `static from(Instance)` factory |
 | `InstanceMetricsResponse` | Response record with `static from(InstanceMetrics)` factory |
 | `WorkspaceImageResponse` | Response record for workspace image catalog entries |
 | `CatalogEntryResponse` | Response record for catalog entries with running instance count |
 | `RecordMetricsRequest` | Request record for recording instance metrics (cpuUsage, memoryUsage, diskUsage, timeUsage) |
 | `CreateInstanceUserRequest` | Request record with `userId` and `instanceId` |
 | `InstanceUserResponse` | Response record with `id`, `instanceId`, `userId` |
+| `RemoteSessionResponse` | Response record with `instanceId`, `status`, `vncEnabled`, `vncUrl` (nullable), `expiresAt`; `static from(Instance)` factory |
+| `RemoteSessionStatusResponse` | Response record with `status`, `vncReachable` |
+| `VncProxyResponse` | Response record with `statusCode`, `contentType` (nullable), `body` (nullable); `static error(int)` factory |
 
 #### Instances Module Diagram
 
@@ -410,6 +418,8 @@ classDiagram
         +gpuEnabled() boolean
         +exposedPort() int
         +vncPort() int
+        +vncEnabled() boolean
+        +vncPassword() String
         +internalIp() String
         +createdAt() LocalDateTime
         +expiresAt() LocalDateTime
@@ -477,6 +487,8 @@ classDiagram
         -boolean gpuEnabled
         -int exposedPort
         -int vncPort
+        -boolean vncEnabled
+        -String vncPassword
         -String internalIp
         -LocalDateTime createdAt
         -LocalDateTime expiresAt
@@ -581,6 +593,8 @@ classDiagram
         +Integer storageMb
         +Boolean gpuEnabled
         +Integer vncPort
+        +Boolean vncEnabled
+        +String vncPassword
         +InstanceStatus status
         +LocalDateTime createdAt
         +LocalDateTime expiresAt
@@ -627,8 +641,22 @@ classDiagram
     class InstanceConfig
 
     class VncProxyController {
-        -InstanceService instanceService
+        -VncProxyWsOps vncProxyWsOps
         +proxyVncRequest(instanceId)
+    }
+
+    class VncProxyWsOps {
+        <<interface>>
+        +proxyVncRequest(instanceId, requestSuffix) VncProxyResponse
+    }
+
+    class VncProxySpringWsOps
+
+    class VncProxyResponse {
+        +int statusCode
+        +MediaType contentType
+        +byte[] body
+        +error(int statusCode)$ VncProxyResponse
     }
 
     class VncWebSocketProxyHandler {
@@ -657,7 +685,9 @@ classDiagram
     InstanceResponse ..> Instance
     InstanceMetricsResponse ..> InstanceMetrics
     Instance --> InstanceStatus
-    VncProxyController --> InstanceService
+    VncProxyController --> VncProxyWsOps
+    VncProxySpringWsOps ..|> VncProxyWsOps
+    VncProxySpringWsOps --> InstanceService
     VncWebSocketProxyHandler --> InstanceService
 ```
 
@@ -944,6 +974,7 @@ classDiagram
         class InstanceService
         class InstanceServiceOp
         class VncProxyController
+        class VncProxyWsOps
         class VncWebSocketProxyHandler
     }
 
@@ -965,7 +996,7 @@ classDiagram
     UserDto ..> User
 
     InstanceServiceOp ..|> InstanceService
-    VncProxyController --> InstanceService
+    VncProxyController --> VncProxyWsOps
     VncWebSocketProxyHandler --> InstanceService
 
     AuthenticationOperation ..|> AuthenticationService
@@ -987,14 +1018,14 @@ The Users, Instances, and Authentication modules are each documented across two
 complementary diagrams that separate the data model from the operational
 architecture. Use them together to reason about a module end-to-end.
 
-| Diagram | Purpose | When to Use |
-|---|---|---|
-| `architecture/virtual-lab-users-module-types.mermaid` | Domain interfaces, enums, JPA entities, request/response DTOs, and the private web-layer adapter records, with realization, domain association, and DTO field-typing relationships | When modeling data structures, request/response payloads, or domain type hierarchies for the users module |
-| `architecture/virtual-lab-users-module-services.mermaid` | Service interfaces, service implementations, web-operation facades, controllers, repositories, and configuration, with realization and dependency-injection relationships | When modeling operational flow, request handling, or service-layer dependencies for the users module |
-| `architecture/virtual-lab-instances-module-types.mermaid` | Domain interfaces, enums, JPA entities, value objects (`WorkspaceImage`, `CatalogEntry`), and request/response DTOs including remote session models, with realization and domain association relationships | When modeling data structures, lifecycle states, or remote-desktop session payloads for the instances module |
-| `architecture/virtual-lab-instances-module-services.mermaid` | Service interfaces (including `WorkspaceProvisionerService`), operations, web-operation facades, controllers, the VNC WebSocket proxy, repositories, and configuration, with realization and dependency-injection relationships | When modeling operational flow, Docker provisioning, VNC proxying, or service-layer dependencies for the instances module |
-| `architecture/virtual-lab-authentication-module-types.mermaid` | `RefreshToken` interface, `TokenType` enum, `RefreshTokenJpa` entity, `AuthenticationResult` record, and request/response DTOs, with realization relationships | When modeling token and session payloads, request/response shapes, or domain types for the authentication module |
-| `architecture/virtual-lab-authentication-module-services.mermaid` | `AuthenticationService` and `TokenService` contracts, their operations, the `AuthWsOps` facade, the controller, JWT security filter, entry point, and access-denied handler, repository, and configuration, with realization and dependency-injection relationships | When modeling login/refresh/logout flows, JWT validation, the security filter chain, or service-layer dependencies for the authentication module |
+| Diagram                                                                    | Purpose | When to Use |
+|----------------------------------------------------------------------------|---|---|
+| `architecture/diagrams/virtual-lab-users-module-types.mermaid`             | Domain interfaces, enums, JPA entities, request/response DTOs, and the private web-layer adapter records, with realization, domain association, and DTO field-typing relationships | When modeling data structures, request/response payloads, or domain type hierarchies for the users module |
+| `architecture/diagrams/virtual-lab-users-module-services.mermaid`          | Service interfaces, service implementations, web-operation facades, controllers, repositories, and configuration, with realization and dependency-injection relationships | When modeling operational flow, request handling, or service-layer dependencies for the users module |
+| `architecture/diagrams/virtual-lab-instances-module-types.mermaid`         | Domain interfaces, enums, JPA entities, value objects (`WorkspaceImage`, `CatalogEntry`), and request/response DTOs including remote session models, with realization and domain association relationships | When modeling data structures, lifecycle states, or remote-desktop session payloads for the instances module |
+| `architecture/diagrams/virtual-lab-instances-module-services.mermaid`      | Service interfaces (including `WorkspaceProvisionerService`), operations, web-operation facades, controllers, the VNC WebSocket proxy, repositories, and configuration, with realization and dependency-injection relationships | When modeling operational flow, Docker provisioning, VNC proxying, or service-layer dependencies for the instances module |
+| `architecture/diagrams/virtual-lab-authentication-module-types.mermaid`    | `RefreshToken` interface, `TokenType` enum, `RefreshTokenJpa` entity, `AuthenticationResult` record, and request/response DTOs, with realization relationships | When modeling token and session payloads, request/response shapes, or domain types for the authentication module |
+| `architecture/diagrams/virtual-lab-authentication-module-services.mermaid` | `AuthenticationService` and `TokenService` contracts, their operations, the `AuthWsOps` facade, the controller, JWT security filter, entry point, and access-denied handler, repository, and configuration, with realization and dependency-injection relationships | When modeling login/refresh/logout flows, JWT validation, the security filter chain, or service-layer dependencies for the authentication module |
 
 The original combined `architecture/virtual-lab-users-module.mermaid`,
 `architecture/virtual-lab-instances-module.mermaid`, and
@@ -1089,9 +1120,11 @@ The `UniqueIdGenerator` interface in commons has two implementations (`UuidGener
 
 ### Docker Integration
 
-`WorkspaceProvisionerOperation` directly uses the `docker-java` client library to create and stop containers. This is the only service that interacts with external infrastructure. The provisioner configures resource limits (CPU, memory, disk) dynamically based on parameters supplied during instance creation. The overloaded `createWorkspace` method accepts image name, version, CPU cores, memory MB, storage MB, GPU flag, and exposed port. A backward-compatible overload with default values (2 CPU cores, 4 GB RAM, 10 GB disk, `lab-kicad:latest`) is also provided.
+`WorkspaceProvisionerOperation` directly uses the `docker-java` client library to create and stop containers. This is the only service that interacts with external infrastructure. The provisioner configures resource limits (CPU, memory, disk) dynamically based on parameters supplied during instance creation. The overloaded `createWorkspace` method accepts image name, version, CPU cores, memory MB, storage MB, GPU flag, exposed port, and VNC password. A backward-compatible overload with default values (2 CPU cores, 4 GB RAM, 10 GB disk, `lab-kicad:latest`) is also provided.
 
-Containers expose two ports: an application port (default 8080) and a KasmVNC port (default 6901) for browser-based remote desktop access. KasmVNC provides a full Linux desktop (LXDE) with built-in WebSocket support and an HTML5 web client. The `VncWebSocketProxyHandler` and `VncProxyController` enable the frontend to access the container's KasmVNC server through the backend, maintaining authentication and avoiding direct container exposure.
+Containers expose two ports: an application port (default 8080) and a KasmVNC port (default 6901) for browser-based remote desktop access. KasmVNC provides a full Linux desktop (XFCE) with built-in WebSocket support and an HTML5 web client. Shared memory is configured at 2 GB (`shmSize`) for KasmVNC frame buffer operations. Each container receives a unique VNC password via the `KASMVNC_PASSWORD` environment variable, which the entrypoint script configures before starting KasmVNC.
+
+The `VncWebSocketProxyHandler` and `VncProxyController` enable the frontend to access the container's KasmVNC server through the backend, maintaining authentication and avoiding direct container exposure. The VNC URL returned to clients includes the per-instance password as a query parameter (`?password=<pw>`), enabling the KasmVNC web client to authenticate automatically.
 
 After container creation, the internal bridge IP address is resolved via `docker inspect` and stored in `internalIp`, enabling the VNC proxy to connect to running containers by their Docker network address.
 

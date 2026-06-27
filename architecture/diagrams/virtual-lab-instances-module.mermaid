@@ -1,0 +1,442 @@
+%% Virtual Lab Platform — Instances Module
+%% Class diagram aligned with architecture/ARCHITECTURE.md
+%% Source of truth: ARCHITECTURE.md (Instances Module section)
+classDiagram
+    direction LR
+
+    class Instance {
+        <<interface>>
+        +id() String
+        +name() String
+        +description() Optional~String~
+        +externalIp() String
+        +imageName() String
+        +imageVersion() String
+        +imageRegistry() String
+        +cpuCores() int
+        +memoryMb() int
+        +storageMb() int
+        +gpuEnabled() boolean
+        +exposedPort() int
+        +vncPort() int
+        +vncEnabled() boolean
+        +vncPassword() String
+        +internalIp() String
+        +createdAt() LocalDateTime
+        +expiresAt() LocalDateTime
+        +startedAt() LocalDateTime
+        +stoppedAt() Optional~LocalDateTime~
+        +deletedAt() Optional~LocalDateTime~
+        +lastAccessedAt() Optional~LocalDateTime~
+        +status() InstanceStatus
+    }
+
+    class InstanceMetrics {
+        <<interface>>
+        +id() String
+        +instanceId() String
+        +currentCpuUsage() Double
+        +currentMemoryUsage() Double
+        +currentDiskUsage() Double
+        +currentTimeUsage() Double
+    }
+
+    class InstanceUser {
+        <<interface>>
+        +id() String
+        +instanceId() String
+        +userId() String
+    }
+
+    class InstanceStatus {
+        <<enumeration>>
+        CREATED
+        STARTING
+        RUNNING
+        STOPPED
+        EXPIRED
+        DELETED
+    }
+
+    class WorkspaceImage {
+        <<record>>
+        +String name
+        +String version
+        +String registry
+        +int cpuCores
+        +int memoryMb
+        +int storageMb
+        +boolean gpuEnabled
+        +int exposedPort
+    }
+
+    class CatalogEntry {
+        <<record>>
+        +WorkspaceImage image
+        +int runningInstanceCount
+    }
+
+    class InstanceService {
+        <<interface>>
+        +createInstance(request) Instance
+        +startInstance(id) Instance
+        +stopInstance(id) Instance
+        +getInstanceById(id) Optional~Instance~
+        +getInstancesByUserId(userId) List~Instance~
+        +deleteInstance(id) void
+        +checkOwnership(instanceId, userId) boolean
+    }
+
+    class InstanceMetricsService {
+        <<interface>>
+        +getMetricsByInstanceId(instanceId) List~InstanceMetrics~
+        +recordMetrics(instanceId, request) InstanceMetrics
+    }
+
+    class InstanceUserService {
+        <<interface>>
+        +assignUserToInstance(userId, instanceId) InstanceUser
+        +getUsersByInstanceId(instanceId) List~InstanceUser~
+        +removeUserFromInstance(userId, instanceId) void
+    }
+
+    class WorkspaceProvisionerService {
+        <<interface>>
+        +createWorkspace(userId, isPersistent) String
+        +createWorkspace(userId, isPersistent, imageName, imageVersion, cpuCores, memoryMb, storageMb, gpuEnabled, exposedPort, vncPassword) String
+        +stopWorkSpace(containerId) void
+        +startWorkspace(containerId) void
+        +getContainerIp(containerId) String
+    }
+
+    class CatalogService {
+        <<interface>>
+        +getAvailableImages() List~WorkspaceImage~
+        +getCatalog() List~CatalogEntry~
+    }
+
+    class InstanceJpa {
+        -String id
+        -String name
+        -String description
+        -String externalIp
+        -String imageName
+        -String imageVersion
+        -String imageRegistry
+        -Integer cpuCores
+        -Integer memoryMb
+        -Integer storageMb
+        -Boolean gpuEnabled
+        -Integer exposedPort
+        -Integer vncPort
+        -Boolean vncEnabled
+        -String vncPassword
+        -String internalIp
+        -LocalDateTime createdAt
+        -LocalDateTime expiresAt
+        -LocalDateTime startedAt
+        -LocalDateTime stoppedAt
+        -LocalDateTime deletedAt
+        -LocalDateTime lastAccessedAt
+        -InstanceStatus status
+    }
+
+    class InstanceMetricsJpa {
+        -String id
+        -String instanceId
+        -Double currentCpuUsage
+        -Double currentMemoryUsage
+        -Double currentDiskUsage
+        -Double currentTimeUsage
+    }
+
+    class InstanceUserJpa {
+        -String id
+        -String instanceId
+        -String userId
+    }
+
+    class InstanceRepository {
+        <<interface>>
+        +findById(id) Optional~InstanceJpa~
+        +findAll() List~InstanceJpa~
+        +findByUserId(userId) List~InstanceJpa~
+        +countByImageNameAndStatusNot(name, status) int
+        +save(instance) InstanceJpa
+    }
+
+    class InstanceMetricsRepository {
+        <<interface>>
+        +findByInstanceId(instanceId) List~InstanceMetricsJpa~
+        +save(metrics) InstanceMetricsJpa
+    }
+
+    class InstanceUserRepository {
+        <<interface>>
+        +findByUserId(userId) List~InstanceUserJpa~
+        +findByInstanceId(instanceId) List~InstanceUserJpa~
+    }
+
+    class InstanceServiceOperation {
+        -InstanceRepository repository
+        -InstanceUserRepository instanceUserRepository
+        -WorkspaceProvisionerService workspaceProvisionerService
+        -UniqueIdGenerator uniqueIdGenerator
+        +createInstance(request) Instance
+        +startInstance(id) Instance
+        +stopInstance(id) Instance
+        +getInstanceById(id) Optional~Instance~
+        +getInstancesByUserId(userId) List~Instance~
+        +deleteInstance(id) void
+        +checkOwnership(instanceId, userId) boolean
+    }
+
+    class InstanceMetricsServiceOperation {
+        -InstanceMetricsRepository repository
+        -InstanceRepository instanceRepository
+        -UniqueIdGenerator uniqueIdGenerator
+        +getMetricsByInstanceId(instanceId) List~InstanceMetrics~
+        +recordMetrics(instanceId, request) InstanceMetrics
+    }
+
+    class InstanceUserServiceOperation {
+        -InstanceUserRepository repository
+        -UniqueIdGenerator uniqueIdGenerator
+        +assignUserToInstance(userId, instanceId) InstanceUser
+        +getUsersByInstanceId(instanceId) List~InstanceUser~
+        +removeUserFromInstance(userId, instanceId) void
+    }
+
+    class WorkspaceProvisionerOperation {
+        -DockerClient dockerClient
+        +createWorkspace(userId, isPersistent) String
+        +createWorkspace(userId, isPersistent, imageName, imageVersion, cpuCores, memoryMb, storageMb, gpuEnabled, exposedPort, vncPassword) String
+        +stopWorkSpace(containerId) void
+        +startWorkspace(containerId) void
+        +getContainerIp(containerId) String
+    }
+
+    class CatalogServiceOperation {
+        -WorkspaceImageProperties imageProperties
+        -InstanceRepository instanceRepository
+        +getAvailableImages() List~WorkspaceImage~
+        +getCatalog() List~CatalogEntry~
+    }
+
+    class WorkspaceImageProperties {
+        <<ConfigurationProperties>>
+        +List~WorkspaceImage~ images
+    }
+
+    class InstancesWsOps {
+        <<interface>>
+        +createInstance(request) InstanceResponse
+        +getInstanceById(id) InstanceResponse
+        +getInstancesByUser() List~InstanceResponse~
+        +startInstance(id) InstanceResponse
+        +stopInstance(id) InstanceResponse
+        +deleteInstance(id) void
+    }
+
+    class InstancesSpringWsOps
+
+    class InstanceMetricsWsOps {
+        <<interface>>
+        +getMetricsByInstanceId(instanceId) List~InstanceMetricsResponse~
+        +recordMetrics(instanceId, request) InstanceMetricsResponse
+    }
+
+    class InstanceMetricsSpringWsOps
+
+    class InstanceUsersWsOps {
+        <<interface>>
+        +assignUserToInstance(request) InstanceUserResponse
+        +getInstanceUserAssociations(instanceId, userId) List~InstanceUserResponse~
+        +removeUserFromInstance(userId, instanceId) void
+    }
+
+    class InstanceUsersSpringWsOps
+
+    class CatalogWsOps {
+        <<interface>>
+        +getAvailableImages() List~WorkspaceImageResponse~
+        +getCatalog() List~CatalogEntryResponse~
+    }
+
+    class CatalogSpringWsOps
+
+    class InstanceController {
+        -InstancesWsOps instancesWsOps
+        +createInstance(request)
+        +getInstanceById(id)
+        +getInstancesByUser()
+        +startInstance(id)
+        +stopInstance(id)
+        +deleteInstance(id)
+    }
+
+    class InstanceMetricsController {
+        -InstanceMetricsWsOps instanceMetricsWsOps
+        +getMetricsByInstanceId(instanceId)
+        +recordMetrics(instanceId, request)
+    }
+
+    class InstanceUsersController {
+        -InstanceUsersWsOps instanceUsersWsOps
+        +assignUserToInstance(request)
+        +getInstanceUserAssociations(instanceId, userId)
+        +removeUserFromInstance(userId, instanceId)
+    }
+
+    class CatalogController {
+        -CatalogWsOps catalogWsOps
+        +getAvailableImages()
+        +getCatalog()
+    }
+
+    class VncProxyController {
+        -VncProxyWsOps vncProxyWsOps
+        +proxyVncRequest(instanceId)
+    }
+
+    class VncProxyWsOps {
+        <<interface>>
+        +proxyVncRequest(instanceId, requestSuffix) VncProxyResponse
+    }
+
+    class VncProxySpringWsOps
+
+    class VncProxyResponse {
+        +int statusCode
+        +MediaType contentType
+        +byte[] body
+        +error(int statusCode)$ VncProxyResponse
+    }
+
+    class VncWebSocketProxyHandler {
+        -InstanceService instanceService
+        +afterConnectionEstablished(session)
+        +handleBinaryMessage(session, message)
+        +handleTextMessage(session, message)
+    }
+
+    class VncWebSocketConfig
+
+    class InstanceConfig {
+        +dockerClient() DockerClient
+    }
+
+    class InstancesWsConfig
+
+    class CreateInstanceRequest {
+        +String name
+        +Optional~String~ description
+        +String imageName
+        +String imageVersion
+        +String imageRegistry
+        +int cpuCores
+        +int memoryMb
+        +int storageMb
+        +boolean gpuEnabled
+        +int exposedPort
+    }
+
+    class RecordMetricsRequest {
+        +Double cpuUsage
+        +Double memoryUsage
+        +Double diskUsage
+        +Double timeUsage
+    }
+
+    class CreateInstanceUserRequest {
+        +String userId
+        +String instanceId
+    }
+
+    class InstanceResponse {
+        +String id
+        +String name
+        +Optional~String~ description
+        +String imageName
+        +String imageVersion
+        +Integer cpuCores
+        +Integer memoryMb
+        +Integer storageMb
+        +Boolean gpuEnabled
+        +Integer vncPort
+        +Boolean vncEnabled
+        +String vncPassword
+        +InstanceStatus status
+        +LocalDateTime createdAt
+        +LocalDateTime expiresAt
+        +Optional~LocalDateTime~ startedAt
+        +Optional~LocalDateTime~ stoppedAt
+        +Optional~LocalDateTime~ deletedAt
+        +Optional~LocalDateTime~ lastAccessedAt
+        +from(Instance instance) InstanceResponse$
+    }
+
+    class InstanceMetricsResponse {
+        +String id
+        +String instanceId
+        +Double currentCpuUsage
+        +Double currentMemoryUsage
+        +Double currentDiskUsage
+        +Double currentTimeUsage
+        +from(InstanceMetrics metrics) InstanceMetricsResponse$
+    }
+
+    class InstanceUserResponse {
+        +String id
+        +String instanceId
+        +String userId
+    }
+
+    class WorkspaceImageResponse {
+        +String name
+        +String version
+        +String registry
+        +int cpuCores
+        +int memoryMb
+        +int storageMb
+        +boolean gpuEnabled
+        +int exposedPort
+    }
+
+    class CatalogEntryResponse {
+        +WorkspaceImageResponse image
+        +int runningInstanceCount
+    }
+
+    InstanceJpa ..|> Instance
+    InstanceMetricsJpa ..|> InstanceMetrics
+    InstanceUserJpa ..|> InstanceUser
+    InstanceServiceOperation ..|> InstanceService
+    InstanceMetricsServiceOperation ..|> InstanceMetricsService
+    InstanceUserServiceOperation ..|> InstanceUserService
+    WorkspaceProvisionerOperation ..|> WorkspaceProvisionerService
+    CatalogServiceOperation ..|> CatalogService
+    InstancesSpringWsOps ..|> InstancesWsOps
+    InstanceMetricsSpringWsOps ..|> InstanceMetricsWsOps
+    InstanceUsersSpringWsOps ..|> InstanceUsersWsOps
+    CatalogSpringWsOps ..|> CatalogWsOps
+    InstanceServiceOperation --> InstanceRepository
+    InstanceServiceOperation --> InstanceUserRepository
+    InstanceServiceOperation --> WorkspaceProvisionerOperation
+    InstanceMetricsServiceOperation --> InstanceMetricsRepository
+    InstanceMetricsServiceOperation --> InstanceRepository
+    InstanceUserServiceOperation --> InstanceUserRepository
+    CatalogServiceOperation --> InstanceRepository
+    CatalogServiceOperation --> WorkspaceImageProperties
+    InstanceController --> InstancesWsOps
+    InstanceMetricsController --> InstanceMetricsWsOps
+    InstanceUsersController --> InstanceUsersWsOps
+    CatalogController --> CatalogWsOps
+    VncProxyController --> VncProxyWsOps
+    VncProxySpringWsOps ..|> VncProxyWsOps
+    VncProxySpringWsOps --> InstanceService
+    VncWebSocketProxyHandler --> InstanceService
+    InstanceResponse ..> Instance
+    InstanceMetricsResponse ..> InstanceMetrics
+    CatalogEntryResponse ..> CatalogEntry
+    Instance --> InstanceStatus

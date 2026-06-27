@@ -16,6 +16,10 @@
  *       contract for instance-user association web operations</li>
  *   <li>{@link edu.univalle.gadim.virtual_lab_platform.instances.web.ops.CatalogWsOps} —
  *       contract for workspace catalog web operations</li>
+ *   <li>{@link edu.univalle.gadim.virtual_lab_platform.instances.web.ops.RemoteSessionWsOps} —
+ *       contract for remote session web operations</li>
+ *   <li>{@link edu.univalle.gadim.virtual_lab_platform.instances.web.ops.VncProxyWsOps} —
+ *       contract for VNC HTTP proxy web operations</li>
  * </ul>
  */
 package edu.univalle.gadim.virtual_lab_platform.instances.web.ops;

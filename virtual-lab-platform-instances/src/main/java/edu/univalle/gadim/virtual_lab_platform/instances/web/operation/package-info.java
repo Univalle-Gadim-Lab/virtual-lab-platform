@@ -17,6 +17,10 @@
  *       delegates to {@code InstanceUserService}</li>
  *   <li>{@link edu.univalle.gadim.virtual_lab_platform.instances.web.operation.CatalogSpringWsOps} —
  *       delegates to {@code CatalogService}</li>
+ *   <li>{@link edu.univalle.gadim.virtual_lab_platform.instances.web.operation.RemoteSessionSpringWsOps} —
+ *       delegates to {@code InstanceService} for remote session operations</li>
+ *   <li>{@link edu.univalle.gadim.virtual_lab_platform.instances.web.operation.VncProxySpringWsOps} —
+ *       delegates to {@code InstanceService} for VNC HTTP proxy operations</li>
  * </ul>
  */
 package edu.univalle.gadim.virtual_lab_platform.instances.web.operation;
