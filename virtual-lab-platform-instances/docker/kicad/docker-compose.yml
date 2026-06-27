@@ -1,0 +1,17 @@
+services:
+  kicad:
+    build: .
+    image: lab-kicad:latest
+    container_name: kicad
+    ports:
+      - "6901:6901"
+    environment:
+      - KASMVNC_PASSWORD=test123
+      - VNC_RESOLUTION=1920x1080
+    volumes:
+      - kicad-data:/home/labuser/projects
+    restart: unless-stopped
+    shm_size: "2gb"
+
+volumes:
+  kicad-data:
