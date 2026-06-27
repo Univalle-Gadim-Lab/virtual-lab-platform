@@ -923,9 +923,32 @@ Controller → WsOps interface → SpringWsOps impl → Service interface → Op
 - **Operation implementations** contain the business logic and persistence interaction.
 
 This pattern ensures that:
-1. Controllers never directly reference service or repository types.
-2. Web-layer concerns (DTO construction, exception translation) are isolated in `SpringWsOps` classes.
-3. Service interfaces remain web-agnostic and reusable.
+ 1. Controllers never directly reference service or repository types.
+ 2. Web-layer concerns (DTO construction, exception translation) are isolated in `SpringWsOps` classes.
+ 3. Service interfaces remain web-agnostic and reusable.
+
+### Package Layout Convention
+
+Every module follows the same baseline package layout rooted at `edu.univalle.gadim.virtual_lab_platform.<module>`, with each subdomain layer represented by its own package:
+
+| Layer | Package |
+|---|---|
+| Root module package | `<module>` |
+| Domain interfaces & enums | `<module>.api.type` |
+| Service contracts | `<module>.api.service` |
+| JPA entities | `<module>.data.model` |
+| Spring Data repositories | `<module>.data.repository` |
+| Service implementations | `<module>.operation` (suffix `*Operation`) |
+| Spring `@Configuration` classes | `<module>.config` |
+| Web-operation contracts | `<module>.web.ops` (suffix `*WsOps`) |
+| Web-operation implementations | `<module>.web.operation` (suffix `*SpringWsOps`) |
+| REST controllers | `<module>.web.controller` |
+| Request/response DTOs | `<module>.web.model` |
+| VNC WebSocket proxy (instances only) | `<module>.vnc` |
+
+**Every package, including module-root packages and layer-aggregate packages (`<module>.api`, `<module>.data`, `<module>.web`), must contain a `package-info.java` with Javadoc describing the package contents.** Modules are therefore expected to ship package-info files for every intermediate layer (e.g., `users.api`, `users.data`, `users.web`) in addition to the leaf packages.
+
+The alignment between the module configuration and this layout is verified by the seven Spring `@Configuration` classes listed in the previous section.
 
 ### Security Configuration
 
