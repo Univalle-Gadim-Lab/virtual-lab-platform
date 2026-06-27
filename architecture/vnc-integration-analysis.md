@@ -124,7 +124,7 @@ Docker Container (KasmVNC on port 6901)
     |
     | VNC protocol (internal)
     v
-X11 / LXDE Desktop (KiCad, etc.)
+X11 / XFCE Desktop (KiCad, etc.)
 ```
 
 **Flow:**
@@ -178,13 +178,10 @@ Container continues running (workspace not affected)
 
 ### Docker Image Requirements
 
-The Docker images need KasmVNC installed and configured. The plan includes:
+The Docker images need KasmVNC installed and configured. The current implementation:
 
-1. **Verification step**: Check if `lab-kicad:latest` already has KasmVNC
-2. **Base image creation** (if needed): Create a Dockerfile that installs:
-   - Ubuntu 24.04 base
-   - LXDE desktop environment
-   - KasmVNC server
-   - Target application (KiCad, Vivado, etc.)
-3. **Entrypoint**: Container startup script that launches Xvfb + KasmVNC + window manager
-4. **KasmVNC config**: Listen on port 6901, no password (auth handled by platform JWT)
+1. **Base image**: Ubuntu 24.04 with XFCE desktop environment
+2. **KasmVNC server**: Installed from KasmVNC releases (v1.4.0)
+3. **Target application**: KiCad (and other EDA tools)
+4. **Entrypoint**: `entrypoint.sh` reads `KASMVNC_PASSWORD` env var, configures VNC password via `vncpasswd`, then starts KasmVNC with XFCE desktop
+5. **KasmVNC config**: Listen on port 6901, per-instance password authentication (password passed via `?password=` query parameter in VNC URL)

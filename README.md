@@ -272,10 +272,10 @@ This modular approach improves:
 | [`architecture/ARCHITECTURE.md`](architecture/ARCHITECTURE.md) | System architecture, module diagrams, component relationships |
 | [`architecture/DATABASE.md`](architecture/DATABASE.md) | Physical database schema, ERD diagram, DDL-to-JPA mapping |
 | [`architecture/openapi/openapi.yaml`](architecture/openapi/openapi.yaml) | Full OpenAPI 3.0 specification for the REST API |
-| [`architecture/virtual-lab-users-module.mermaid`](architecture/virtual-lab-users-module.mermaid) | Mermaid class diagram for the users module |
-| [`architecture/virtual-lab-instances-module.mermaid`](architecture/virtual-lab-instances-module.mermaid) | Mermaid class diagram for the instances module |
-| [`architecture/virtual-lab-authentication.mermaid`](architecture/virtual-lab-authentication.mermaid) | Mermaid class diagram for the authentication module |
-| [`architecture/virtual-lab-module-integration.mermaid`](architecture/virtual-lab-module-integration.mermaid) | Mermaid module integration diagram |
+| [`architecture/virtual-lab-users-module.mermaid`](architecture/diagrams/virtual-lab-users-module.mermaid) | Mermaid class diagram for the users module |
+| [`architecture/virtual-lab-instances-module.mermaid`](architecture/diagrams/virtual-lab-instances-module.mermaid) | Mermaid class diagram for the instances module |
+| [`architecture/virtual-lab-authentication.mermaid`](architecture/diagrams/virtual-lab-authentication.mermaid) | Mermaid class diagram for the authentication module |
+| [`architecture/virtual-lab-module-integration.mermaid`](architecture/diagrams/virtual-lab-module-integration.mermaid) | Mermaid module integration diagram |
 
 ---
 

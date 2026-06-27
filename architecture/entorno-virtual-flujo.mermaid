@@ -1,0 +1,84 @@
+---
+config:
+  theme: default
+---
+%% graph TD
+%%     subgraph FLUJO_PRINCIPAL["Flujo Principal del Usuario"]
+%%         A[Usuario autenticado] --> B[Explorar catálogo<br/>GET /api/catalog]
+%%         B --> C[Seleccionar workspace<br/>KiCad / Vivado / Quartus]
+%%         C --> D[Crear instancia<br/>POST /api/instances]
+%%         D --> E{¿Imagen Docker<br/>existe?}
+%%         E -->|No| E1[Construir imagen<br/>docker build]
+%%         E1 --> F
+%%         E -->|Sí| F[Crear contenedor<br/>con límites CPU/RAM]
+%%         F --> G[Asignar puerto VNC<br/>dinámico en host]
+%%         G --> H[Montar volumen<br/>vol_userId]
+%%         H --> I[Iniciar contenedor<br/>+ servidor KasmVNC]
+%%         I --> J[Instancia en estado<br/>CREATED → RUNNING]
+%%         J --> K[Acceder al escritorio<br/>remoto vía navegador]
+%%         K --> L[Trabajar en la<br/>aplicación]
+%%         L --> M{¿Terminar sesión?}
+%%         M -->|Pausar| N[Detener instancia<br/>POST .../stop]
+%%         N --> O[Estado: STOPPED]
+%%         O --> P{¿Reanudar?}
+%%         P -->|Sí| Q[Iniciar instancia<br/>POST .../start]
+%%         Q --> J
+%%         P -->|No| R[Eliminar instancia<br/>DELETE .../id]
+%%         R --> S[Estado: DELETED<br/>borrado lógico]
+%%         M -->|Eliminar| R
+%%     end
+%%
+%%     subgraph FLUJO_VNC["Flujo de Conexión VNC (Escritorio Remoto)"]
+%%         V1[Navegador<br/>React SPA] --> V2["GET /api/instances/{id}/remote-session<br/>Obtener URL + contraseña VNC"]
+%%         V2 --> V3["Abrir iframe con<br/>?token={jwt}"]
+%%         V3 --> V4[VncProxyController<br/>Proxy HTTP inverso]
+%%         V4 --> V5{¿JWT válido?<br/>¿Usuario dueño?<br/>¿Estado RUNNING?}
+%%         V5 -->|No| V5E[Error 401/403/409]
+%%         V5 -->|Sí| V6[Reenviar a<br/>KasmVNC :6901<br/>con Basic Auth]
+%%         V6 --> V7[Cliente web KasmVNC<br/>cargado en iframe]
+%%         V7 --> V8[Abrir WebSocket<br/>/vnc/websockify]
+%%         V8 --> V9[VncWebSocketProxyHandler<br/>Proxy WebSocket]
+%%         V9 --> V10{¿JWT válido?<br/>¿Usuario dueño?<br/>¿Estado RUNNING?}
+%%         V10 -->|No| V10E[Cerrar conexión<br/>4003/409]
+%%         V10 -->|Sí| V11[Conectar a<br/>KasmVNC WebSocket<br/>:6901/websockify]
+%%         V11 --> V12[Escritorio XFCE<br/>interactivo en navegador]
+%%         V12 --> V13[Usuario trabaja con<br/>KiCad / Vivado / Quartus]
+%%     end
+%%
+%%     subgraph CAPAS["Capas de la Plataforma"]
+%%         C1[Controladores REST<br/>Thin Controllers] --> C2[WsOps Interfaces<br/>Web Operations]
+%%         C2 --> C3[SpringWsOps<br/>Implementaciones Web]
+%%         C3 --> C4[Service Interfaces<br/>Servicios de Dominio]
+%%         C4 --> C5[Operation Implementations<br/>Lógica de Negocio]
+%%         C5 --> C6[Repositorios JPA<br/>Acceso a Datos]
+%%         C5 --> C7[Docker Client<br/>Gestión de Contenedores]
+%%     end
+%%
+%%     A -.->|capa web| C1
+%%     J -.->|persistencia| C6
+%%     F -.->|contenedores| C7
+
+sequenceDiagram
+    actor Usuario
+    participant Navegador as Navegador (React)
+    participant Backend as Spring Boot
+    participant Docker as Contenedor Docker (KasmVNC)
+
+    Usuario->>Navegador: Selecciona workspace
+    Navegador->>Backend: GET /api/instances/{id}/remote-session
+    Backend-->>Navegador: URL VNC + contraseña (+ JWT)
+
+    Navegador->>Backend: GET /api/instances/{id}/vnc/?token={jwt}
+    Note over Backend: Valida JWT + pertenencia
+    Backend->>Docker: GET http://localhost:{hostPort}/
+    Note over Backend,Docker: Basic Auth (labuser:password)
+    Docker-->>Backend: Cliente web KasmVNC (HTML/JS)
+    Backend-->>Navegador: Cliente web cargado en iframe
+
+    Navegador->>Backend: WebSocket /api/instances/{id}/vnc/websockify
+    Note over Backend: Valida JWT + pertenencia + estado RUNNING
+    Backend->>Docker: WebSocket ws://localhost:{hostPort}/websockify
+    Note over Backend,Docker: Basic Auth (labuser:password)
+    Navegador->>Backend: Frames binarios/texto
+    Backend->>Docker: Frames binarios/texto
+    Note over Navegador,Docker: Escritorio XFCE interactivo

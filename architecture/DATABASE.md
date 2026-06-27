@@ -38,6 +38,8 @@ erDiagram
         BOOLEAN gpu_enabled
         INTEGER exposed_port
         INTEGER vnc_port
+        BOOLEAN vnc_enabled
+        VARCHAR_255 vnc_password
         VARCHAR_45 internal_ip
         TIMESTAMP created_at
         TIMESTAMP expires_at
@@ -132,6 +134,8 @@ The central entity for virtual lab workspaces, tracking container configuration,
 | `gpu_enabled` | `BOOLEAN` | NOT NULL | — | — | `InstanceJpa.gpuEnabled` → `Instance.gpuEnabled()` |
 | `exposed_port` | `INTEGER` | NULL | — | — | `InstanceJpa.exposedPort` → `Instance.exposedPort()` |
 | `vnc_port` | `INTEGER` | NULL | — | — | `InstanceJpa.vncPort` → `Instance.vncPort()` — KasmVNC port for browser remote desktop (default 6901) |
+| `vnc_enabled` | `BOOLEAN` | NULL | — | — | `InstanceJpa.vncEnabled` → `Instance.vncEnabled()` — whether VNC remote desktop is enabled |
+| `vnc_password` | `VARCHAR(255)` | NULL | — | — | `InstanceJpa.vncPassword` → `Instance.vncPassword()` — per-instance VNC password for KasmVNC authentication |
 | `internal_ip` | `VARCHAR(45)` | NULL | — | — | `InstanceJpa.internalIp` → `Instance.internalIp()` |
 | `created_at` | `TIMESTAMP` | NOT NULL | — | `CURRENT_TIMESTAMP` | `InstanceJpa.createdAt` → `Instance.createdAt()` |
 | `expires_at` | `TIMESTAMP` | NULL | — | — | `InstanceJpa.expiresAt` → `Instance.expiresAt()` |
