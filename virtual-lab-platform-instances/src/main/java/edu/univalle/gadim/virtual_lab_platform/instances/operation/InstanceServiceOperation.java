@@ -9,6 +9,7 @@ import edu.univalle.gadim.virtual_lab_platform.instances.data.model.InstanceJpa;
 import edu.univalle.gadim.virtual_lab_platform.instances.data.model.InstanceUserJpa;
 import edu.univalle.gadim.virtual_lab_platform.instances.data.repository.InstanceRepository;
 import edu.univalle.gadim.virtual_lab_platform.instances.data.repository.InstanceUserRepository;
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -36,12 +37,16 @@ public class InstanceServiceOperation implements InstanceService {
   private static final String INSTANCE_NOT_FOUND = "Instance not found: ";
   private static final int DEFAULT_VNC_PORT = 6901;
   private static final int DEFAULT_EXPOSED_PORT = 8080;
+  private static final String VNC_PASSWORD_CHARS =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  private static final int VNC_PASSWORD_LENGTH = 12;
 
   private final InstanceRepository instanceRepository;
   private final InstanceUserRepository instanceUserRepository;
   private final WorkspaceProvisionerService workspaceProvisionerService;
   private final UniqueIdGenerator uniqueIdGenerator;
   private final RestTemplate restTemplate;
+  private final SecureRandom secureRandom = new SecureRandom();
 
   public InstanceServiceOperation(
       InstanceRepository instanceRepository,
@@ -94,6 +99,7 @@ public class InstanceServiceOperation implements InstanceService {
     logger.info("Creating instance for user: {}", userId);
 
     String instanceId = uniqueIdGenerator.generate();
+    String vncPassword = generateVncPassword();
     String containerId =
         workspaceProvisionerService.createWorkspace(
             userId,
@@ -104,8 +110,10 @@ public class InstanceServiceOperation implements InstanceService {
             memoryMb,
             storageMb,
             gpuEnabled,
-            exposedPort);
+            exposedPort,
+            vncPassword);
 
+    int hostVncPort = workspaceProvisionerService.getHostVncPort(containerId);
     String internalIp = workspaceProvisionerService.getContainerIp(containerId);
 
     LocalDateTime now = LocalDateTime.now();
@@ -125,8 +133,9 @@ public class InstanceServiceOperation implements InstanceService {
             .storageMb(storageMb)
             .gpuEnabled(gpuEnabled)
             .exposedPort(exposedPort)
-            .vncPort(DEFAULT_VNC_PORT)
+            .vncPort(hostVncPort)
             .vncEnabled(true)
+            .vncPassword(vncPassword)
             .internalIp(internalIp)
             .createdAt(now)
             .expiresAt(expiresAt)
@@ -281,7 +290,7 @@ public class InstanceServiceOperation implements InstanceService {
     }
     try {
       final var healthUrl =
-          "http://" + instance.getInternalIp() + ":" + instance.getVncPort() + "/";
+          "http://localhost:" + instance.getVncPort() + "/";
       restTemplate.getForObject(healthUrl, String.class);
       return true;
     } catch (RestClientException e) {
@@ -300,5 +309,13 @@ public class InstanceServiceOperation implements InstanceService {
     if (instance.getStatus() == InstanceStatus.DELETED) {
       throw new IllegalArgumentException(INSTANCE_NOT_FOUND + instance.getId());
     }
+  }
+
+  private String generateVncPassword() {
+    var sb = new StringBuilder(VNC_PASSWORD_LENGTH);
+    for (int i = 0; i < VNC_PASSWORD_LENGTH; i++) {
+      sb.append(VNC_PASSWORD_CHARS.charAt(secureRandom.nextInt(VNC_PASSWORD_CHARS.length())));
+    }
+    return sb.toString();
   }
 }

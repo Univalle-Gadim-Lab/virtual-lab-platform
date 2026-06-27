@@ -175,6 +175,14 @@ public interface Instance {
     boolean vncEnabled();
 
     /**
+     * Returns the VNC password for remote desktop access.
+     *
+     * @return The VNC password
+     */
+    @Nonnull
+    String vncPassword();
+
+    /**
      * Returns the current status of the instance.
      *
      * @return The instance status

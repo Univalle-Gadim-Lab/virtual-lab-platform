@@ -19,10 +19,10 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 /**
  * Security configuration for the Virtual Lab Platform.
  *
- * <p>Configures the Spring Security filter chain with JWT-based authentication,
- * CORS policy for local development UI servers, and public access to
- * authentication and health endpoints. The login, refresh, and health endpoints
- * are publicly accessible; all other endpoints require a valid Bearer token.
+ * <p>Configures the Spring Security filter chain with JWT-based authentication, CORS policy for
+ * local development UI servers, and public access to authentication and health endpoints. The
+ * login, refresh, and health endpoints are publicly accessible; all other endpoints require a valid
+ * Bearer token.
  *
  * @see JwtAuthenticationFilter
  */
@@ -47,14 +47,15 @@ public class SecurityConfig {
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
         .csrf(csrf -> csrf.disable())
+        .headers(headers -> headers.contentSecurityPolicy(csp -> csp.policyDirectives(
+            "frame-ancestors 'self' http://localhost:4200 http://localhost:3000 "
+                + "http://localhost:3001 http://localhost:3002 http://localhost:5173 "
+                + "http://localhost:6901")))
         .sessionManagement(
             session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
             auth ->
-                auth.requestMatchers(
-                        "/api/auth/login",
-                        "/api/auth/refresh",
-                        "/api/health")
+                auth.requestMatchers("/api/auth/login", "/api/auth/refresh", "/api/health")
                     .permitAll()
                     .requestMatchers("/api/users/**")
                     .hasRole("ADMIN")
@@ -66,15 +67,13 @@ public class SecurityConfig {
             ex ->
                 ex.authenticationEntryPoint(authenticationEntryPoint)
                     .accessDeniedHandler(accessDeniedHandler))
-        .addFilterBefore(
-            jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();
   }
 
   /**
-   * Configures CORS policy allowing cross-origin requests from local development
-   * UI servers.
+   * Configures CORS policy allowing cross-origin requests from local development UI servers.
    *
    * @return the CORS configuration source
    */
@@ -82,7 +81,13 @@ public class SecurityConfig {
   CorsConfigurationSource corsConfigurationSource() {
     final var configuration = new CorsConfiguration();
     configuration.setAllowedOrigins(
-        List.of("http://localhost:4200", "http://localhost:3000", "http://localhost:5173"));
+        List.of(
+            "http://localhost:4200",
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "http://localhost:3002",
+            "http://localhost:5173",
+            "http://localhost:6901"));
     configuration.setAllowedMethods(
         List.of(
             HttpMethod.GET.name(),
@@ -92,9 +97,17 @@ public class SecurityConfig {
             HttpMethod.PATCH.name(),
             HttpMethod.OPTIONS.name()));
     configuration.setAllowedHeaders(
-        List.of("Authorization", "Content-Type", "Accept", "X-Requested-With",
-            "Upgrade", "Connection", "Sec-WebSocket-Key", "Sec-WebSocket-Version",
-            "Sec-WebSocket-Extensions", "Sec-WebSocket-Protocol"));
+        List.of(
+            "Authorization",
+            "Content-Type",
+            "Accept",
+            "X-Requested-With",
+            "Upgrade",
+            "Connection",
+            "Sec-WebSocket-Key",
+            "Sec-WebSocket-Version",
+            "Sec-WebSocket-Extensions",
+            "Sec-WebSocket-Protocol"));
     configuration.setAllowCredentials(true);
     configuration.setMaxAge(3600L);
 

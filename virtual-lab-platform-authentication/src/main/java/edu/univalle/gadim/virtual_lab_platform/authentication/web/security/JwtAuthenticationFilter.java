@@ -3,6 +3,7 @@ package edu.univalle.gadim.virtual_lab_platform.authentication.web.security;
 import edu.univalle.gadim.virtual_lab_platform.authentication.api.service.TokenService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -34,6 +35,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   private static final String AUTHORIZATION_HEADER = "Authorization";
   private static final String BEARER_PREFIX = "Bearer ";
   private static final String TOKEN_PARAM = "token";
+  private static final String VNC_TOKEN_COOKIE = "vnc_token";
 
   private final TokenService tokenService;
 
@@ -81,7 +83,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     if (authHeader != null && authHeader.startsWith(BEARER_PREFIX)) {
       return authHeader.substring(BEARER_PREFIX.length());
     }
-    return request.getParameter(TOKEN_PARAM);
+    final var queryToken = request.getParameter(TOKEN_PARAM);
+    if (queryToken != null && !queryToken.isEmpty()) {
+      return queryToken;
+    }
+    final var cookies = request.getCookies();
+    if (cookies != null) {
+      for (var cookie : cookies) {
+        if (VNC_TOKEN_COOKIE.equals(cookie.getName())) {
+          return cookie.getValue();
+        }
+      }
+    }
+    return null;
   }
 
   @Override

@@ -2,11 +2,18 @@ package edu.univalle.gadim.virtual_lab_platform.instances.config;
 
 import edu.univalle.gadim.virtual_lab_platform.instances.api.service.InstanceService;
 import edu.univalle.gadim.virtual_lab_platform.instances.vnc.VncWebSocketProxyHandler;
+import java.util.Map;
+import javax.annotation.Nonnull;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.server.ServerHttpRequest;
+import org.springframework.http.server.ServerHttpResponse;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
+import org.springframework.web.socket.server.support.HttpSessionHandshakeInterceptor;
 
 /**
  * Registers the VNC WebSocket proxy handler for browser-to-container remote desktop access.
@@ -33,6 +40,20 @@ public class VncWebSocketConfig implements WebSocketConfigurer {
   @Override
   public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
     registry.addHandler(vncWebSocketProxyHandler(), "/api/instances/*/vnc/websockify")
-        .setAllowedOriginPatterns("*");
+        .setAllowedOriginPatterns("*")
+        .addInterceptors(new HttpSessionHandshakeInterceptor() {
+          @Override
+          public boolean beforeHandshake(@Nonnull ServerHttpRequest request,
+              @Nonnull ServerHttpResponse response,
+              @Nonnull WebSocketHandler wsHandler,
+              @Nonnull Map<String, Object> attributes) {
+            var authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated()) {
+              attributes.put("principal", authentication);
+              return true;
+            }
+            return true;
+          }
+        });
   }
 }

@@ -6,7 +6,9 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
+import java.util.Base64;
 import java.util.concurrent.CompletionStage;
 import javax.annotation.ParametersAreNonnullByDefault;
 import org.slf4j.Logger;
@@ -62,11 +64,15 @@ public class VncWebSocketProxyHandler extends BinaryWebSocketHandler {
     }
 
     final var containerUri = URI.create(
-        "ws://" + instance.internalIp() + ":" + instance.vncPort() + "/websockify");
+        "ws://localhost:" + instance.vncPort() + "/websockify");
+
+    final var credentials = "labuser:" + instance.vncPassword();
+    final var encodedCredentials = Base64.getEncoder()
+        .encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
 
     logger.info("Connecting to KasmVNC at: {}", containerUri);
 
-    final var containerWs = connectToContainer(containerUri, browserSession);
+    final var containerWs = connectToContainer(containerUri, encodedCredentials, browserSession);
     browserSession.getAttributes().put("containerWs", containerWs);
   }
 
@@ -106,12 +112,13 @@ public class VncWebSocketProxyHandler extends BinaryWebSocketHandler {
     }
   }
 
-  private WebSocket connectToContainer(URI containerUri, WebSocketSession browserSession)
-      throws Exception {
+  private WebSocket connectToContainer(URI containerUri, String basicAuth,
+      WebSocketSession browserSession) throws Exception {
     final var httpClient = HttpClient.newHttpClient();
     final var connected = new java.util.concurrent.CompletableFuture<WebSocket>();
 
     httpClient.newWebSocketBuilder()
+        .header("Authorization", "Basic " + basicAuth)
         .buildAsync(containerUri, new WebSocket.Listener() {
           final StringBuilder textAccum = new StringBuilder();
 
@@ -186,9 +193,14 @@ public class VncWebSocketProxyHandler extends BinaryWebSocketHandler {
   }
 
   private static String getUserId(WebSocketSession session) {
-    final Principal principal = session.getPrincipal();
+    var principal = session.getPrincipal();
     if (principal != null) {
       return principal.getName();
+    }
+    var auth = (org.springframework.security.core.Authentication) session.getAttributes()
+        .get("principal");
+    if (auth != null && auth.isAuthenticated()) {
+      return auth.getName();
     }
     throw new IllegalArgumentException("No authenticated principal on WebSocket session");
   }

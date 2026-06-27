@@ -52,7 +52,7 @@ public class InstanceJpa implements Instance {
   @Column(name = "description")
   private String description;
 
-  @Column(name = "external_ip")
+  @Column(name = "external_ip", length = 64)
   private String externalIp;
 
   @Column(name = "image_name")
@@ -87,6 +87,9 @@ public class InstanceJpa implements Instance {
 
   @Column(name = "vnc_enabled")
   private Boolean vncEnabled;
+
+  @Column(name = "vnc_password")
+  private String vncPassword;
 
   @Column(name = "created_at")
   private LocalDateTime createdAt;
@@ -208,6 +211,11 @@ public class InstanceJpa implements Instance {
   @Override
   public boolean vncEnabled() {
     return this.vncEnabled;
+  }
+
+  @Override
+  public String vncPassword() {
+    return this.vncPassword;
   }
 
   @Override

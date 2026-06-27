@@ -6,12 +6,17 @@ import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.HostConfig;
+import com.github.dockerjava.api.model.Ports;
 import edu.univalle.gadim.virtual_lab_platform.instances.api.service.WorkspaceProvisionerService;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.security.SecureRandom;
 import java.util.List;
-import java.util.Map;
 import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
 import org.jspecify.annotations.NonNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
@@ -28,18 +33,23 @@ import org.springframework.stereotype.Service;
 @ParametersAreNonnullByDefault
 public class WorkspaceProvisionerOperation implements WorkspaceProvisionerService {
 
+  private static final Logger logger = LoggerFactory.getLogger(WorkspaceProvisionerOperation.class);
   private static final int CPU_PERIOD = 100_000;
   private static final long BYTES_PER_MB = 1024L * 1024L;
-  private static final int MB_PER_GB = 1024;
   private static final int DEFAULT_CPU_CORES = 2;
   private static final int DEFAULT_MEMORY_MB = 4096;
   private static final int DEFAULT_STORAGE_MB = 10240;
   private static final int DEFAULT_EXPOSED_PORT = 8080;
   private static final int DEFAULT_VNC_PORT = 6901;
+  private static final long SHM_SIZE_BYTES = 2L * 1024 * 1024 * 1024;
   private static final String DEFAULT_IMAGE_NAME = "lab-kicad";
   private static final String DEFAULT_IMAGE_VERSION = "latest";
+  private static final String VNC_PASSWORD_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  private static final int VNC_PASSWORD_LENGTH = 12;
+  private static final String DOCKER_BUILD_CONTEXT = "virtual-lab-platform-instances/docker/kicad";
 
   private final DockerClient dockerClient;
+  private final SecureRandom secureRandom = new SecureRandom();
 
   public WorkspaceProvisionerOperation(DockerClient dockerClient) {
     this.dockerClient = dockerClient;
@@ -58,7 +68,7 @@ public class WorkspaceProvisionerOperation implements WorkspaceProvisionerServic
         DEFAULT_STORAGE_MB,
         false,
         DEFAULT_EXPOSED_PORT,
-        DEFAULT_VNC_PORT);
+        generateVncPassword());
   }
 
   @Override
@@ -72,7 +82,8 @@ public class WorkspaceProvisionerOperation implements WorkspaceProvisionerServic
       int memoryMb,
       int storageMb,
       boolean gpuEnabled,
-      int exposedPort) {
+      int exposedPort,
+      String vncPassword) {
     return createWorkspace(
         userId,
         isPersistent,
@@ -83,7 +94,8 @@ public class WorkspaceProvisionerOperation implements WorkspaceProvisionerServic
         storageMb,
         gpuEnabled,
         exposedPort,
-        DEFAULT_VNC_PORT);
+        DEFAULT_VNC_PORT,
+        vncPassword);
   }
 
   private String createWorkspace(
@@ -96,12 +108,16 @@ public class WorkspaceProvisionerOperation implements WorkspaceProvisionerServic
       int storageMb,
       boolean gpuEnabled,
       int exposedPort,
-      int vncPort) {
+      int vncPort,
+      String vncPassword) {
 
     final var imageReference = imageName + ":" + imageVersion;
     final var cpuQuota = (long) cpuCores * CPU_PERIOD;
     final var ramLimitBytes = (long) memoryMb * BYTES_PER_MB;
-    final var diskSizeGb = Math.max(1, storageMb / MB_PER_GB);
+
+    var vncExposedPort = ExposedPort.tcp(vncPort);
+    var portBindings = new Ports();
+    portBindings.bind(vncExposedPort, Ports.Binding.bindPort(0));
 
     HostConfig hostConfig =
         HostConfig.newHostConfig()
@@ -109,13 +125,14 @@ public class WorkspaceProvisionerOperation implements WorkspaceProvisionerServic
             .withMemorySwap(ramLimitBytes)
             .withCpuQuota(cpuQuota)
             .withCpuPeriod((long) CPU_PERIOD)
-            .withSecurityOpts(List.of("no-new-privileges:true"));
-
-    hostConfig.withStorageOpt(Map.of("size", diskSizeGb + "G"));
+            .withShmSize(SHM_SIZE_BYTES)
+            .withSecurityOpts(List.of("no-new-privileges:true"))
+            .withPortBindings(portBindings);
 
     if (isPersistent) {
+      var volumeName = "vol_" + sanitizeUserId(userId);
       hostConfig.withBinds(
-          com.github.dockerjava.api.model.Bind.parse("vol_" + userId + ":/home/labuser/projects"));
+          com.github.dockerjava.api.model.Bind.parse(volumeName + ":/home/labuser/projects"));
     }
 
     boolean imageExistsLocally = false;
@@ -126,15 +143,7 @@ public class WorkspaceProvisionerOperation implements WorkspaceProvisionerServic
     }
 
     if (!imageExistsLocally) {
-      try {
-        dockerClient.pullImageCmd(imageName)
-            .withTag(imageVersion)
-            .start()
-            .awaitCompletion();
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        throw new RuntimeException("Image pull was interrupted: " + imageReference, e);
-      }
+      buildImageLocally(imageName, imageVersion);
     }
 
     CreateContainerResponse container;
@@ -143,12 +152,56 @@ public class WorkspaceProvisionerOperation implements WorkspaceProvisionerServic
           createCmd
               .withHostConfig(hostConfig)
               .withExposedPorts(ExposedPort.tcp(exposedPort), ExposedPort.tcp(vncPort))
+              .withEnv("KASMVNC_PASSWORD=" + vncPassword)
               .exec();
     }
 
     dockerClient.startContainerCmd(container.getId()).exec();
 
     return container.getId();
+  }
+
+  private String generateVncPassword() {
+    var sb = new StringBuilder(VNC_PASSWORD_LENGTH);
+    for (int i = 0; i < VNC_PASSWORD_LENGTH; i++) {
+      sb.append(VNC_PASSWORD_CHARS.charAt(secureRandom.nextInt(VNC_PASSWORD_CHARS.length())));
+    }
+    return sb.toString();
+  }
+
+  private String sanitizeUserId(String userId) {
+    var localPart = userId.contains("@") ? userId.substring(0, userId.indexOf("@")) : userId;
+    return localPart.contains(".") ? localPart.substring(0, localPart.indexOf(".")) : localPart;
+  }
+
+  private void buildImageLocally(String imageName, String imageVersion) {
+    var buildContext = Path.of(DOCKER_BUILD_CONTEXT).toAbsolutePath();
+    var imageTag = imageName + ":" + imageVersion;
+
+    logger.info("Image {} not found locally. Building from {}...", imageTag, buildContext);
+
+    try {
+      var processBuilder =
+          new ProcessBuilder("docker", "build", "-t", imageTag, ".")
+              .directory(buildContext.toFile())
+              .redirectErrorStream(true);
+
+      var process = processBuilder.start();
+      var output = new String(process.getInputStream().readAllBytes());
+      var exitCode = process.waitFor();
+
+      if (exitCode != 0) {
+        throw new RuntimeException(
+            "Docker build failed for " + imageTag + " (exit code " + exitCode + "):\n" + output);
+      }
+
+      logger.info("Image {} built successfully.", imageTag);
+    } catch (IOException e) {
+      throw new RuntimeException("Failed to execute docker build for " + imageTag, e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException("Docker build was interrupted for " + imageTag, e);
+    }
   }
 
   @Override
@@ -175,5 +228,21 @@ public class WorkspaceProvisionerOperation implements WorkspaceProvisionerServic
       }
     }
     return "127.0.0.1";
+  }
+
+  @Override
+  public int getHostVncPort(String containerId) {
+    InspectContainerResponse inspection = dockerClient.inspectContainerCmd(containerId).exec();
+    var networkSettings = inspection.getNetworkSettings();
+    if (networkSettings != null && networkSettings.getPorts() != null) {
+      var bindings = networkSettings.getPorts().getBindings();
+      if (bindings != null) {
+        var vncBindings = bindings.get(ExposedPort.tcp(DEFAULT_VNC_PORT));
+        if (vncBindings != null && vncBindings.length > 0) {
+          return Integer.parseInt(vncBindings[0].getHostPortSpec());
+        }
+      }
+    }
+    return DEFAULT_VNC_PORT;
   }
 }

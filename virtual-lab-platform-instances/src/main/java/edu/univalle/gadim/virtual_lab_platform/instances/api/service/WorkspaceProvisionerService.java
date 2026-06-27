@@ -16,8 +16,8 @@ public interface WorkspaceProvisionerService {
   /**
    * Creates and starts a new Docker container workspace for the specified user.
    *
-   * <p>Uses hardcoded default resource limits. Prefer
-   * {@link #createWorkspace(String, boolean, String, String, int, int, int, boolean, int)}
+   * <p>Uses hardcoded default resource limits and generates a random VNC password. Prefer
+   * {@link #createWorkspace(String, boolean, String, String, int, int, int, boolean, int, String)}
    * for dynamic resource configuration.
    *
    * @param userId the user ID to associate with the workspace
@@ -39,6 +39,7 @@ public interface WorkspaceProvisionerService {
    * @param storageMb the amount of disk storage in megabytes to allocate
    * @param gpuEnabled whether GPU acceleration is enabled
    * @param exposedPort the port to expose on the container
+   * @param vncPassword the VNC password for remote desktop access
    * @return the Docker container ID
    */
   @Nonnull
@@ -51,7 +52,8 @@ public interface WorkspaceProvisionerService {
       int memoryMb,
       int storageMb,
       boolean gpuEnabled,
-      int exposedPort);
+      int exposedPort,
+      String vncPassword);
 
   /**
    * Stops the Docker container workspace identified by the given container ID.
@@ -75,4 +77,16 @@ public interface WorkspaceProvisionerService {
    */
   @Nonnull
   String getContainerIp(String containerId);
+
+  /**
+   * Resolves the host port assigned to the VNC port (6901) of a running container.
+   *
+   * <p>When running on Docker Desktop (macOS/Windows), the container's internal bridge
+   * IP is not routable from the host. This method returns the host-side port that was
+   * dynamically bound to the container's VNC port at creation time.
+   *
+   * @param containerId the Docker container ID
+   * @return the host port number assigned to the container's VNC port
+   */
+  int getHostVncPort(String containerId);
 }

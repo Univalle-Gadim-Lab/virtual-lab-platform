@@ -50,6 +50,11 @@ public record RemoteSessionResponse(
     if (!instance.vncEnabled() || instance.status() != InstanceStatus.RUNNING) {
       return null;
     }
-    return "http://" + instance.internalIp() + ":" + instance.vncPort();
+    return "http://"
+        + "localhost"
+        + ":"
+        + instance.vncPort()
+        + "?password="
+        + instance.vncPassword();
   }
 }
