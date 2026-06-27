@@ -14,7 +14,6 @@ import java.security.SecureRandom;
 import java.util.List;
 import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
-import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -57,7 +56,7 @@ public class WorkspaceProvisionerOperation implements WorkspaceProvisionerServic
 
   @Override
   @Nonnull
-  public @NonNull String createWorkspace(String userId, boolean isPersistent) {
+  public String createWorkspace(String userId, boolean isPersistent) {
     return createWorkspace(
         userId,
         isPersistent,
@@ -73,7 +72,7 @@ public class WorkspaceProvisionerOperation implements WorkspaceProvisionerServic
 
   @Override
   @Nonnull
-  public @NonNull String createWorkspace(
+  public String createWorkspace(
       String userId,
       boolean isPersistent,
       String imageName,
@@ -216,7 +215,7 @@ public class WorkspaceProvisionerOperation implements WorkspaceProvisionerServic
 
   @Override
   @Nonnull
-  public @NonNull String getContainerIp(String containerId) {
+  public String getContainerIp(String containerId) {
     InspectContainerResponse inspection = dockerClient.inspectContainerCmd(containerId).exec();
     var networkSettings = inspection.getNetworkSettings();
     if (networkSettings != null && networkSettings.getNetworks() != null) {
