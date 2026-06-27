@@ -63,6 +63,7 @@ class InstanceMetricsServiceOperationUnTest {
         .storageMb(20480)
         .gpuEnabled(true)
         .exposedPort(8080)
+        .vncPassword("testPass123")
         .internalIp("127.0.0.1")
         .createdAt(LocalDateTime.now())
         .expiresAt(LocalDateTime.now().plusDays(7))

@@ -28,6 +28,7 @@ class InstanceJpaUnTest {
   private static final Integer EXPOSED_PORT = 8080;
   private static final Integer VNC_PORT = 6901;
   private static final Boolean VNC_ENABLED = true;
+  private static final String VNC_PASSWORD = "testPass123";
   private static final String INTERNAL_IP = "10.0.0.5";
   private static final LocalDateTime CREATED_AT = LocalDateTime.of(2025, 1, 15, 10, 30, 0);
   private static final LocalDateTime EXPIRES_AT = LocalDateTime.of(2025, 2, 15, 10, 30, 0);
@@ -60,6 +61,7 @@ class InstanceJpaUnTest {
       assertThat(instance.getExposedPort()).isNull();
       assertThat(instance.getVncPort()).isNull();
       assertThat(instance.getVncEnabled()).isNull();
+      assertThat(instance.getVncPassword()).isNull();
       assertThat(instance.getInternalIp()).isNull();
       assertThat(instance.getCreatedAt()).isNull();
       assertThat(instance.getExpiresAt()).isNull();
@@ -95,6 +97,7 @@ class InstanceJpaUnTest {
               INTERNAL_IP,
               VNC_PORT,
               VNC_ENABLED,
+              VNC_PASSWORD,
               CREATED_AT,
               EXPIRES_AT,
               STARTED_AT,
@@ -118,6 +121,7 @@ class InstanceJpaUnTest {
           .returns(EXPOSED_PORT, InstanceJpa::getExposedPort)
           .returns(VNC_PORT, InstanceJpa::getVncPort)
           .returns(VNC_ENABLED, InstanceJpa::getVncEnabled)
+          .returns(VNC_PASSWORD, InstanceJpa::getVncPassword)
           .returns(INTERNAL_IP, InstanceJpa::getInternalIp)
           .returns(CREATED_AT, InstanceJpa::getCreatedAt)
           .returns(EXPIRES_AT, InstanceJpa::getExpiresAt)
@@ -248,6 +252,15 @@ class InstanceJpaUnTest {
       instance.setVncEnabled(VNC_ENABLED);
 
       assertThat(instance.getVncEnabled()).isEqualTo(VNC_ENABLED);
+    }
+
+    @Test
+    @DisplayName("should update vncPassword")
+    void shouldUpdateVncPassword() {
+      final var instance = new InstanceJpa();
+      instance.setVncPassword(VNC_PASSWORD);
+
+      assertThat(instance.getVncPassword()).isEqualTo(VNC_PASSWORD);
     }
 
     @Test

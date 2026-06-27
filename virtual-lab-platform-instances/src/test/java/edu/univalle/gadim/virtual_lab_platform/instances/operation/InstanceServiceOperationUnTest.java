@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -81,6 +82,7 @@ class InstanceServiceOperationUnTest {
         .storageMb(STORAGE_MB)
         .gpuEnabled(GPU_ENABLED)
         .exposedPort(EXPOSED_PORT)
+        .vncPassword("testPass123")
         .internalIp("127.0.0.1")
         .createdAt(LocalDateTime.of(2025, 1, 15, 10, 30, 0))
         .expiresAt(LocalDateTime.of(2025, 2, 15, 10, 30, 0))
@@ -100,16 +102,18 @@ class InstanceServiceOperationUnTest {
       final var savedInstance = buildInstance(INSTANCE_ID, InstanceStatus.CREATED);
       when(uniqueIdGenerator.generate()).thenReturn(INSTANCE_ID, "iu-001");
       when(workspaceProvisionerService.createWorkspace(
-              USER_ID,
-              true,
-              IMAGE_NAME,
-              IMAGE_VERSION,
-              CPU_CORES,
-              MEMORY_MB,
-              STORAGE_MB,
-              GPU_ENABLED,
-              EXPOSED_PORT))
+              eq(USER_ID),
+              eq(true),
+              eq(IMAGE_NAME),
+              eq(IMAGE_VERSION),
+              eq(CPU_CORES),
+              eq(MEMORY_MB),
+              eq(STORAGE_MB),
+              eq(GPU_ENABLED),
+              eq(EXPOSED_PORT),
+              anyString()))
           .thenReturn(CONTAINER_ID);
+      when(workspaceProvisionerService.getHostVncPort(CONTAINER_ID)).thenReturn(32768);
       when(instanceRepository.save(any(InstanceJpa.class))).thenReturn(savedInstance);
       when(instanceUserRepository.save(any(InstanceUserJpa.class)))
           .thenAnswer(invocation -> invocation.getArgument(0));
@@ -133,15 +137,16 @@ class InstanceServiceOperationUnTest {
       assertThat(result).isNotNull();
       verify(workspaceProvisionerService)
           .createWorkspace(
-              USER_ID,
-              true,
-              IMAGE_NAME,
-              IMAGE_VERSION,
-              CPU_CORES,
-              MEMORY_MB,
-              STORAGE_MB,
-              GPU_ENABLED,
-              EXPOSED_PORT);
+              eq(USER_ID),
+              eq(true),
+              eq(IMAGE_NAME),
+              eq(IMAGE_VERSION),
+              eq(CPU_CORES),
+              eq(MEMORY_MB),
+              eq(STORAGE_MB),
+              eq(GPU_ENABLED),
+              eq(EXPOSED_PORT),
+              anyString());
       verify(instanceRepository).save(any(InstanceJpa.class));
       verify(instanceUserRepository).save(any(InstanceUserJpa.class));
     }
@@ -153,16 +158,18 @@ class InstanceServiceOperationUnTest {
       final var savedInstance = buildInstance(INSTANCE_ID, InstanceStatus.CREATED);
       when(uniqueIdGenerator.generate()).thenReturn(INSTANCE_ID, "iu-001");
       when(workspaceProvisionerService.createWorkspace(
-              USER_ID,
-              true,
-              IMAGE_NAME,
-              IMAGE_VERSION,
-              CPU_CORES,
-              MEMORY_MB,
-              STORAGE_MB,
-              GPU_ENABLED,
-              EXPOSED_PORT))
+              eq(USER_ID),
+              eq(true),
+              eq(IMAGE_NAME),
+              eq(IMAGE_VERSION),
+              eq(CPU_CORES),
+              eq(MEMORY_MB),
+              eq(STORAGE_MB),
+              eq(GPU_ENABLED),
+              eq(EXPOSED_PORT),
+              anyString()))
           .thenReturn(CONTAINER_ID);
+      when(workspaceProvisionerService.getHostVncPort(CONTAINER_ID)).thenReturn(32768);
       when(instanceRepository.save(any(InstanceJpa.class))).thenReturn(savedInstance);
 
       // When

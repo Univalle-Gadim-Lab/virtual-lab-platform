@@ -28,6 +28,7 @@ class InstanceJpaBuilderTest {
   private static final boolean GPU_ENABLED = true;
   private static final int EXPOSED_PORT = 8080;
   private static final String INTERNAL_IP = "10.0.0.5";
+  private static final String VNC_PASSWORD = "testPass123";
   private static final LocalDateTime CREATED_AT = LocalDateTime.of(2025, 1, 15, 10, 30, 0);
   private static final LocalDateTime EXPIRES_AT = LocalDateTime.of(2025, 2, 15, 10, 30, 0);
   private static final LocalDateTime STARTED_AT = LocalDateTime.of(2025, 1, 15, 10, 35, 0);
@@ -50,6 +51,7 @@ class InstanceJpaBuilderTest {
         .gpuEnabled(GPU_ENABLED)
         .exposedPort(EXPOSED_PORT)
         .internalIp(INTERNAL_IP)
+        .vncPassword(VNC_PASSWORD)
         .createdAt(CREATED_AT)
         .expiresAt(EXPIRES_AT)
         .startedAt(STARTED_AT)
@@ -82,6 +84,7 @@ class InstanceJpaBuilderTest {
           .returns(GPU_ENABLED, InstanceJpa::getGpuEnabled)
           .returns(EXPOSED_PORT, InstanceJpa::getExposedPort)
           .returns(INTERNAL_IP, InstanceJpa::getInternalIp)
+          .returns(VNC_PASSWORD, InstanceJpa::getVncPassword)
           .returns(CREATED_AT, InstanceJpa::getCreatedAt)
           .returns(EXPIRES_AT, InstanceJpa::getExpiresAt)
           .returns(STARTED_AT, InstanceJpa::getStartedAt)
@@ -110,6 +113,7 @@ class InstanceJpaBuilderTest {
           .returns(GPU_ENABLED, Instance::gpuEnabled)
           .returns(EXPOSED_PORT, Instance::exposedPort)
           .returns(INTERNAL_IP, Instance::internalIp)
+          .returns(VNC_PASSWORD, Instance::vncPassword)
           .returns(CREATED_AT, Instance::createdAt)
           .returns(EXPIRES_AT, Instance::expiresAt)
           .returns(STARTED_AT, Instance::startedAt)

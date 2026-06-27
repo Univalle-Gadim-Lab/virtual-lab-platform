@@ -12,11 +12,8 @@ import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.InspectImageCmd;
 import com.github.dockerjava.api.command.InspectImageResponse;
-import com.github.dockerjava.api.command.PullImageCmd;
-import com.github.dockerjava.api.command.PullImageResultCallback;
 import com.github.dockerjava.api.command.StartContainerCmd;
 import com.github.dockerjava.api.command.StopContainerCmd;
-import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.HostConfig;
 import org.jspecify.annotations.NullMarked;
@@ -44,10 +41,6 @@ class WorkspaceProvisionerOperationUnTest {
 
   @Mock private StopContainerCmd stopContainerCmd;
 
-  @Mock private PullImageCmd pullImageCmd;
-
-  @Mock private PullImageResultCallback pullImageResultCallback;
-
   @Mock private InspectImageCmd inspectImageCmd;
 
   @Mock private InspectImageResponse inspectImageResponse;
@@ -63,12 +56,10 @@ class WorkspaceProvisionerOperationUnTest {
   private void stubCreateContainer() {
     when(dockerClient.inspectImageCmd(anyString())).thenReturn(inspectImageCmd);
     when(inspectImageCmd.exec()).thenReturn(inspectImageResponse);
-    when(dockerClient.pullImageCmd(anyString())).thenReturn(pullImageCmd);
-    when(pullImageCmd.withTag(anyString())).thenReturn(pullImageCmd);
-    doReturn(pullImageResultCallback).when(pullImageCmd).start();
     when(dockerClient.createContainerCmd(anyString())).thenReturn(createContainerCmd);
     when(createContainerCmd.withName(anyString())).thenReturn(createContainerCmd);
     when(createContainerCmd.withHostConfig(any(HostConfig.class))).thenReturn(createContainerCmd);
+    when(createContainerCmd.withEnv(anyString())).thenReturn(createContainerCmd);
     doReturn(createContainerCmd).when(createContainerCmd).withExposedPorts(
         any(ExposedPort.class), any(ExposedPort.class));
     when(createContainerCmd.exec()).thenReturn(createContainerResponse);
@@ -114,24 +105,6 @@ class WorkspaceProvisionerOperationUnTest {
       verify(dockerClient).createContainerCmd("lab-kicad:latest");
       verify(createContainerCmd).withHostConfig(any(HostConfig.class));
     }
-
-    @Test
-    @DisplayName("should pull image when not found locally")
-    void shouldPullImageWhenNotFoundLocally() {
-      // Given
-      stubCreateContainer();
-      when(dockerClient.inspectImageCmd("lab-kicad:latest")).thenThrow(NotFoundException.class);
-
-      // When
-      final var result = provisioner.createWorkspace(USER_ID, false);
-
-      // Then
-      assertThat(result).isEqualTo(CONTAINER_ID);
-      verify(dockerClient).inspectImageCmd("lab-kicad:latest");
-      verify(dockerClient).pullImageCmd("lab-kicad");
-      verify(pullImageCmd).withTag("latest");
-      verify(dockerClient).createContainerCmd("lab-kicad:latest");
-    }
   }
 
   @Nested
@@ -147,7 +120,7 @@ class WorkspaceProvisionerOperationUnTest {
       // When
       final var result =
           provisioner.createWorkspace(
-              USER_ID, true, "lab-vivado", "2023.2", 4, 8192, 20480, false, 8080);
+              USER_ID, true, "lab-vivado", "2023.2", 4, 8192, 20480, false, 8080, "testPass123");
 
       // Then
       assertThat(result).isEqualTo(CONTAINER_ID);
@@ -165,7 +138,7 @@ class WorkspaceProvisionerOperationUnTest {
 
       // When
       provisioner.createWorkspace(
-          USER_ID, false, "lab-quartus", "22.1", 2, 4096, 10240, false, 3000);
+          USER_ID, false, "lab-quartus", "22.1", 2, 4096, 10240, false, 3000, "testPass123");
 
       // Then
       verify(dockerClient).inspectImageCmd("lab-quartus:22.1");
