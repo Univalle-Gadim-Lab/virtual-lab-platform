@@ -927,7 +927,7 @@ Each module provides Spring `@Configuration` classes that register beans needed 
 | `SecurityConfig` | boot | Configures Spring Security filter chain, CORS, and role-based access rules |
 | `UserSecurityConfig` | users | Provides `PasswordEncoder` bean (`BCryptPasswordEncoder` with default strength 10) |
 | `AuthenticationConfig` | authentication | Marker `@Configuration` for component scanning within the authentication module |
-| `InstanceConfig` | instances | Provides `DockerClient` bean; enables `WorkspaceImageProperties` binding |
+| `InstanceConfig` | instances | Provides `DockerClient` and `RestTemplate` beans; enables `WorkspaceImageProperties` binding |
 | `InstancesWsConfig` | instances | Marker `@Configuration` for web service operations within the instances module |
 | `VncWebSocketConfig` | instances | Registers VNC WebSocket handler at `/api/instances/*/vnc/websockify` for browser-to-container proxy |
 

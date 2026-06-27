@@ -35,9 +35,9 @@ public class VncProxySpringWsOps implements VncProxyWsOps {
   private final InstanceService instanceService;
   private final RestTemplate restTemplate;
 
-  public VncProxySpringWsOps(InstanceService instanceService) {
+  public VncProxySpringWsOps(InstanceService instanceService, RestTemplate restTemplate) {
     this.instanceService = instanceService;
-    this.restTemplate = new RestTemplate();
+    this.restTemplate = restTemplate;
   }
 
   @Override

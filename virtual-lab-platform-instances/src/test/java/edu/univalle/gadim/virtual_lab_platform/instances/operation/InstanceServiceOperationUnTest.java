@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.web.client.RestTemplate;
 
 @NullMarked
 @DisplayName("InstanceServiceOperation")
@@ -56,6 +57,8 @@ class InstanceServiceOperationUnTest {
 
   @Mock private UniqueIdGenerator uniqueIdGenerator;
 
+  @Mock private RestTemplate restTemplate;
+
   private InstanceServiceOperation serviceOperation;
 
   @BeforeEach
@@ -66,7 +69,8 @@ class InstanceServiceOperationUnTest {
             instanceRepository,
             instanceUserRepository,
             workspaceProvisionerService,
-            uniqueIdGenerator);
+            uniqueIdGenerator,
+            restTemplate);
   }
 
   private InstanceJpa buildInstance(String id, InstanceStatus status) {

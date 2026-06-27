@@ -52,12 +52,13 @@ public class InstanceServiceOperation implements InstanceService {
       InstanceRepository instanceRepository,
       InstanceUserRepository instanceUserRepository,
       WorkspaceProvisionerService workspaceProvisionerService,
-      UniqueIdGenerator uniqueIdGenerator) {
+      UniqueIdGenerator uniqueIdGenerator,
+      RestTemplate restTemplate) {
     this.instanceRepository = instanceRepository;
     this.instanceUserRepository = instanceUserRepository;
     this.workspaceProvisionerService = workspaceProvisionerService;
     this.uniqueIdGenerator = uniqueIdGenerator;
-    this.restTemplate = new RestTemplate();
+    this.restTemplate = restTemplate;
   }
 
   /**
