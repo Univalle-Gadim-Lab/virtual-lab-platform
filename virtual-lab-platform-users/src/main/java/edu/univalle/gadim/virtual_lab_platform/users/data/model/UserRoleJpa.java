@@ -81,6 +81,6 @@ public class UserRoleJpa implements UserRole {
 
   @Override
   public final int hashCode() {
-    return getClass().hashCode();
+    return Objects.hash(getId());
   }
 }
