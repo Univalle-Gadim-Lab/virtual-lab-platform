@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  vivado:
+    build:
+      context: .
+      additional_contexts:
+        - installer=docker-context/installer
+    image: lab-vivado:2023.2
+    container_name: vivado
+    shm_size: 4gb
+    environment:
+      - KASMVNC_PASSWORD
+    ports:
+      - "127.0.0.1::6901"
+    volumes:
+      - vivado-data:/home/labuser/projects
+
+volumes:
+  vivado-data:

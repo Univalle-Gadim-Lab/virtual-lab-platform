@@ -1,0 +1,52 @@
+desktop:
+  resolution:
+    width: 1920
+    height: 1080
+  allow_resize: true
+  pixel_depth: 24
+
+network:
+  protocol: http
+  interface: 0.0.0.0
+  websocket_port: 6901
+  use_ipv4: true
+  ssl:
+    require_ssl: false
+
+user_session:
+  new_session_disconnects_existing_exclusive_session: false
+  concurrent_connections_prompt: false
+  idle_timeout: never
+
+keyboard:
+  raw_keyboard: false
+
+pointer:
+  enabled: true
+
+encoding:
+  max_frame_rate: 60
+  full_frame_updates: none
+  video_encoding_mode:
+    jpeg_quality: -1
+    webp_quality: -1
+    max_resolution:
+      width: 1920
+      height: 1080
+
+data_loss_prevention:
+  clipboard:
+    server_to_client:
+      enabled: true
+      size: unlimited
+    client_to_server:
+      enabled: true
+      size: unlimited
+  keyboard:
+    enabled: true
+    rate_limit: unlimited
+
+security:
+  brute_force_protection:
+    blacklist_threshold: 0
+    blacklist_timeout: 0

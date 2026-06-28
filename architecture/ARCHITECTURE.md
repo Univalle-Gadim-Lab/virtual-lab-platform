@@ -1170,6 +1170,18 @@ The `UniqueIdGenerator` interface in commons has two implementations (`UuidGener
 
 Containers expose two ports: an application port (default 8080) and a KasmVNC port (default 6901) for browser-based remote desktop access. KasmVNC provides a full Linux desktop (XFCE) with built-in WebSocket support and an HTML5 web client. Shared memory is configured at 2 GB (`shmSize`) for KasmVNC frame buffer operations. Each container receives a unique VNC password via the `KASMVNC_PASSWORD` environment variable, which the entrypoint script configures before starting KasmVNC.
 
+### Workspace Image Kits
+
+Each workspace image is a self-contained kit under `virtual-lab-platform-instances/docker/<workspace>/`. Every kit ships the same skeleton: `Dockerfile` + `kasmvnc.yaml` + `xstartup` + `entrypoint.sh` + `docker-compose.yml`. The current catalogue registered in `application.yml` is:
+
+| Kit | Status | Default tag | Build mechanism |
+|---|---|---|---|
+| `kicad/` | ✅ Ready to build | `lab-kicad:latest` | Open-source KiCad installed from `apt` |
+| `vivado/` | 🔒 Build skeleton | `lab-vivado:2023.2` | Xilinx Unified Installer supplied via Docker `--build-context installer=` |
+| `quartus/` | 🔒 Build skeleton | `lab-quartus:22.1` | Intel/Altera installer supplied via the same mechanism |
+
+The Vivado and Quartus skeletons **fail fast** at the `RUN /tmp/xilinx-installer.bin …` (or `…/quartus-installer.run …`) step if the operator has not mounted an installer context, by design. The proprietary installer files cannot be redistributed in this repository because of licensing terms; their `README.md` files document the exact context layout the build expects.
+
 The `VncWebSocketProxyHandler` and `VncProxyController` enable the frontend to access the container's KasmVNC server through the backend, maintaining authentication and avoiding direct container exposure. The VNC URL returned to clients includes the per-instance password as a query parameter (`?password=<pw>`), enabling the KasmVNC web client to authenticate automatically.
 
 After container creation, the internal bridge IP address is resolved via `docker inspect` and stored in `internalIp`, enabling the VNC proxy to connect to running containers by their Docker network address.
