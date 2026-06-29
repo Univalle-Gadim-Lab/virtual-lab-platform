@@ -31,9 +31,9 @@ workspace:
         version: "latest"
         image: "lab-kicad:latest"
         category: "EDA"
-        default-cpu-cores: 2
-        default-memory-mb: 4096
-        default-storage-mb: 10240
+        default-cpu-cores: 1
+        default-memory-mb: 2048
+        default-storage-mb: 4096
       - id: "vivado"
         name: "Vivado"
         description: "Xilinx FPGA design suite"

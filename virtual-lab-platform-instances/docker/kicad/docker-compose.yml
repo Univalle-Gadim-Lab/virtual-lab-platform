@@ -7,11 +7,14 @@ services:
       - "6901:6901"
     environment:
       - KASMVNC_PASSWORD=test123
-      - VNC_RESOLUTION=1920x1080
+      - VNC_RESOLUTION=1360x768
     volumes:
       - kicad-data:/home/labuser/projects
     restart: unless-stopped
+    mem_limit: 2g
     shm_size: "2gb"
+    storage_opt:
+      size: "4G"
 
 volumes:
   kicad-data:
