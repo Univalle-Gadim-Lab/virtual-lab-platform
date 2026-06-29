@@ -231,17 +231,29 @@ public class WorkspaceProvisionerOperation implements WorkspaceProvisionerServic
 
   @Override
   public int getHostVncPort(String containerId) {
-    InspectContainerResponse inspection = dockerClient.inspectContainerCmd(containerId).exec();
-    var networkSettings = inspection.getNetworkSettings();
-    if (networkSettings != null && networkSettings.getPorts() != null) {
-      var bindings = networkSettings.getPorts().getBindings();
-      if (bindings != null) {
-        var vncBindings = bindings.get(ExposedPort.tcp(DEFAULT_VNC_PORT));
-        if (vncBindings != null && vncBindings.length > 0) {
-          return Integer.parseInt(vncBindings[0].getHostPortSpec());
+    for (int attempt = 0; attempt < 10; attempt++) {
+      InspectContainerResponse inspection = dockerClient.inspectContainerCmd(containerId).exec();
+      var networkSettings = inspection.getNetworkSettings();
+      if (networkSettings != null && networkSettings.getPorts() != null) {
+        var bindings = networkSettings.getPorts().getBindings();
+        if (bindings != null) {
+          var vncBindings = bindings.get(ExposedPort.tcp(DEFAULT_VNC_PORT));
+          if (vncBindings != null && vncBindings.length > 0) {
+            var hostPort = vncBindings[0].getHostPortSpec();
+            if (hostPort != null && !hostPort.equals("0")) {
+              return Integer.parseInt(hostPort);
+            }
+          }
         }
       }
+      try {
+        Thread.sleep(500);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        break;
+      }
     }
+    logger.warn("Could not determine host VNC port for container {}, using default {}", containerId, DEFAULT_VNC_PORT);
     return DEFAULT_VNC_PORT;
   }
 }

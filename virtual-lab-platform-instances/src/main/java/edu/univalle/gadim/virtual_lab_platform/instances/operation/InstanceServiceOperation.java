@@ -209,6 +209,10 @@ public class InstanceServiceOperation implements InstanceService {
       workspaceProvisionerService.startWorkspace(instance.getExternalIp());
       savedInstance.setStatus(InstanceStatus.RUNNING);
       savedInstance.setLastAccessedAt(LocalDateTime.now());
+    } catch (com.github.dockerjava.api.exception.NotModifiedException e) {
+      logger.info("Container for instance {} is already running", instanceId);
+      savedInstance.setStatus(InstanceStatus.RUNNING);
+      savedInstance.setLastAccessedAt(LocalDateTime.now());
     } catch (Exception e) {
       logger.error("Failed to start container for instance: {}", instanceId, e);
       savedInstance.setStatus(InstanceStatus.STOPPED);
