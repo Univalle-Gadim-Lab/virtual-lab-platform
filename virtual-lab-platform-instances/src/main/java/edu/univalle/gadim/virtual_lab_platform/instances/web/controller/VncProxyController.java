@@ -51,7 +51,7 @@ public class VncProxyController {
   /**
    * Proxies all HTTP GET requests under /vnc/ to the container's KasmVNC web server.
    */
-  @GetMapping("/**")
+  @GetMapping(value = "/**", headers = "!Upgrade")
   @Nonnull
   public ResponseEntity<Resource> proxyVncRequest(
       @PathVariable String instanceId,

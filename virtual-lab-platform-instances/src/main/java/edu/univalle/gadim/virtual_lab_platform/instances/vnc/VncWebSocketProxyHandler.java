@@ -9,12 +9,14 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.Base64;
+import java.util.List;
 import java.util.concurrent.CompletionStage;
 import javax.annotation.ParametersAreNonnullByDefault;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.socket.BinaryMessage;
 import org.springframework.web.socket.CloseStatus;
+import org.springframework.web.socket.SubProtocolCapable;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.BinaryWebSocketHandler;
@@ -27,7 +29,8 @@ import org.springframework.web.socket.handler.BinaryWebSocketHandler;
  * the container's KasmVNC WebSocket endpoint.
  */
 @ParametersAreNonnullByDefault
-public class VncWebSocketProxyHandler extends BinaryWebSocketHandler {
+public class VncWebSocketProxyHandler extends BinaryWebSocketHandler
+    implements SubProtocolCapable {
 
   private static final Logger logger = LoggerFactory.getLogger(VncWebSocketProxyHandler.class);
   private static final String INSTANCE_NOT_RUNNING = "Instance is not in RUNNING status";
@@ -37,6 +40,11 @@ public class VncWebSocketProxyHandler extends BinaryWebSocketHandler {
 
   public VncWebSocketProxyHandler(InstanceService instanceService) {
     this.instanceService = instanceService;
+  }
+
+  @Override
+  public List<String> getSubProtocols() {
+    return List.of("binary");
   }
 
   @Override
@@ -63,16 +71,20 @@ public class VncWebSocketProxyHandler extends BinaryWebSocketHandler {
       return;
     }
 
+    final var vncPort = instance.vncPort();
     final var containerUri = URI.create(
-        "ws://localhost:" + instance.vncPort() + "/websockify");
+        "ws://localhost:" + vncPort + "/websockify");
 
     final var credentials = "labuser:" + instance.vncPassword();
     final var encodedCredentials = Base64.getEncoder()
         .encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
 
-    logger.info("Connecting to KasmVNC at: {}", containerUri);
+    final var origin = "https://localhost:" + vncPort;
 
-    final var containerWs = connectToContainer(containerUri, encodedCredentials, browserSession);
+    logger.info("Connecting to KasmVNC at: {} (origin: {})", containerUri, origin);
+
+    final var containerWs = connectToContainer(containerUri, encodedCredentials, origin,
+        browserSession);
     browserSession.getAttributes().put("containerWs", containerWs);
   }
 
@@ -112,13 +124,15 @@ public class VncWebSocketProxyHandler extends BinaryWebSocketHandler {
     }
   }
 
-  private WebSocket connectToContainer(URI containerUri, String basicAuth,
+  private WebSocket connectToContainer(URI containerUri, String basicAuth, String origin,
       WebSocketSession browserSession) throws Exception {
     final var httpClient = HttpClient.newHttpClient();
     final var connected = new java.util.concurrent.CompletableFuture<WebSocket>();
 
     httpClient.newWebSocketBuilder()
         .header("Authorization", "Basic " + basicAuth)
+        .header("Sec-WebSocket-Origin", origin)
+        .subprotocols("binary")
         .buildAsync(containerUri, new WebSocket.Listener() {
           final StringBuilder textAccum = new StringBuilder();
 
